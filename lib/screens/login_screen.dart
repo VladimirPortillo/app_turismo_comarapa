@@ -146,11 +146,27 @@ class _LoginScreenState extends State<LoginScreen> {
                   ],
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                  icon: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.25),
+                        width: 1,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.arrow_back,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                  ),
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
-                  tooltip: 'Volver',
+                  tooltip: 'Volver al inicio',
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                 ),

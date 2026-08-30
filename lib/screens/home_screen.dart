@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'auth_gate.dart';
+import 'places_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -11,30 +12,107 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
+  Widget _buildBody() {
+    switch (_currentIndex) {
+      case 0:
+        return SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildTopBar(context),
+                const SizedBox(height: 20),
+                _buildSearchBar(),
+                const SizedBox(height: 20),
+                _buildHeroBanner(),
+                const SizedBox(height: 28),
+                _buildCategoriesSection(),
+                const SizedBox(height: 28),
+                _buildHighlightsSection(),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+        );
+      case 1:
+        return SafeArea(
+          child: PlacesScreen(
+            onBack: () {
+              setState(() {
+                _currentIndex = 0;
+              });
+            },
+          ),
+        );
+      case 2:
+        return _buildPlaceholderTab('Mapa');
+      case 3:
+        return _buildPlaceholderTab('Eventos');
+      case 4:
+        return _buildPlaceholderTab('Más');
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  Widget _buildPlaceholderTab(String title) {
+    return SafeArea(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 20, right: 20, top: 16),
+            child: Row(
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _currentIndex = 0;
+                    });
+                  },
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: const Icon(Icons.chevron_left, color: Colors.black87),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF0C3D28),
+                    fontFamily: 'serif',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Expanded(
+            child: Center(
+              child: Text(
+                'Esta sección está en desarrollo',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFAF9F6),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildTopBar(context),
-              const SizedBox(height: 20),
-              _buildSearchBar(),
-              const SizedBox(height: 20),
-              _buildHeroBanner(),
-              const SizedBox(height: 28),
-              _buildCategoriesSection(),
-              const SizedBox(height: 28),
-              _buildHighlightsSection(),
-              const SizedBox(height: 20),
-            ],
-          ),
-        ),
-      ),
+      body: _buildBody(),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) {
@@ -280,32 +358,45 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildCategoryCard(String label, IconData icon, Color bgColor, Color iconColor) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            color: bgColor,
-            borderRadius: BorderRadius.circular(16),
+    return GestureDetector(
+      onTap: () {
+        if (label == 'Lugares') {
+          setState(() {
+            _currentIndex = 1;
+          });
+        } else if (label == 'Eventos') {
+          setState(() {
+            _currentIndex = 3;
+          });
+        }
+      },
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(
+              icon,
+              color: iconColor,
+              size: 26,
+            ),
           ),
-          child: Icon(
-            icon,
-            color: iconColor,
-            size: 26,
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+              color: Color(0xFF374151),
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 12,
-            color: Color(0xFF374151),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
