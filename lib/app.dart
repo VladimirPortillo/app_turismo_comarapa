@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'controllers/preferences_controller.dart';
-import 'screens/auth_gate.dart';
+import 'screens/home_screen.dart';
 
 class ProyectoFinalApp extends StatelessWidget {
   const ProyectoFinalApp({super.key});
@@ -24,7 +24,8 @@ class ProyectoFinalApp extends StatelessWidget {
         colorSchemeSeed: Colors.indigo,
         brightness: Brightness.dark,
       ),
-      home: const AuthGate(),
+      home: const HomeScreen(),
     );
   }
 }
+

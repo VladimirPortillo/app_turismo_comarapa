@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'home_screen.dart';
+import 'admin_home_screen.dart';
 import 'login_screen.dart';
 
 class AuthGate extends StatelessWidget {
@@ -17,8 +17,9 @@ class AuthGate extends StatelessWidget {
         if (client.auth.currentSession == null) {
           return const LoginScreen();
         }
-        return const HomeScreen();
+        return const AdminHomeScreen();
       },
     );
   }
 }
+
