@@ -1,0 +1,8 @@
+WINDOWS - SESION 2
+
+1) Descomprime en C:\flutter_aula\
+2) Abre CMD/PowerShell en la carpeta.
+3) Ejecuta scripts\00_PREPARAR_WINDOWS.bat
+4) Ejecuta scripts\01_MENU_WINDOWS.bat
+5) Primero DEMO en Android o Chrome.
+6) No uses flutter pub upgrade.

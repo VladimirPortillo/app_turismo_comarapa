@@ -1,0 +1,9 @@
+LINUX / MX LINUX - SESION 2
+
+1) Descomprime dentro de tu HOME.
+2) chmod +x scripts/*.sh
+3) ./scripts/00_PREPARAR_LINUX.sh
+4) ./scripts/01_MENU_LINUX.sh
+5) Primero DEMO en Android o Chrome.
+6) Si Ninja falla: ./scripts/98_REPARAR_NINJA_LINUX.sh
+7) No uses flutter pub upgrade.
