@@ -1,24 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-class Place {
-  final String name;
-  final String category;
-  final String time;
-  final String difficulty;
-  final CustomPainter Function() imagePainterBuilder;
-  final Color badgeBgColor;
-  final Color badgeTextColor;
-
-  Place({
-    required this.name,
-    required this.category,
-    required this.time,
-    required this.difficulty,
-    required this.imagePainterBuilder,
-    required this.badgeBgColor,
-    required this.badgeTextColor,
-  });
-}
+import '../models/lugar.dart';
+import '../models/turismo_tipo.dart';
+import '../repositories/lugar_repository.dart';
+import 'place_detail_screen.dart';
 
 class PlacesScreen extends StatefulWidget {
   final VoidCallback onBack;
@@ -31,75 +17,19 @@ class PlacesScreen extends StatefulWidget {
 
 class _PlacesScreenState extends State<PlacesScreen> {
   final TextEditingController _searchController = TextEditingController();
-  String _selectedCategory = 'Todos';
+  String _selectedCategoria = 'Todos';
   String _searchQuery = '';
-
-  final List<String> _categories = [
-    'Todos',
-    'Natural',
-    'Arqueológico',
-    'Aventura',
-    'Mirador',
-  ];
-
-  late final List<Place> _allPlaces;
+  bool _loading = true;
+  String? _error;
+  List<Lugar> _lugares = <Lugar>[];
 
   @override
   void initState() {
     super.initState();
-    _allPlaces = [
-      Place(
-        name: 'Valle de los Cactus',
-        category: 'Natural',
-        time: '2 horas',
-        difficulty: 'Fácil',
-        badgeBgColor: const Color(0xFFE2ECE7),
-        badgeTextColor: const Color(0xFF1B5A3F),
-        imagePainterBuilder: () => CactusMountainPainter(),
-      ),
-      Place(
-        name: 'Jardín de Lagunas',
-        category: 'Natural',
-        time: '3 horas',
-        difficulty: 'Media',
-        badgeBgColor: const Color(0xFFE2ECE7),
-        badgeTextColor: const Color(0xFF1B5A3F),
-        imagePainterBuilder: () => LagunasLeafPainter(),
-      ),
-      Place(
-        name: 'Ruinas prehispánicas',
-        category: 'Arqueológico',
-        time: '1.5 horas',
-        difficulty: 'Fácil',
-        badgeBgColor: const Color(0xFFF9EFE5),
-        badgeTextColor: const Color(0xFFC68B59),
-        imagePainterBuilder: () => PrehispanicColumnsPainter(),
-      ),
-      Place(
-        name: 'Puerta al Amboró',
-        category: 'Aventura',
-        time: 'Medio día',
-        difficulty: 'Media',
-        badgeBgColor: const Color(0xFFE2ECE7),
-        badgeTextColor: const Color(0xFF1B5A3F),
-        imagePainterBuilder: () => AmboroArchPainter(),
-      ),
-      Place(
-        name: 'Mirador Serranía',
-        category: 'Mirador',
-        time: '1 hora',
-        difficulty: 'Fácil',
-        badgeBgColor: const Color(0xFFE2ECE7),
-        badgeTextColor: const Color(0xFF1B5A3F),
-        imagePainterBuilder: () => MiradorSerraniaPainter(),
-      ),
-    ];
-
     _searchController.addListener(() {
-      setState(() {
-        _searchQuery = _searchController.text;
-      });
+      setState(() => _searchQuery = _searchController.text);
     });
+    _load();
   }
 
   @override
@@ -108,19 +38,74 @@ class _PlacesScreenState extends State<PlacesScreen> {
     super.dispose();
   }
 
-  List<Place> get _filteredPlaces {
-    return _allPlaces.where((place) {
-      final matchesCategory = _selectedCategory == 'Todos' || place.category == _selectedCategory;
-      final matchesSearch = place.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          place.category.toLowerCase().contains(_searchQuery.toLowerCase());
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      final lugares = await context.read<LugarRepository>().fetchActivos();
+      if (!mounted) return;
+      setState(() {
+        _lugares = lugares;
+        _loading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _error = error.toString();
+        _loading = false;
+      });
+    }
+  }
+
+  List<String> get _categorias {
+    final nombres = <String>{
+      for (final lugar in _lugares)
+        if (lugar.categoriaNombre != null) lugar.categoriaNombre!,
+    }.toList()
+      ..sort();
+    return ['Todos', ...nombres];
+  }
+
+  List<Lugar> get _filteredLugares {
+    final query = _searchQuery.toLowerCase();
+    return _lugares.where((lugar) {
+      final matchesCategory =
+          _selectedCategoria == 'Todos' || lugar.categoriaNombre == _selectedCategoria;
+      final matchesSearch = lugar.nombre.toLowerCase().contains(query) ||
+          (lugar.categoriaNombre ?? '').toLowerCase().contains(query);
       return matchesCategory && matchesSearch;
     }).toList();
   }
 
+  CustomPainter _painterFor(String nombre) {
+    final name = nombre.toLowerCase();
+    if (name.contains('cactus')) {
+      return CactusMountainPainter();
+    } else if (name.contains('laguna')) {
+      return LagunasLeafPainter();
+    } else if (name.contains('ruina') || name.contains('fuerte') || name.contains('plaza')) {
+      return PrehispanicColumnsPainter();
+    } else if (name.contains('puerta') || name.contains('amboró') || name.contains('ave')) {
+      return AmboroArchPainter();
+    } else {
+      return MiradorSerraniaPainter();
+    }
+  }
+
+  String _tiempoLabel(Lugar lugar) {
+    final minutos = lugar.tiempoVisitaMin;
+    if (minutos == null) return 'Duración no especificada';
+    if (minutos < 60) return '$minutos min';
+    final horas = minutos / 60;
+    final horasTexto = horas == horas.roundToDouble() ? horas.toInt().toString() : horas.toStringAsFixed(1);
+    return '$horasTexto ${horas == 1 ? "hora" : "horas"}';
+  }
+
   @override
   Widget build(BuildContext context) {
-    final filtered = _filteredPlaces;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -130,19 +115,49 @@ class _PlacesScreenState extends State<PlacesScreen> {
         const SizedBox(height: 20),
         _buildCategoriesSelector(),
         const SizedBox(height: 16),
-        Expanded(
-          child: filtered.isEmpty
-              ? _buildEmptyState()
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  itemCount: filtered.length,
-                  itemBuilder: (context, index) {
-                    final place = filtered[index];
-                    return _buildPlaceCard(place);
-                  },
-                ),
-        ),
+        Expanded(child: _buildBody()),
       ],
+    );
+  }
+
+  Widget _buildBody() {
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline, size: 48, color: Colors.redAccent),
+              const SizedBox(height: 12),
+              Text(_error!, textAlign: TextAlign.center),
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                onPressed: _load,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Reintentar'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final filtered = _filteredLugares;
+
+    return RefreshIndicator(
+      onRefresh: _load,
+      child: filtered.isEmpty
+          ? _buildEmptyState()
+          : ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              itemCount: filtered.length,
+              itemBuilder: (context, index) => _buildPlaceCard(filtered[index]),
+            ),
     );
   }
 
@@ -227,15 +242,16 @@ class _PlacesScreenState extends State<PlacesScreen> {
   }
 
   Widget _buildCategoriesSelector() {
+    final categorias = _categorias;
     return SizedBox(
       height: 42,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20),
-        itemCount: _categories.length,
+        itemCount: categorias.length,
         itemBuilder: (context, index) {
-          final category = _categories[index];
-          final isSelected = _selectedCategory == category;
+          final category = categorias[index];
+          final isSelected = _selectedCategoria == category;
           return Padding(
             padding: const EdgeInsets.only(right: 8),
             child: ChoiceChip(
@@ -249,9 +265,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
               selected: isSelected,
               onSelected: (selected) {
                 if (selected) {
-                  setState(() {
-                    _selectedCategory = category;
-                  });
+                  setState(() => _selectedCategoria = category);
                 }
               },
               selectedColor: const Color(0xFF1B5A3F),
@@ -271,143 +285,144 @@ class _PlacesScreenState extends State<PlacesScreen> {
     );
   }
 
-  Widget _buildPlaceCard(Place place) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey.shade100),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+  Widget _buildPlaceCard(Lugar lugar) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => PlaceDetailScreen(lugar: lugar),
           ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            // Thumbnail with custom illustrations
-            Container(
-              width: 90,
-              height: 90,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: CustomPaint(
-                painter: place.imagePainterBuilder(),
-              ),
-            ),
-            const SizedBox(width: 16),
-            // Place text info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Category Badge
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: place.badgeBgColor,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      place.category,
-                      style: TextStyle(
-                        color: place.badgeTextColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  // Title
-                  Text(
-                    place.name,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1F2937),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  // Time / Difficulty metadata
-                  Row(
-                    children: [
-                      Icon(Icons.access_time_outlined, size: 14, color: Colors.grey.shade500),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${place.time} · ${place.difficulty}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.chevron_right,
-              color: Colors.grey.shade400,
-              size: 22,
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.grey.shade100),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              Container(
+                width: 90,
+                height: 90,
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
+                clipBehavior: Clip.antiAlias,
+                child: CustomPaint(painter: _painterFor(lugar.nombre)),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE2ECE7),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        lugar.categoriaNombre ?? 'Sin categoría',
+                        style: const TextStyle(
+                          color: Color(0xFF1B5A3F),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      lugar.nombre,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1F2937),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.access_time_outlined, size: 14, color: Colors.grey.shade500),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            '${_tiempoLabel(lugar)} · ${dificultadLabel(lugar.dificultad)}',
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: Colors.grey.shade400, size: 22),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.search_off_outlined, size: 64, color: Colors.grey.shade300),
-            const SizedBox(height: 16),
-            const Text(
-              'No se encontraron lugares',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF374151),
-              ),
+    return ListView(
+      children: [
+        const SizedBox(height: 60),
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.search_off_outlined, size: 64, color: Colors.grey.shade300),
+                const SizedBox(height: 16),
+                const Text(
+                  'No se encontraron lugares',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF374151),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Prueba con otra categoría o término de búsqueda.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade400,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Prueba con otra categoría o término de búsqueda.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade400,
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 }
 
 // --- Custom Painters for Thumbnails ---
+// Se mantienen como ilustraciones genéricas mientras no haya fotos reales
+// cargadas (el campo `imagenes` de cada lugar sigue siendo la fuente real).
 
 class CactusMountainPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..style = PaintingStyle.fill;
 
-    // Background color (Natural - Medium green)
     paint.color = const Color(0xFF4E9B7B);
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
 
-    // Mountain silhouettes in white with opacity
     final mountainPaint = Paint()
       ..color = Colors.white.withValues(alpha: 0.15)
       ..style = PaintingStyle.fill;
@@ -436,28 +451,26 @@ class LagunasLeafPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..style = PaintingStyle.fill;
 
-    // Background color (Natural - Sage green)
     paint.color = const Color(0xFF539D72);
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
 
-    // Minimalist leaf outline in white
     final leafPaint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0
       ..strokeCap = StrokeCap.round;
 
-    // Leaf / plant bud outline
     final path = Path()
       ..moveTo(size.width * 0.5, size.height * 0.75)
-      ..lineTo(size.width * 0.5, size.height * 0.5) // Stem
+      ..lineTo(size.width * 0.5, size.height * 0.5)
       ..quadraticBezierTo(size.width * 0.35, size.height * 0.4, size.width * 0.5, size.height * 0.25)
       ..quadraticBezierTo(size.width * 0.65, size.height * 0.4, size.width * 0.5, size.height * 0.5);
 
     canvas.drawPath(path, leafPaint);
 
-    // Small droplet or dot inside/around
-    final dotPaint = Paint()..color = Colors.white..style = PaintingStyle.fill;
+    final dotPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
     canvas.drawCircle(Offset(size.width * 0.5, size.height * 0.38), 2.0, dotPaint);
   }
 
@@ -470,11 +483,9 @@ class PrehispanicColumnsPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..style = PaintingStyle.fill;
 
-    // Background color (Arqueologico - Earth Brown)
     paint.color = const Color(0xFF75583E);
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
 
-    // Rectangular ruins outline in white
     final strokePaint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.stroke
@@ -483,18 +494,14 @@ class PrehispanicColumnsPainter extends CustomPainter {
 
     final columnWidth = size.width * 0.12;
 
-    // Draw three columns next to each other
-    // Column 1
     canvas.drawRect(
       Rect.fromLTWH(size.width * 0.28, size.height * 0.55, columnWidth, size.height * 0.25),
       strokePaint,
     );
-    // Column 2
     canvas.drawRect(
       Rect.fromLTWH(size.width * 0.44, size.height * 0.40, columnWidth, size.height * 0.40),
       strokePaint,
     );
-    // Column 3
     canvas.drawRect(
       Rect.fromLTWH(size.width * 0.60, size.height * 0.50, columnWidth, size.height * 0.30),
       strokePaint,
@@ -510,11 +517,9 @@ class AmboroArchPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..style = PaintingStyle.fill;
 
-    // Background color (Aventura - Dark Forest Green)
     paint.color = const Color(0xFF2E6D4E);
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
 
-    // Arch outline and mountain peak
     final strokePaint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.stroke
@@ -526,7 +531,9 @@ class AmboroArchPainter extends CustomPainter {
       ..quadraticBezierTo(size.width * 0.5, size.height * 0.35, size.width * 0.7, size.height * 0.75);
     canvas.drawPath(path, strokePaint);
 
-    final dotPaint = Paint()..color = Colors.white..style = PaintingStyle.fill;
+    final dotPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
     canvas.drawCircle(Offset(size.width * 0.5, size.height * 0.45), 2.5, dotPaint);
   }
 
@@ -539,11 +546,9 @@ class MiradorSerraniaPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..style = PaintingStyle.fill;
 
-    // Background color (Mirador - Soft Mint Green)
     paint.color = const Color(0xFF72AA8D);
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
 
-    // White outline mountain lines
     final strokePaint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.stroke

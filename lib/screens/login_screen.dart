@@ -76,10 +76,7 @@ class _LoginScreenState extends State<LoginScreen> {
       key: _formKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildHeader(context),
-          _buildFormContent(context),
-        ],
+        children: [_buildHeader(context), _buildFormContent(context)],
       ),
     );
 
@@ -98,10 +95,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 clipBehavior: Clip.antiAlias,
-                child: Container(
-                  color: Colors.white,
-                  child: content,
-                ),
+                child: Container(color: Colors.white, child: content),
               ),
             ),
           ),
@@ -111,9 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        child: content,
-      ),
+      body: SingleChildScrollView(child: content),
     );
   }
 
@@ -180,7 +172,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
-                _registerMode ? 'REGISTRO DE USUARIO' : 'PANEL DE ADMINISTRACIÓN',
+                _registerMode
+                    ? 'REGISTRO DE USUARIO'
+                    : 'PANEL DE ADMINISTRACIÓN',
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -191,7 +185,9 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              _registerMode ? 'Crea tu cuenta para\nel municipio' : 'Gestiona el contenido\ndel municipio',
+              _registerMode
+                  ? 'Crea tu cuenta para\nel municipio'
+                  : 'Gestiona el contenido\ndel municipio',
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -213,7 +209,7 @@ class _LoginScreenState extends State<LoginScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            _registerMode ? 'Crear cuenta' : 'Iniciar sesión',
+            _registerMode ? '' : 'Iniciar sesión',
             style: const TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.bold,
@@ -226,10 +222,7 @@ class _LoginScreenState extends State<LoginScreen> {
             _registerMode
                 ? 'Regístrate con tu correo para empezar.'
                 : 'Ingresa con tu cuenta de administrador o editor.',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade600,
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
           ),
           const SizedBox(height: 24),
           const Text(
@@ -245,11 +238,14 @@ class _LoginScreenState extends State<LoginScreen> {
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
             decoration: InputDecoration(
-              hintText: 'admin@comarapa.gob.bo',
+              hintText: 'admin123@gmail.com',
               hintStyle: TextStyle(color: Colors.grey.shade400),
               filled: true,
               fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(color: Colors.grey.shade300),
@@ -260,7 +256,10 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFF2E7D52), width: 1.5),
+                borderSide: const BorderSide(
+                  color: Color(0xFF2E7D52),
+                  width: 1.5,
+                ),
               ),
               errorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -296,10 +295,15 @@ class _LoginScreenState extends State<LoginScreen> {
               hintStyle: TextStyle(color: Colors.grey.shade400),
               filled: true,
               fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
+              ),
               suffixIcon: IconButton(
                 icon: Icon(
-                  _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                  _obscurePassword
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
                   color: Colors.grey.shade600,
                 ),
                 onPressed: () {
@@ -318,7 +322,10 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFF2E7D52), width: 1.5),
+                borderSide: const BorderSide(
+                  color: Color(0xFF2E7D52),
+                  width: 1.5,
+                ),
               ),
               errorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -337,32 +344,7 @@ class _LoginScreenState extends State<LoginScreen> {
             },
           ),
           const SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Funcionalidad de recuperación no disponible'),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              },
-              style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF1B5A3F),
-                padding: EdgeInsets.zero,
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              child: const Text(
-                '¿Olvidaste tu contraseña?',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                ),
-              ),
-            ),
-          ),
+          Align(alignment: Alignment.centerRight),
           if (_message != null) ...[
             const SizedBox(height: 16),
             Container(
@@ -374,12 +356,19 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.error_outline, color: Colors.red.shade700, size: 20),
+                  Icon(
+                    Icons.error_outline,
+                    color: Colors.red.shade700,
+                    size: 20,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       _message!,
-                      style: TextStyle(color: Colors.red.shade800, fontSize: 13),
+                      style: TextStyle(
+                        color: Colors.red.shade800,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
                 ],
@@ -395,7 +384,9 @@ class _LoginScreenState extends State<LoginScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF2E7D52),
                 foregroundColor: Colors.white,
-                disabledBackgroundColor: const Color(0xFF2E7D52).withValues(alpha: 0.6),
+                disabledBackgroundColor: const Color(
+                  0xFF2E7D52,
+                ).withValues(alpha: 0.6),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -435,9 +426,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               child: Text(
                 _registerMode ? 'Ya tengo cuenta' : 'Crear una cuenta',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
           ),
@@ -460,7 +449,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Acceso restringido a personal autorizado de la alcaldía. El mismo inicio de sesión funciona en el móvil y en la web.',
+                    'Acceso restringido a personal autorizado.',
                     style: TextStyle(
                       color: Colors.grey.shade800,
                       fontSize: 12,
@@ -547,8 +536,12 @@ class MountainLogoPainter extends CustomPainter {
     final dotPaint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.fill;
-    
-    canvas.drawCircle(Offset(size.width * 0.18, size.height * 0.35), 2.2, dotPaint);
+
+    canvas.drawCircle(
+      Offset(size.width * 0.18, size.height * 0.35),
+      2.2,
+      dotPaint,
+    );
   }
 
   @override

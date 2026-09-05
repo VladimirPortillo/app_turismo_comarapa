@@ -1,6 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../models/lugar.dart';
+import '../repositories/lugar_repository.dart';
 import 'auth_gate.dart';
+import 'place_detail_screen.dart';
 import 'places_screen.dart';
+import 'activities_screen.dart';
+import 'gastronomy_screen.dart';
+import 'hotels_screen.dart';
+import 'events_screen.dart';
+import 'restaurants_screen.dart';
+import 'map_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -11,6 +22,28 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
+  List<Lugar> _destacados = <Lugar>[];
+  bool _loadingDestacados = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDestacados();
+  }
+
+  Future<void> _loadDestacados() async {
+    try {
+      final lugares = await context.read<LugarRepository>().fetchActivos();
+      if (!mounted) return;
+      setState(() {
+        _destacados = lugares.take(5).toList();
+        _loadingDestacados = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loadingDestacados = false);
+    }
+  }
 
   Widget _buildBody() {
     switch (_currentIndex) {
@@ -46,9 +79,17 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         );
       case 2:
-        return _buildPlaceholderTab('Mapa');
+        return const MapScreen();
       case 3:
-        return _buildPlaceholderTab('Eventos');
+        return SafeArea(
+          child: EventsScreen(
+            onBack: () {
+              setState(() {
+                _currentIndex = 0;
+              });
+            },
+          ),
+        );
       case 4:
         return _buildPlaceholderTab('Más');
       default:
@@ -289,7 +330,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
               ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  setState(() => _currentIndex = 1);
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: const Color(0xFF0C3D28),
@@ -364,10 +407,62 @@ class _HomeScreenState extends State<HomeScreen> {
           setState(() {
             _currentIndex = 1;
           });
+        } else if (label == 'Actividades') {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => Scaffold(
+                backgroundColor: const Color(0xFFFAF9F6),
+                body: SafeArea(
+                  child: ActivitiesScreen(
+                    onBack: () => Navigator.of(context).pop(),
+                  ),
+                ),
+              ),
+            ),
+          );
+        } else if (label == 'Gastronomía') {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => Scaffold(
+                backgroundColor: const Color(0xFFFAF9F6),
+                body: SafeArea(
+                  child: GastronomyScreen(
+                    onBack: () => Navigator.of(context).pop(),
+                  ),
+                ),
+              ),
+            ),
+          );
+        } else if (label == 'Hoteles') {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => Scaffold(
+                backgroundColor: const Color(0xFFFAF9F6),
+                body: SafeArea(
+                  child: HotelsScreen(
+                    onBack: () => Navigator.of(context).pop(),
+                  ),
+                ),
+              ),
+            ),
+          );
         } else if (label == 'Eventos') {
           setState(() {
             _currentIndex = 3;
           });
+        } else if (label == 'Restaurantes') {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => Scaffold(
+                backgroundColor: const Color(0xFFFAF9F6),
+                body: SafeArea(
+                  child: RestaurantsScreen(
+                    onBack: () => Navigator.of(context).pop(),
+                  ),
+                ),
+              ),
+            ),
+          );
         }
       },
       child: Column(
@@ -417,7 +512,9 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             TextButton(
-              onPressed: () {},
+              onPressed: () {
+                setState(() => _currentIndex = 1);
+              },
               style: TextButton.styleFrom(
                 foregroundColor: const Color(0xFF2E7D52),
                 padding: EdgeInsets.zero,
@@ -437,88 +534,120 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(height: 16),
         SizedBox(
           height: 140,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            children: [
-              _buildHighlightCard(
-                'Laguna Verde',
-                'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=500&auto=format&fit=crop&q=60',
-              ),
-              const SizedBox(width: 16),
-              _buildHighlightCard(
-                'Valle Hermoso',
-                'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=500&auto=format&fit=crop&q=60',
-              ),
-              const SizedBox(width: 16),
-              _buildHighlightCard(
-                'Serranía de Siberia',
-                'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=500&auto=format&fit=crop&q=60',
-              ),
-            ],
-          ),
+          child: _buildHighlightsBody(),
         ),
       ],
     );
   }
 
-  Widget _buildHighlightCard(String title, String imageUrl) {
-    return Container(
-      width: 170,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+  Widget _buildHighlightsBody() {
+    if (_loadingDestacados) {
+      return const Center(
+        child: SizedBox(
+          height: 24,
+          width: 24,
+          child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF1B5A3F)),
+        ),
+      );
+    }
+
+    if (_destacados.isEmpty) {
+      return Center(
+        child: Text(
+          'Todavía no hay lugares cargados.',
+          style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      scrollDirection: Axis.horizontal,
+      itemCount: _destacados.length,
+      separatorBuilder: (context, index) => const SizedBox(width: 16),
+      itemBuilder: (context, index) => _buildHighlightCard(_destacados[index]),
+    );
+  }
+
+  Widget _buildHighlightCard(Lugar lugar) {
+    final imageUrl = lugar.imagenes.isNotEmpty ? lugar.imagenes.first : null;
+    final title = lugar.nombre;
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => PlaceDetailScreen(lugar: lugar),
           ),
-        ],
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.network(
-            imageUrl,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              return Container(
-                decoration: const BoxDecoration(
+        );
+      },
+      child: Container(
+        width: 170,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (imageUrl != null)
+              Image.network(
+                imageUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFF26674B), Color(0xFF0C3D28)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                    ),
+                  );
+                },
+              )
+            else
+              const DecoratedBox(
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [Color(0xFF26674B), Color(0xFF0C3D28)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                 ),
-              );
-            },
-          ),
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.transparent,
-                  Colors.black.withValues(alpha: 0.7),
-                ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
+              ),
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.7),
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
               ),
             ),
-          ),
-          Positioned(
-            left: 12,
-            bottom: 12,
-            right: 12,
-            child: Text(
-              title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
+            Positioned(
+              left: 12,
+              bottom: 12,
+              right: 12,
+              child: Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

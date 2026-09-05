@@ -9,7 +9,7 @@
     
 
     <application
-        android:label="COMARAPA TURISMO"
+        android:label="Comarapa Turismo"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
