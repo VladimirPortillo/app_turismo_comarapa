@@ -20,6 +20,7 @@ import 'repositories/usuario_repository.dart';
 import 'services/image_upload_service.dart';
 import 'services/location_service.dart';
 import 'services/preferences_service.dart';
+import 'services/routing_service.dart';
 import 'services/weather_service.dart';
 
 Future<void> main() async {
@@ -85,6 +86,10 @@ Future<void> main() async {
         Provider<WeatherService>(
           create: (providerContext) =>
               const WeatherService(),
+        ),
+        Provider<RoutingService>(
+          create: (providerContext) =>
+              const RoutingService(),
         ),
         ChangeNotifierProvider<ContextController>(
           create: (providerContext) {
