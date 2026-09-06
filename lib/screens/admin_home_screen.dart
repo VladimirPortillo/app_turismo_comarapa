@@ -1440,12 +1440,18 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
               height: 76,
               decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
               clipBehavior: Clip.antiAlias,
-              child: card.activo
-                  ? CustomPaint(painter: _getPainterForNombre(card.nombre))
-                  : Container(
+              child: !card.activo
+                  ? Container(
                       color: Colors.grey.shade400,
                       child: const Icon(Icons.image_not_supported_outlined, color: Colors.white, size: 28),
-                    ),
+                    )
+                  : card.imagenes.isNotEmpty
+                      ? Image.network(
+                          card.imagenes.first,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => CustomPaint(painter: _getPainterForNombre(card.nombre)),
+                        )
+                      : CustomPaint(painter: _getPainterForNombre(card.nombre)),
             ),
             const SizedBox(width: 16),
             Expanded(

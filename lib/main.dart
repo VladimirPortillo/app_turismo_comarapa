@@ -17,6 +17,7 @@ import 'repositories/registro_repository.dart';
 import 'repositories/restaurante_repository.dart';
 import 'repositories/supabase_registro_repository.dart';
 import 'repositories/usuario_repository.dart';
+import 'services/image_upload_service.dart';
 import 'services/location_service.dart';
 import 'services/preferences_service.dart';
 import 'services/weather_service.dart';
@@ -73,6 +74,9 @@ Future<void> main() async {
         ),
         Provider<UsuarioRepository>(
           create: (_) => UsuarioRepository(supabaseClient),
+        ),
+        Provider<ImageUploadService>(
+          create: (_) => ImageUploadService(supabaseClient),
         ),
         Provider<LocationService>(
           create: (providerContext) =>

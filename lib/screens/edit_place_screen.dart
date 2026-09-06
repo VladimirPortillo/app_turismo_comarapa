@@ -14,6 +14,7 @@ import '../repositories/categoria_repository.dart';
 import '../repositories/gastronomia_repository.dart';
 import '../repositories/hotel_repository.dart';
 import '../repositories/lugar_repository.dart';
+import '../widgets/imagen_picker_field.dart';
 
 const Color _kPrimary = Color(0xFF1B5A3F);
 const Color _kAccent = Color(0xFF2A7353);
@@ -48,7 +49,7 @@ class EditPlaceScreen extends StatefulWidget {
 class _EditPlaceScreenState extends State<EditPlaceScreen> {
   final _nombreController = TextEditingController();
   final _descripcionController = TextEditingController();
-  final _imagenUrlController = TextEditingController();
+  List<String> _imagenesSeleccionadas = [];
 
   // lugares
   final _tiempoVisitaController = TextEditingController();
@@ -98,7 +99,7 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
         final l = widget.lugar;
         _nombreController.text = l?.nombre ?? '';
         _descripcionController.text = l?.descripcion ?? '';
-        _imagenUrlController.text = l?.imagenes.isNotEmpty == true ? l!.imagenes.first : '';
+        _imagenesSeleccionadas = List.of(l?.imagenes ?? const <String>[]);
         _dificultad = l?.dificultad ?? 'facil';
         _tiempoVisitaController.text = l?.tiempoVisitaMin?.toString() ?? '';
         _costoEntradaController.text =
@@ -115,7 +116,7 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
         final a = widget.actividad;
         _nombreController.text = a?.nombre ?? '';
         _descripcionController.text = a?.descripcion ?? '';
-        _imagenUrlController.text = a?.imagenes.isNotEmpty == true ? a!.imagenes.first : '';
+        _imagenesSeleccionadas = List.of(a?.imagenes ?? const <String>[]);
         _dificultad = a?.dificultad ?? 'facil';
         _duracionController.text = a?.duracionMin?.toString() ?? '';
         _precioRefController.text = a?.precioReferencial?.toString() ?? '';
@@ -132,7 +133,7 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
         final h = widget.hotel;
         _nombreController.text = h?.nombre ?? '';
         _descripcionController.text = h?.descripcion ?? '';
-        _imagenUrlController.text = h?.imagenes.isNotEmpty == true ? h!.imagenes.first : '';
+        _imagenesSeleccionadas = List.of(h?.imagenes ?? const <String>[]);
         _direccionController.text = h?.direccionReferencia ?? '';
         _precioMinController.text = h?.precioMin?.toString() ?? '';
         _precioMaxController.text = h?.precioMax?.toString() ?? '';
@@ -148,7 +149,7 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
         final g = widget.gastronomia;
         _nombreController.text = g?.nombre ?? '';
         _descripcionController.text = g?.descripcion ?? '';
-        _imagenUrlController.text = g?.imagenes.isNotEmpty == true ? g!.imagenes.first : '';
+        _imagenesSeleccionadas = List.of(g?.imagenes ?? const <String>[]);
         _temporadaController.text = g?.temporada ?? '';
         _precioRefController.text = g?.precioReferencial?.toString() ?? '';
         _activo = g?.activo ?? true;
@@ -189,7 +190,6 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
   void dispose() {
     _nombreController.dispose();
     _descripcionController.dispose();
-    _imagenUrlController.dispose();
     _tiempoVisitaController.dispose();
     _costoEntradaController.dispose();
     _mejorEpocaController.dispose();
@@ -259,11 +259,6 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
     }
   }
 
-  List<String> get _imagenes {
-    final url = _imagenUrlController.text.trim();
-    return url.isEmpty ? const <String>[] : <String>[url];
-  }
-
   Future<void> _save() async {
     final nombre = _nombreController.text.trim();
     if (nombre.length < 3) {
@@ -319,7 +314,7 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
       categoriaId: _categoriaId,
       nombre: nombre,
       descripcion: _descripcionController.text,
-      imagenes: _imagenes,
+      imagenes: _imagenesSeleccionadas,
       latitud: _ubicacion?.latitude,
       longitud: _ubicacion?.longitude,
       direccionReferencia: _direccionController.text.trim().isEmpty
@@ -348,7 +343,7 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
       categoriaId: _categoriaId,
       nombre: nombre,
       descripcion: _descripcionController.text,
-      imagenes: _imagenes,
+      imagenes: _imagenesSeleccionadas,
       latitud: _ubicacion?.latitude,
       longitud: _ubicacion?.longitude,
       dificultad: _dificultad,
@@ -384,7 +379,7 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
       categoriaId: _categoriaId,
       nombre: nombre,
       descripcion: _descripcionController.text,
-      imagenes: _imagenes,
+      imagenes: _imagenesSeleccionadas,
       latitud: _ubicacion?.latitude,
       longitud: _ubicacion?.longitude,
       direccionReferencia: _direccionController.text.trim().isEmpty
@@ -413,7 +408,7 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
       categoriaId: _categoriaId,
       nombre: nombre,
       descripcion: _descripcionController.text,
-      imagenes: _imagenes,
+      imagenes: _imagenesSeleccionadas,
       temporada: _temporadaController.text.trim().isEmpty
           ? null
           : _temporadaController.text.trim(),
@@ -455,8 +450,11 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
                     _buildTextField(_descripcionController, hintText: 'Descripción...', maxLines: 4),
                     const SizedBox(height: 20),
 
-                    _buildLabel('Imagen (URL, opcional)'),
-                    _buildTextField(_imagenUrlController, hintText: 'https://...'),
+                    ImagenPickerField(
+                      imagenes: _imagenesSeleccionadas,
+                      carpeta: widget.tipo.entidad,
+                      onChanged: (lista) => setState(() => _imagenesSeleccionadas = lista),
+                    ),
                     const SizedBox(height: 20),
 
                     ..._buildCamposEspecificos(),

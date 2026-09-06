@@ -317,7 +317,13 @@ class _PlacesScreenState extends State<PlacesScreen> {
                 height: 90,
                 decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
                 clipBehavior: Clip.antiAlias,
-                child: CustomPaint(painter: _painterFor(lugar.nombre)),
+                child: lugar.imagenes.isNotEmpty
+                    ? Image.network(
+                        lugar.imagenes.first,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => CustomPaint(painter: _painterFor(lugar.nombre)),
+                      )
+                    : CustomPaint(painter: _painterFor(lugar.nombre)),
               ),
               const SizedBox(width: 16),
               Expanded(
