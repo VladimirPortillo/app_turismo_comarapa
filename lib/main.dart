@@ -13,6 +13,7 @@ import 'repositories/evento_repository.dart';
 import 'repositories/gastronomia_repository.dart';
 import 'repositories/hotel_repository.dart';
 import 'repositories/lugar_repository.dart';
+import 'repositories/municipio_repository.dart';
 import 'repositories/registro_repository.dart';
 import 'repositories/resena_repository.dart';
 import 'repositories/restaurante_repository.dart';
@@ -58,6 +59,9 @@ Future<void> main() async {
         ),
         Provider<LugarRepository>(
           create: (_) => LugarRepository(supabaseClient),
+        ),
+        Provider<MunicipioRepository>(
+          create: (_) => MunicipioRepository(supabaseClient),
         ),
         Provider<ActividadRepository>(
           create: (_) => ActividadRepository(supabaseClient),

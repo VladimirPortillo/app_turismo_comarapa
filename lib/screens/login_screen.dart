@@ -411,26 +411,6 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          Center(
-            child: TextButton(
-              onPressed: _busy
-                  ? null
-                  : () {
-                      setState(() {
-                        _registerMode = !_registerMode;
-                        _message = null;
-                      });
-                    },
-              style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF2E7D52),
-              ),
-              child: Text(
-                _registerMode ? 'Ya tengo cuenta' : 'Crear una cuenta',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(

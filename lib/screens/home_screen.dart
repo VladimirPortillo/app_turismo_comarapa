@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart' hide Path;
 import 'package:provider/provider.dart';
 
 import '../models/lugar.dart';
+import '../models/municipio.dart';
 import '../repositories/lugar_repository.dart';
+import '../repositories/municipio_repository.dart';
+import '../widgets/full_map_sheet.dart';
 import 'auth_gate.dart';
 import 'place_detail_screen.dart';
 import 'places_screen.dart';
@@ -12,6 +17,7 @@ import 'hotels_screen.dart';
 import 'events_screen.dart';
 import 'restaurants_screen.dart';
 import 'map_screen.dart';
+import 'search_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -25,10 +31,19 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Lugar> _destacados = <Lugar>[];
   bool _loadingDestacados = true;
 
+  Municipio? _municipio;
+  bool _loadingMunicipio = true;
+
+  // Coordenadas por defecto (plaza principal) si el municipio no tiene
+  // ubicación asignada todavía en Supabase.
+  static const double _defaultLat = -17.9144;
+  static const double _defaultLng = -64.5319;
+
   @override
   void initState() {
     super.initState();
     _loadDestacados();
+    _loadMunicipio();
   }
 
   Future<void> _loadDestacados() async {
@@ -43,6 +58,59 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!mounted) return;
       setState(() => _loadingDestacados = false);
     }
+  }
+
+  Future<void> _loadMunicipio() async {
+    try {
+      final municipio = await context.read<MunicipioRepository>().fetch();
+      if (!mounted) return;
+      setState(() {
+        _municipio = municipio;
+        _loadingMunicipio = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loadingMunicipio = false);
+    }
+  }
+
+  LatLng get _municipioPunto {
+    final lat = _municipio?.latitud;
+    final lng = _municipio?.longitud;
+    if (lat != null && lng != null && lat != 0 && lng != 0) {
+      return LatLng(lat, lng);
+    }
+    return const LatLng(_defaultLat, _defaultLng);
+  }
+
+  String get _municipioDescripcionTexto {
+    final desc = _municipio?.descripcion.trim();
+    if (desc != null && desc.isNotEmpty) return desc;
+    return 'Comarapa es un municipio del valle andino de Santa Cruz, conocido como '
+        '"El Paraíso Escondido" por sus paisajes de montaña, su producción de durazno '
+        'y la biodiversidad de la puerta al Parque Nacional Amboró. Un destino ideal '
+        'para el turismo de naturaleza, aventura y agroturismo.';
+  }
+
+  void _abrirMapaMunicipio() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.8,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          builder: (context, scrollController) {
+            return FullMapSheet(
+              titulo: 'Comarapa',
+              destino: _municipioPunto,
+            );
+          },
+        );
+      },
+    );
   }
 
   Widget _buildBody() {
@@ -63,6 +131,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 _buildCategoriesSection(),
                 const SizedBox(height: 28),
                 _buildHighlightsSection(),
+                const SizedBox(height: 28),
+                _buildMunicipioSection(),
                 const SizedBox(height: 20),
               ],
             ),
@@ -90,63 +160,9 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
         );
-      case 4:
-        return _buildPlaceholderTab('Más');
       default:
         return const SizedBox.shrink();
     }
-  }
-
-  Widget _buildPlaceholderTab(String title) {
-    return SafeArea(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 20, right: 20, top: 16),
-            child: Row(
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _currentIndex = 0;
-                    });
-                  },
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.grey.shade200),
-                    ),
-                    child: const Icon(Icons.chevron_left, color: Colors.black87),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0C3D28),
-                    fontFamily: 'serif',
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Expanded(
-            child: Center(
-              child: Text(
-                'Esta sección está en desarrollo',
-                style: TextStyle(color: Colors.grey),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
@@ -183,10 +199,6 @@ class _HomeScreenState extends State<HomeScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.calendar_today_outlined),
             label: 'Eventos',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.more_horiz),
-            label: 'Más',
           ),
         ],
       ),
@@ -270,6 +282,12 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       child: TextField(
+        readOnly: true,
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const SearchScreen()),
+          );
+        },
         decoration: InputDecoration(
           hintText: 'Buscar lugares, hoteles, eventos...',
           hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
@@ -649,6 +667,112 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildMunicipioSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Sobre Comarapa',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF0C3D28),
+            fontFamily: 'serif',
+          ),
+        ),
+        const SizedBox(height: 10),
+        if (_loadingMunicipio)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF1B5A3F))),
+          )
+        else ...[
+          Text(
+            _municipioDescripcionTexto,
+            style: const TextStyle(
+              fontSize: 14.5,
+              color: Color(0xFF4B5563),
+              height: 1.55,
+            ),
+          ),
+          const SizedBox(height: 16),
+          GestureDetector(
+            onTap: _abrirMapaMunicipio,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                height: 150,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE2EFE7),
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Stack(
+                  children: [
+                    FlutterMap(
+                      options: MapOptions(
+                        initialCenter: _municipioPunto,
+                        initialZoom: 13.0,
+                        interactionOptions: const InteractionOptions(
+                          flags: InteractiveFlag.none,
+                        ),
+                      ),
+                      children: [
+                        TileLayer(
+                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          userAgentPackageName: 'bo.edu.uajms.proyecto_final_360',
+                        ),
+                        MarkerLayer(
+                          markers: [
+                            Marker(
+                              point: _municipioPunto,
+                              width: 44,
+                              height: 44,
+                              child: const Icon(
+                                Icons.location_on,
+                                size: 38,
+                                color: Color(0xFF26674B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    Positioned(
+                      right: 10,
+                      bottom: 10,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 6),
+                          ],
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.fullscreen, size: 14, color: Color(0xFF1B5A3F)),
+                            SizedBox(width: 4),
+                            Text(
+                              'Ver mapa',
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF1B5A3F)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
