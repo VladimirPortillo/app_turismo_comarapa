@@ -8,6 +8,7 @@ import '../models/lugar.dart';
 import '../models/turismo_tipo.dart';
 import '../services/location_service.dart';
 import '../services/routing_service.dart';
+import '../widgets/resenas_section.dart';
 
 class PlaceDetailScreen extends StatefulWidget {
   final Lugar lugar;
@@ -25,6 +26,9 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
   late final PageController _pageController;
   int _currentPage = 0;
   bool _isFavorite = false;
+
+  double _promedioResenas = 0;
+  int _totalResenas = 0;
 
   // Coordenadas por defecto (Comarapa) si el lugar no tiene ubicación asignada
   static const double _defaultLat = -17.9144;
@@ -368,16 +372,19 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
             Row(
               children: [
                 ...List.generate(5, (i) {
+                  final activo = i < _promedioResenas.round();
                   return Icon(
-                    i < 4 ? Icons.star : Icons.star_border,
+                    activo ? Icons.star : Icons.star_border,
                     size: 20,
                     color: const Color(0xFFE59819),
                   );
                 }),
                 const SizedBox(width: 8),
-                const Text(
-                  '4.2 · 86 reseñas',
-                  style: TextStyle(
+                Text(
+                  _totalResenas == 0
+                      ? 'Sin reseñas todavía'
+                      : '${_promedioResenas.toStringAsFixed(1)} · $_totalResenas ${_totalResenas == 1 ? "reseña" : "reseñas"}',
+                  style: const TextStyle(
                     fontSize: 14,
                     color: Color(0xFF6B7280),
                     fontWeight: FontWeight.w500,
@@ -444,6 +451,20 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                 ],
               ),
             ],
+            const SizedBox(height: 28),
+
+            // Sección: Reseñas
+            if (widget.lugar.id != null)
+              ResenasSection(
+                entidad: 'lugar',
+                entidadId: widget.lugar.id!,
+                onResumenActualizado: (promedio, total) {
+                  setState(() {
+                    _promedioResenas = promedio;
+                    _totalResenas = total;
+                  });
+                },
+              ),
           ],
         ),
       ),

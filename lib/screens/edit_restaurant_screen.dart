@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../models/restaurante.dart';
 import '../repositories/restaurante_repository.dart';
+import '../widgets/imagen_picker_field.dart';
 
 class EditRestaurantScreen extends StatefulWidget {
   final Restaurante? restaurante;
@@ -34,6 +35,7 @@ class _EditRestaurantScreenState extends State<EditRestaurantScreen> {
   late int _numResenas;
   late LatLng _coordenadas;
   bool _isSaving = false;
+  List<String> _imagenes = [];
 
   @override
   void initState() {
@@ -84,6 +86,8 @@ class _EditRestaurantScreenState extends State<EditRestaurantScreen> {
       r?.latitud ?? -18.0388,
       r?.longitud ?? -64.5283,
     );
+
+    _imagenes = List.of(r?.imagenes ?? const <String>[]);
 
     _nombreController.addListener(() {
       setState(() {});
@@ -169,6 +173,7 @@ class _EditRestaurantScreenState extends State<EditRestaurantScreen> {
         nombre: nombre,
         categoriaNombre: _tipoSeleccionado,
         descripcion: _descripcionController.text.trim(),
+        imagenes: _imagenes,
         horarioAtencion: _horarioController.text.trim(),
         contacto: _contactoController.text.trim(),
         direccionReferencia: _direccionController.text.trim(),
@@ -645,13 +650,40 @@ class _EditRestaurantScreenState extends State<EditRestaurantScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Ubicación',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-            color: Color(0xFF1F2937),
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Ubicación',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: Color(0xFF1F2937),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE2F0E8),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.touch_app, size: 13, color: Color(0xFF26674B)),
+                  SizedBox(width: 4),
+                  Text(
+                    'Toca para reubicar pin',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF26674B),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
         Container(
@@ -666,9 +698,19 @@ class _EditRestaurantScreenState extends State<EditRestaurantScreen> {
             options: MapOptions(
               initialCenter: _coordenadas,
               initialZoom: 14.5,
-              interactionOptions: const InteractionOptions(
-                flags: InteractiveFlag.none,
-              ),
+              onTap: (tapPosition, point) {
+                setState(() => _coordenadas = point);
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Ubicación fijada: ${point.latitude.toStringAsFixed(4)}, ${point.longitude.toStringAsFixed(4)}',
+                    ),
+                    duration: const Duration(seconds: 2),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
             ),
             children: [
               TileLayer(
@@ -694,7 +736,7 @@ class _EditRestaurantScreenState extends State<EditRestaurantScreen> {
         ),
         const SizedBox(height: 6),
         Text(
-          '${_direccionController.text.trim()} · ${_coordenadas.latitude.toStringAsFixed(4)}, ${_coordenadas.longitude.toStringAsFixed(4)}',
+          '${_direccionController.text.trim().isNotEmpty ? _direccionController.text.trim() : 'Comarapa'} · ${_coordenadas.latitude.toStringAsFixed(4)}, ${_coordenadas.longitude.toStringAsFixed(4)}',
           style: const TextStyle(
             fontSize: 12,
             color: Color(0xFF6B7280),
@@ -705,90 +747,10 @@ class _EditRestaurantScreenState extends State<EditRestaurantScreen> {
   }
 
   Widget _buildImagenesSection() {
-    final List<Color> sampleColors = [
-      const Color(0xFFB57834),
-      const Color(0xFFD39B54),
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Imágenes',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-            color: Color(0xFF1F2937),
-          ),
-        ),
-        const SizedBox(height: 8),
-
-        // Área de subida dashed
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: Colors.grey.shade300,
-              style: BorderStyle.solid,
-            ),
-          ),
-          child: const Column(
-            children: [
-              Icon(Icons.file_upload_outlined, size: 26, color: Color(0xFF4B5563)),
-              SizedBox(height: 6),
-              Text(
-                'Tomar foto o subir desde la galería',
-                style: TextStyle(
-                  fontSize: 12.5,
-                  color: Color(0xFF6B7280),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        // Miniaturas de fotos
-        Row(
-          children: List.generate(2, (index) {
-            final isPrincipal = index == 0;
-            return Container(
-              width: 90,
-              height: 90,
-              margin: const EdgeInsets.only(right: 12),
-              decoration: BoxDecoration(
-                color: sampleColors[index],
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: isPrincipal
-                  ? Align(
-                      alignment: Alignment.topLeft,
-                      child: Container(
-                        margin: const EdgeInsets.all(6),
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE26A2C),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Text(
-                          'PRINCIPAL',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 8.5,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
-                    )
-                  : null,
-            );
-          }),
-        ),
-      ],
+    return ImagenPickerField(
+      imagenes: _imagenes,
+      carpeta: 'restaurantes',
+      onChanged: (lista) => setState(() => _imagenes = lista),
     );
   }
 

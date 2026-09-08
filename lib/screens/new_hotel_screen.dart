@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../models/hotel.dart';
 import '../repositories/hotel_repository.dart';
+import '../widgets/imagen_picker_field.dart';
 
 class NewHotelScreen extends StatefulWidget {
   const NewHotelScreen({super.key});
@@ -30,6 +31,7 @@ class _NewHotelScreenState extends State<NewHotelScreen> {
   bool _isActive = true;
   LatLng _coordenadas = const LatLng(-18.0401, -64.5276);
   bool _isSaving = false;
+  List<String> _imagenes = [];
 
   @override
   void initState() {
@@ -138,6 +140,7 @@ class _NewHotelScreenState extends State<NewHotelScreen> {
         descripcion: _descripcionController.text.trim().isNotEmpty
             ? _descripcionController.text.trim()
             : 'Alojamiento confortable en Comarapa, ideal para descansar y disfrutar del valle.',
+        imagenes: _imagenes,
         precioMin: pMin,
         precioMax: pMax,
         contactoReservas: _contactoController.text.trim().isNotEmpty
@@ -768,94 +771,10 @@ class _NewHotelScreenState extends State<NewHotelScreen> {
   }
 
   Widget _buildImagenesSection() {
-    final List<Color> sampleColors = [
-      const Color(0xFF387A57),
-      const Color(0xFF4F916B),
-      const Color(0xFF75B18E),
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Imágenes',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-            color: Color(0xFF1F2937),
-          ),
-        ),
-        const SizedBox(height: 8),
-
-        // Área de subida dashed
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: Colors.grey.shade300,
-              style: BorderStyle.solid,
-            ),
-          ),
-          child: const Column(
-            children: [
-              Icon(Icons.file_upload_outlined, size: 26, color: Color(0xFF4B5563)),
-              SizedBox(height: 6),
-              Text(
-                'Tomar foto o subir desde la galería',
-                style: TextStyle(
-                  fontSize: 12.5,
-                  color: Color(0xFF6B7280),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        // Miniaturas representativas
-        Row(
-          children: List.generate(3, (index) {
-            final isPrincipal = index == 0;
-            return Expanded(
-              child: Container(
-                height: 82,
-                margin: EdgeInsets.only(
-                  right: index < 2 ? 10 : 0,
-                ),
-                decoration: BoxDecoration(
-                  color: sampleColors[index],
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: isPrincipal
-                    ? Align(
-                        alignment: Alignment.topLeft,
-                        child: Container(
-                          margin: const EdgeInsets.all(6),
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE26A2C),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Text(
-                            'PRINCIPAL',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 8.5,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ),
-                      )
-                    : null,
-              ),
-            );
-          }),
-        ),
-      ],
+    return ImagenPickerField(
+      imagenes: _imagenes,
+      carpeta: 'hoteles',
+      onChanged: (lista) => setState(() => _imagenes = lista),
     );
   }
 

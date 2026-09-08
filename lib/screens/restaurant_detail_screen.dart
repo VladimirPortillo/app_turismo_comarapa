@@ -4,6 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 
 import '../models/restaurante.dart';
+import '../widgets/resenas_section.dart';
 
 class RestaurantDetailScreen extends StatefulWidget {
   final Restaurante restaurante;
@@ -21,6 +22,9 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
   late final PageController _pageController;
   int _currentPage = 0;
   bool _isFavorite = false;
+
+  double _promedioResenas = 0;
+  int _totalResenas = 0;
 
   // Coordenadas por defecto (Comarapa) si el restaurante no tiene ubicación asignada
   static const double _defaultLat = -18.0447;
@@ -619,10 +623,6 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
   }
 
   Widget _buildContentCard() {
-    final rating = widget.restaurante.calificacionPromedio > 0
-        ? widget.restaurante.calificacionPromedio.toDouble()
-        : 4.8;
-
     return Transform.translate(
       offset: const Offset(0, -20),
       child: Container(
@@ -670,15 +670,18 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
             Row(
               children: [
                 ...List.generate(5, (i) {
+                  final activo = i < _promedioResenas.round();
                   return Icon(
-                    i < rating.floor() ? Icons.star : Icons.star_border,
+                    activo ? Icons.star : Icons.star_border,
                     size: 20,
                     color: const Color(0xFFE59819),
                   );
                 }),
                 const SizedBox(width: 8),
                 Text(
-                  '${rating.toStringAsFixed(1)} · 42 opiniones',
+                  _totalResenas == 0
+                      ? 'Sin reseñas todavía'
+                      : '${_promedioResenas.toStringAsFixed(1)} · $_totalResenas ${_totalResenas == 1 ? "opinión" : "opiniones"}',
                   style: const TextStyle(
                     fontSize: 14,
                     color: Color(0xFF6B7280),
@@ -758,6 +761,20 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                 ],
               ),
             ],
+            const SizedBox(height: 28),
+
+            // Sección: Reseñas
+            if (widget.restaurante.id != null)
+              ResenasSection(
+                entidad: 'restaurante',
+                entidadId: widget.restaurante.id!,
+                onResumenActualizado: (promedio, total) {
+                  setState(() {
+                    _promedioResenas = promedio;
+                    _totalResenas = total;
+                  });
+                },
+              ),
           ],
         ),
       ),

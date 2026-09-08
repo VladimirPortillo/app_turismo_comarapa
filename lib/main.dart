@@ -14,6 +14,7 @@ import 'repositories/gastronomia_repository.dart';
 import 'repositories/hotel_repository.dart';
 import 'repositories/lugar_repository.dart';
 import 'repositories/registro_repository.dart';
+import 'repositories/resena_repository.dart';
 import 'repositories/restaurante_repository.dart';
 import 'repositories/supabase_registro_repository.dart';
 import 'repositories/usuario_repository.dart';
@@ -75,6 +76,9 @@ Future<void> main() async {
         ),
         Provider<UsuarioRepository>(
           create: (_) => UsuarioRepository(supabaseClient),
+        ),
+        Provider<ResenaRepository>(
+          create: (_) => ResenaRepository(supabaseClient),
         ),
         Provider<ImageUploadService>(
           create: (_) => ImageUploadService(supabaseClient),

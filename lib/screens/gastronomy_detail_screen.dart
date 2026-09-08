@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../models/gastronomia_item.dart';
+import '../widgets/resenas_section.dart';
 import 'admin_restaurants_screen.dart';
 
 class GastronomyDetailScreen extends StatefulWidget {
@@ -20,6 +21,9 @@ class _GastronomyDetailScreenState extends State<GastronomyDetailScreen> {
   late final PageController _pageController;
   int _currentPage = 0;
   bool _isFavorite = false;
+
+  double _promedioResenas = 0;
+  int _totalResenas = 0;
 
   @override
   void initState() {
@@ -541,16 +545,19 @@ class _GastronomyDetailScreenState extends State<GastronomyDetailScreen> {
             Row(
               children: [
                 ...List.generate(5, (i) {
-                  return const Icon(
-                    Icons.star,
+                  final activo = i < _promedioResenas.round();
+                  return Icon(
+                    activo ? Icons.star : Icons.star_border,
                     size: 20,
-                    color: Color(0xFFE59819),
+                    color: const Color(0xFFE59819),
                   );
                 }),
                 const SizedBox(width: 8),
-                const Text(
-                  '4.9 · 58 reseñas culinarias',
-                  style: TextStyle(
+                Text(
+                  _totalResenas == 0
+                      ? 'Sin reseñas todavía'
+                      : '${_promedioResenas.toStringAsFixed(1)} · $_totalResenas ${_totalResenas == 1 ? "reseña" : "reseñas"}',
+                  style: const TextStyle(
                     fontSize: 14,
                     color: Color(0xFF6B7280),
                     fontWeight: FontWeight.w500,
@@ -595,6 +602,20 @@ class _GastronomyDetailScreenState extends State<GastronomyDetailScreen> {
 
             // Sección: Consejos de Maridaje
             _buildMaridajeSection(),
+            const SizedBox(height: 28),
+
+            // Sección: Reseñas
+            if (widget.item.id != null)
+              ResenasSection(
+                entidad: 'gastronomia',
+                entidadId: widget.item.id!,
+                onResumenActualizado: (promedio, total) {
+                  setState(() {
+                    _promedioResenas = promedio;
+                    _totalResenas = total;
+                  });
+                },
+              ),
           ],
         ),
       ),

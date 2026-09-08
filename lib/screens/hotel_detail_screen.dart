@@ -4,6 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 
 import '../models/hotel.dart';
+import '../widgets/resenas_section.dart';
 
 class HotelDetailScreen extends StatefulWidget {
   final Hotel hotel;
@@ -21,6 +22,9 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
   late final PageController _pageController;
   int _currentPage = 0;
   bool _isFavorite = false;
+
+  double _promedioResenas = 0;
+  int _totalResenas = 0;
 
   // Coordenadas por defecto (Comarapa) si el hotel no tiene ubicación asignada
   static const double _defaultLat = -18.0401;
@@ -604,16 +608,19 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
             Row(
               children: [
                 ...List.generate(5, (i) {
-                  return const Icon(
-                    Icons.star,
+                  final activo = i < _promedioResenas.round();
+                  return Icon(
+                    activo ? Icons.star : Icons.star_border,
                     size: 20,
-                    color: Color(0xFFE59819),
+                    color: const Color(0xFFE59819),
                   );
                 }),
                 const SizedBox(width: 8),
-                const Text(
-                  '4.8 · 36 reseñas verificadas',
-                  style: TextStyle(
+                Text(
+                  _totalResenas == 0
+                      ? 'Sin reseñas todavía'
+                      : '${_promedioResenas.toStringAsFixed(1)} · $_totalResenas ${_totalResenas == 1 ? "reseña" : "reseñas"}',
+                  style: const TextStyle(
                     fontSize: 14,
                     color: Color(0xFF6B7280),
                     fontWeight: FontWeight.w500,
@@ -662,6 +669,20 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
 
             // Sección: Normas de la Estancia
             _buildNormasSection(),
+            const SizedBox(height: 28),
+
+            // Sección: Reseñas
+            if (widget.hotel.id != null)
+              ResenasSection(
+                entidad: 'hotel',
+                entidadId: widget.hotel.id!,
+                onResumenActualizado: (promedio, total) {
+                  setState(() {
+                    _promedioResenas = promedio;
+                    _totalResenas = total;
+                  });
+                },
+              ),
           ],
         ),
       ),

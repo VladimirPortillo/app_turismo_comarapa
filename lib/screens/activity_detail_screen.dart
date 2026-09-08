@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart' hide Path;
 
 import '../models/actividad.dart';
 import '../models/turismo_tipo.dart';
+import '../widgets/resenas_section.dart';
 
 class ActivityDetailScreen extends StatefulWidget {
   final Actividad actividad;
@@ -22,6 +23,9 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   late final PageController _pageController;
   int _currentPage = 0;
   bool _isFavorite = false;
+
+  double _promedioResenas = 0;
+  int _totalResenas = 0;
 
   // Coordenadas por defecto (Comarapa) si la actividad no tiene ubicación asignada
   static const double _defaultLat = -17.9144;
@@ -611,16 +615,19 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
             Row(
               children: [
                 ...List.generate(5, (i) {
-                  return const Icon(
-                    Icons.star,
+                  final activo = i < _promedioResenas.round();
+                  return Icon(
+                    activo ? Icons.star : Icons.star_border,
                     size: 20,
-                    color: Color(0xFFE59819),
+                    color: const Color(0xFFE59819),
                   );
                 }),
                 const SizedBox(width: 8),
-                const Text(
-                  '4.9 · 42 reseñas',
-                  style: TextStyle(
+                Text(
+                  _totalResenas == 0
+                      ? 'Sin reseñas todavía'
+                      : '${_promedioResenas.toStringAsFixed(1)} · $_totalResenas ${_totalResenas == 1 ? "reseña" : "reseñas"}',
+                  style: const TextStyle(
                     fontSize: 14,
                     color: Color(0xFF6B7280),
                     fontWeight: FontWeight.w500,
@@ -665,6 +672,20 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
 
             // Sección: Recomendaciones
             _buildRecomendacionesSection(),
+            const SizedBox(height: 28),
+
+            // Sección: Reseñas
+            if (widget.actividad.id != null)
+              ResenasSection(
+                entidad: 'actividad',
+                entidadId: widget.actividad.id!,
+                onResumenActualizado: (promedio, total) {
+                  setState(() {
+                    _promedioResenas = promedio;
+                    _totalResenas = total;
+                  });
+                },
+              ),
           ],
         ),
       ),

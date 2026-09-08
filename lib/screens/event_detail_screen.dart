@@ -4,6 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 
 import '../models/evento.dart';
+import '../widgets/resenas_section.dart';
 
 class EventDetailScreen extends StatefulWidget {
   final Evento evento;
@@ -21,6 +22,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   late final PageController _pageController;
   int _currentPage = 0;
   bool _isFavorite = false;
+
+  double _promedioResenas = 0;
+  int _totalResenas = 0;
 
   // Coordenadas por defecto (Comarapa) si el evento no tiene ubicación asignada
   static const double _defaultLat = -18.0447;
@@ -651,6 +655,32 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 ),
               ],
             ),
+            const SizedBox(height: 10),
+
+            // Puntuación y Reseñas
+            Row(
+              children: [
+                ...List.generate(5, (i) {
+                  final activo = i < _promedioResenas.round();
+                  return Icon(
+                    activo ? Icons.star : Icons.star_border,
+                    size: 20,
+                    color: const Color(0xFFE59819),
+                  );
+                }),
+                const SizedBox(width: 8),
+                Text(
+                  _totalResenas == 0
+                      ? 'Sin reseñas todavía'
+                      : '${_promedioResenas.toStringAsFixed(1)} · $_totalResenas ${_totalResenas == 1 ? "reseña" : "reseñas"}',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF6B7280),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 24),
 
             // Fila de 4 tarjetas de métricas rápidas
@@ -692,6 +722,20 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
             // Sección: Recomendaciones para el Visitante
             _buildRecomendacionesSection(),
+            const SizedBox(height: 28),
+
+            // Sección: Reseñas
+            if (widget.evento.id != null)
+              ResenasSection(
+                entidad: 'evento',
+                entidadId: widget.evento.id!,
+                onResumenActualizado: (promedio, total) {
+                  setState(() {
+                    _promedioResenas = promedio;
+                    _totalResenas = total;
+                  });
+                },
+              ),
           ],
         ),
       ),

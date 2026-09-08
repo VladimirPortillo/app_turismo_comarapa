@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../models/evento.dart';
 import '../repositories/evento_repository.dart';
+import '../widgets/imagen_picker_field.dart';
 
 class NewEventScreen extends StatefulWidget {
   const NewEventScreen({super.key});
@@ -30,6 +31,7 @@ class _NewEventScreenState extends State<NewEventScreen> {
   bool _isActive = true;
   LatLng _coordenadas = const LatLng(-18.0447, -64.5301);
   bool _isSaving = false;
+  List<String> _imagenes = [];
 
   @override
   void initState() {
@@ -164,6 +166,7 @@ class _NewEventScreenState extends State<NewEventScreen> {
         descripcion: _descripcionController.text.trim().isNotEmpty
             ? _descripcionController.text.trim()
             : 'Celebración y encuentro tradicional en Comarapa, abierta a todos los turistas y la comunidad.',
+        imagenes: _imagenes,
         fechaInicio: _fechaInicio,
         fechaFin: _fechaFin,
         periodicidad: _periodicidad.toLowerCase(),
@@ -747,113 +750,10 @@ class _NewEventScreenState extends State<NewEventScreen> {
   }
 
   Widget _buildImagenesSection() {
-    final List<Color> sampleColors = [
-      const Color(0xFFA66E2C),
-      const Color(0xFFC48C46),
-      const Color(0xFFE2AB6D),
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Imágenes',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-            color: Color(0xFF1F2937),
-          ),
-        ),
-        const SizedBox(height: 8),
-
-        // Área de subida dashed/borde
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: Colors.grey.shade300,
-              style: BorderStyle.solid,
-            ),
-          ),
-          child: const Column(
-            children: [
-              Icon(Icons.file_upload_outlined, size: 26, color: Color(0xFF4B5563)),
-              SizedBox(height: 6),
-              Text(
-                'Tomar foto o subir desde la galería',
-                style: TextStyle(
-                  fontSize: 12.5,
-                  color: Color(0xFF6B7280),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        // Miniaturas representativas
-        Row(
-          children: List.generate(3, (index) {
-            final isPrincipal = index == 0;
-            return Expanded(
-              child: Container(
-                height: 85,
-                margin: EdgeInsets.only(right: index < 2 ? 10 : 0),
-                decoration: BoxDecoration(
-                  color: sampleColors[index],
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.06),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Stack(
-                  children: [
-                    Center(
-                      child: Icon(
-                        index == 0
-                            ? Icons.celebration_outlined
-                            : index == 1
-                                ? Icons.festival_outlined
-                                : Icons.music_note_outlined,
-                        color: Colors.white.withValues(alpha: 0.4),
-                        size: 32,
-                      ),
-                    ),
-                    if (isPrincipal)
-                      Positioned(
-                        top: 6,
-                        left: 6,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFB45309),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Text(
-                            'PRINCIPAL',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            );
-          }),
-        ),
-      ],
+    return ImagenPickerField(
+      imagenes: _imagenes,
+      carpeta: 'eventos',
+      onChanged: (lista) => setState(() => _imagenes = lista),
     );
   }
 
