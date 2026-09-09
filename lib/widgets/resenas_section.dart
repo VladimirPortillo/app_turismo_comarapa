@@ -63,7 +63,8 @@ class _ResenasSectionState extends State<ResenasSection> {
     if (callback == null) return;
     final promedio = _resenas.isEmpty
         ? 0.0
-        : _resenas.fold<int>(0, (acc, r) => acc + r.calificacion) / _resenas.length;
+        : _resenas.fold<int>(0, (acc, r) => acc + r.calificacion) /
+              _resenas.length;
     callback(promedio, _resenas.length);
   }
 
@@ -72,6 +73,8 @@ class _ResenasSectionState extends State<ResenasSection> {
     final comentarioController = TextEditingController();
     int calificacionSeleccionada = 5;
     bool enviando = false;
+    String? nombreError;
+    String? comentarioError;
 
     await showModalBottomSheet<void>(
       context: context,
@@ -80,6 +83,61 @@ class _ResenasSectionState extends State<ResenasSection> {
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (sheetContext, setSheetState) {
+            bool validarFormulario() {
+              setSheetState(() {
+                nombreError = null;
+                comentarioError = null;
+              });
+
+              final nombre = nombreController.text.trim();
+              final comentario = comentarioController.text.trim();
+              bool valido = true;
+
+              // 1. Campo Nombre:
+              // Obligatorio, máx 50 caracteres, solo letras y espacios, mín 3 caracteres de letras
+              final totalLetras = RegExp(
+                r'[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]',
+              ).allMatches(nombre).length;
+              final soloLetrasYEspacios = RegExp(
+                r'^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$',
+              ).hasMatch(nombre);
+
+              if (nombre.isEmpty) {
+                setSheetState(() => nombreError = 'El nombre es obligatorio.');
+                valido = false;
+              } else if (nombre.length > 50) {
+                setSheetState(
+                  () => nombreError =
+                      'El nombre no puede superar los 50 caracteres.',
+                );
+                valido = false;
+              } else if (!soloLetrasYEspacios) {
+                setSheetState(
+                  () => nombreError =
+                      'El nombre solo debe contener letras y espacios.',
+                );
+                valido = false;
+              } else if (totalLetras < 3) {
+                setSheetState(
+                  () => nombreError =
+                      'El nombre debe contener al menos 3 letras.',
+                );
+                valido = false;
+              }
+
+              // 2. Campo Comentario:
+              // Opcional, pero si se escribe, máx 500 caracteres
+              if (comentario.isNotEmpty && comentario.length > 500) {
+                setSheetState(
+                  () => comentarioError =
+                      'El comentario no puede superar los 500 caracteres.',
+                );
+                valido = false;
+              }
+
+              return valido;
+            }
+
             return Padding(
               padding: EdgeInsets.only(
                 bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
@@ -121,9 +179,13 @@ class _ResenasSectionState extends State<ResenasSection> {
                         children: List.generate(5, (i) {
                           final valor = i + 1;
                           return IconButton(
-                            onPressed: () => setSheetState(() => calificacionSeleccionada = valor),
+                            onPressed: () => setSheetState(
+                              () => calificacionSeleccionada = valor,
+                            ),
                             icon: Icon(
-                              valor <= calificacionSeleccionada ? Icons.star : Icons.star_border,
+                              valor <= calificacionSeleccionada
+                                  ? Icons.star
+                                  : Icons.star_border,
                               color: const Color(0xFFE59819),
                               size: 32,
                             ),
@@ -131,24 +193,144 @@ class _ResenasSectionState extends State<ResenasSection> {
                         }),
                       ),
                       const SizedBox(height: 8),
+                      // Label Tu nombre
+                      const Row(
+                        children: [
+                          Text(
+                            'Tu nombre',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1F2937),
+                            ),
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            '*',
+                            style: TextStyle(
+                              color: Color(0xFFDC2626),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
                       TextField(
                         controller: nombreController,
+                        maxLength: 50,
+                        onChanged: (_) {
+                          if (nombreError != null) {
+                            setSheetState(() => nombreError = null);
+                          }
+                        },
                         decoration: InputDecoration(
-                          labelText: 'Tu nombre',
-                          hintText: 'Ej. María Vargas',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          hintText: 'María Vargas',
+                          counterText: '',
+                          errorText: nombreError,
+                          errorMaxLines: 2,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: nombreError != null
+                                  ? const Color(0xFFDC2626)
+                                  : Colors.grey.shade300,
+                              width: nombreError != null ? 1.5 : 1.0,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: nombreError != null
+                                  ? const Color(0xFFDC2626)
+                                  : const Color(0xFF26674B),
+                              width: 1.5,
+                            ),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 12),
+                      // Label Comentario
+                      Row(
+                        children: [
+                          const Text(
+                            'Comentario',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1F2937),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 1.5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF3F4F6),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: const Color(0xFFE5E7EB),
+                              ),
+                            ),
+                            child: const Text(
+                              'Opcional',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Color(0xFF6B7280),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
                       TextField(
                         controller: comentarioController,
                         maxLines: 3,
+                        maxLength: 500,
+                        onChanged: (_) {
+                          if (comentarioError != null) {
+                            setSheetState(() => comentarioError = null);
+                          }
+                        },
                         decoration: InputDecoration(
-                          labelText: 'Comentario (opcional)',
                           hintText: 'Cuéntanos tu experiencia...',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          errorText: comentarioError,
+                          errorMaxLines: 2,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: comentarioError != null
+                                  ? const Color(0xFFDC2626)
+                                  : Colors.grey.shade300,
+                              width: comentarioError != null ? 1.5 : 1.0,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: comentarioError != null
+                                  ? const Color(0xFFDC2626)
+                                  : const Color(0xFF26674B),
+                              width: 1.5,
+                            ),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -159,38 +341,43 @@ class _ResenasSectionState extends State<ResenasSection> {
                           onPressed: enviando
                               ? null
                               : () async {
-                                  final nombre = nombreController.text.trim();
-                                  if (nombre.length < 2) {
-                                    ScaffoldMessenger.of(sheetContext).showSnackBar(
-                                      const SnackBar(content: Text('Ingresa tu nombre para continuar.')),
-                                    );
-                                    return;
-                                  }
+                                  if (!validarFormulario()) return;
 
                                   setSheetState(() => enviando = true);
+                                  final nombre = nombreController.text.trim();
+                                  final comentario = comentarioController.text
+                                      .trim();
 
                                   final nuevaResena = Resena(
                                     entidad: widget.entidad,
                                     entidadId: widget.entidadId,
                                     autorNombre: nombre,
                                     calificacion: calificacionSeleccionada,
-                                    comentario: comentarioController.text.trim(),
+                                    comentario: comentario.isEmpty
+                                        ? null
+                                        : comentario,
                                     createdAt: DateTime.now(),
                                   );
 
                                   try {
-                                    final repo = context.read<ResenaRepository>();
+                                    final repo = context
+                                        .read<ResenaRepository>();
                                     await repo.create(nuevaResena);
                                     if (!mounted) return;
                                     setState(() {
                                       _resenas = [nuevaResena, ..._resenas];
                                     });
                                     _notificarResumen();
-                                    if (sheetContext.mounted) Navigator.pop(sheetContext);
+                                    if (sheetContext.mounted)
+                                      Navigator.pop(sheetContext);
                                     if (mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
                                         const SnackBar(
-                                          content: Text('¡Gracias por tu reseña!'),
+                                          content: Text(
+                                            '¡Gracias por tu reseña!',
+                                          ),
                                           behavior: SnackBarBehavior.floating,
                                         ),
                                       );
@@ -198,8 +385,14 @@ class _ResenasSectionState extends State<ResenasSection> {
                                   } catch (error) {
                                     setSheetState(() => enviando = false);
                                     if (sheetContext.mounted) {
-                                      ScaffoldMessenger.of(sheetContext).showSnackBar(
-                                        SnackBar(content: Text('No se pudo enviar la reseña: $error')),
+                                      ScaffoldMessenger.of(
+                                        sheetContext,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            'No se pudo enviar la reseña: $error',
+                                          ),
+                                        ),
                                       );
                                     }
                                   }
@@ -208,15 +401,26 @@ class _ResenasSectionState extends State<ResenasSection> {
                             backgroundColor: const Color(0xFF26674B),
                             foregroundColor: Colors.white,
                             elevation: 0,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
                           ),
                           child: enviando
                               ? const SizedBox(
                                   width: 22,
                                   height: 22,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
                                 )
-                              : const Text('Enviar', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                              : const Text(
+                                  'Enviar',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                  ),
+                                ),
                         ),
                       ),
                     ],
@@ -251,7 +455,9 @@ class _ResenasSectionState extends State<ResenasSection> {
               onPressed: _abrirFormularioResena,
               icon: const Icon(Icons.edit_outlined, size: 16),
               label: const Text('Escribir'),
-              style: TextButton.styleFrom(foregroundColor: const Color(0xFF1B5A3F)),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF1B5A3F),
+              ),
             ),
           ],
         ),
@@ -271,7 +477,11 @@ class _ResenasSectionState extends State<ResenasSection> {
             ),
             child: Column(
               children: [
-                Icon(Icons.rate_review_outlined, size: 32, color: Colors.grey.shade400),
+                Icon(
+                  Icons.rate_review_outlined,
+                  size: 32,
+                  color: Colors.grey.shade400,
+                ),
                 const SizedBox(height: 8),
                 Text(
                   'Sé el primero en dejar una reseña',
@@ -281,9 +491,7 @@ class _ResenasSectionState extends State<ResenasSection> {
             ),
           )
         else
-          Column(
-            children: _resenas.map(_buildResenaCard).toList(),
-          ),
+          Column(children: _resenas.map(_buildResenaCard).toList()),
       ],
     );
   }
@@ -307,11 +515,18 @@ class _ResenasSectionState extends State<ResenasSection> {
           Container(
             width: 38,
             height: 38,
-            decoration: const BoxDecoration(color: Color(0xFFE2ECE7), shape: BoxShape.circle),
+            decoration: const BoxDecoration(
+              color: Color(0xFFE2ECE7),
+              shape: BoxShape.circle,
+            ),
             alignment: Alignment.center,
             child: Text(
               iniciales,
-              style: const TextStyle(color: Color(0xFF1B5A3F), fontWeight: FontWeight.bold, fontSize: 15),
+              style: const TextStyle(
+                color: Color(0xFF1B5A3F),
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -325,14 +540,21 @@ class _ResenasSectionState extends State<ResenasSection> {
                     Expanded(
                       child: Text(
                         resena.autorNombre,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1F2937)),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: Color(0xFF1F2937),
+                        ),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     if (resena.createdAt != null)
                       Text(
                         _fechaRelativa(resena.createdAt!),
-                        style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade500,
+                        ),
                       ),
                   ],
                 ),
@@ -346,11 +568,16 @@ class _ResenasSectionState extends State<ResenasSection> {
                     );
                   }),
                 ),
-                if (resena.comentario != null && resena.comentario!.trim().isNotEmpty) ...[
+                if (resena.comentario != null &&
+                    resena.comentario!.trim().isNotEmpty) ...[
                   const SizedBox(height: 6),
                   Text(
                     resena.comentario!,
-                    style: const TextStyle(fontSize: 13, color: Color(0xFF4B5563), height: 1.4),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF4B5563),
+                      height: 1.4,
+                    ),
                   ),
                 ],
               ],
@@ -368,10 +595,14 @@ class _ResenasSectionState extends State<ResenasSection> {
       return meses <= 1 ? 'Hace 1 mes' : 'Hace $meses meses';
     }
     if (diferencia.inDays >= 1) {
-      return diferencia.inDays == 1 ? 'Hace 1 día' : 'Hace ${diferencia.inDays} días';
+      return diferencia.inDays == 1
+          ? 'Hace 1 día'
+          : 'Hace ${diferencia.inDays} días';
     }
     if (diferencia.inHours >= 1) {
-      return diferencia.inHours == 1 ? 'Hace 1 hora' : 'Hace ${diferencia.inHours} horas';
+      return diferencia.inHours == 1
+          ? 'Hace 1 hora'
+          : 'Hace ${diferencia.inHours} horas';
     }
     return 'Recién';
   }

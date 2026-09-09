@@ -50,17 +50,4 @@ class UsuarioRepository {
       'activo': activo,
     }).eq('id', id);
   }
-
-  Future<void> createUsuario({
-    required String nombre,
-    required String correo,
-    required String rol,
-  }) async {
-    await client.from('usuarios').insert({
-      'nombre': nombre.trim(),
-      'correo': correo.trim().toLowerCase(),
-      'rol': rol,
-      'activo': true,
-    });
-  }
 }

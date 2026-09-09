@@ -5,6 +5,8 @@ import 'package:latlong2/latlong.dart' hide Path;
 
 import '../models/actividad.dart';
 import '../models/turismo_tipo.dart';
+import '../widgets/full_map_sheet.dart';
+import '../widgets/fullscreen_image_gallery.dart';
 import '../widgets/resenas_section.dart';
 
 class ActivityDetailScreen extends StatefulWidget {
@@ -261,85 +263,10 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
           minChildSize: 0.5,
           maxChildSize: 0.95,
           builder: (context, scrollController) {
-            return Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-              ),
-              child: Column(
-                children: [
-                  Container(
-                    margin: const EdgeInsets.only(top: 12, bottom: 8),
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                widget.actividad.nombre,
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF0C3D28),
-                                  fontFamily: 'serif',
-                                ),
-                              ),
-                              const Text(
-                                'Punto de encuentro y partida · Comarapa',
-                                style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
-                              ),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close),
-                          onPressed: () => Navigator.pop(ctx),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(height: 1),
-                  Expanded(
-                    child: FlutterMap(
-                      options: MapOptions(
-                        initialCenter: _locationPoint,
-                        initialZoom: 14.5,
-                      ),
-                      children: [
-                        TileLayer(
-                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                          userAgentPackageName: 'bo.edu.uajms.proyecto_final_360',
-                        ),
-                        MarkerLayer(
-                          markers: [
-                            Marker(
-                              point: _locationPoint,
-                              width: 50,
-                              height: 50,
-                              child: const Icon(
-                                Icons.location_on,
-                                size: 44,
-                                color: Color(0xFF26674B),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+            return FullMapSheet(
+              titulo: widget.actividad.nombre,
+              subtitulo: 'Punto de encuentro y partida · Comarapa',
+              destino: _locationPoint,
             );
           },
         );
@@ -399,10 +326,23 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
               onPageChanged: (index) => setState(() => _currentPage = index),
               itemBuilder: (context, index) {
                 final url = imagenes[index];
-                return Image.network(
-                  url,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => _buildFallbackIllustration(),
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        fullscreenDialog: true,
+                        builder: (_) => FullscreenImageGallery(
+                          imagenes: imagenes,
+                          initialIndex: index,
+                        ),
+                      ),
+                    );
+                  },
+                  child: Image.network(
+                    url,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => _buildFallbackIllustration(),
+                  ),
                 );
               },
             )

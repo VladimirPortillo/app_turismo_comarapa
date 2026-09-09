@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../models/gastronomia_item.dart';
+import '../widgets/fullscreen_image_gallery.dart';
 import '../widgets/resenas_section.dart';
 import 'admin_restaurants_screen.dart';
 
@@ -329,10 +330,23 @@ class _GastronomyDetailScreenState extends State<GastronomyDetailScreen> {
               onPageChanged: (index) => setState(() => _currentPage = index),
               itemBuilder: (context, index) {
                 final url = imagenes[index];
-                return Image.network(
-                  url,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => _buildFallbackIllustration(),
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        fullscreenDialog: true,
+                        builder: (_) => FullscreenImageGallery(
+                          imagenes: imagenes,
+                          initialIndex: index,
+                        ),
+                      ),
+                    );
+                  },
+                  child: Image.network(
+                    url,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => _buildFallbackIllustration(),
+                  ),
                 );
               },
             )

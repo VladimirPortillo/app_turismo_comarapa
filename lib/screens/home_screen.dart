@@ -18,6 +18,8 @@ import 'events_screen.dart';
 import 'restaurants_screen.dart';
 import 'map_screen.dart';
 import 'search_screen.dart';
+import '../models/weather_snapshot.dart';
+import '../services/weather_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -34,6 +36,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Municipio? _municipio;
   bool _loadingMunicipio = true;
 
+  WeatherSnapshot? _weather;
+  bool _loadingWeather = true;
+
   // Coordenadas por defecto (plaza principal) si el municipio no tiene
   // ubicación asignada todavía en Supabase.
   static const double _defaultLat = -17.9144;
@@ -44,6 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _loadDestacados();
     _loadMunicipio();
+    _loadWeather();
   }
 
   Future<void> _loadDestacados() async {
@@ -68,9 +74,35 @@ class _HomeScreenState extends State<HomeScreen> {
         _municipio = municipio;
         _loadingMunicipio = false;
       });
+      if (_weather == null) {
+        _loadWeather();
+      }
     } catch (_) {
       if (!mounted) return;
       setState(() => _loadingMunicipio = false);
+    }
+  }
+
+  Future<void> _loadWeather() async {
+    setState(() {
+      _loadingWeather = true;
+    });
+    try {
+      final punto = _municipioPunto;
+      final weather = await const WeatherService().fetchCurrent(
+        latitude: punto.latitude,
+        longitude: punto.longitude,
+      );
+      if (!mounted) return;
+      setState(() {
+        _weather = weather;
+        _loadingWeather = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loadingWeather = false;
+      });
     }
   }
 
@@ -699,6 +731,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(height: 16),
+          _buildWeatherCard(),
+          const SizedBox(height: 16),
           GestureDetector(
             onTap: _abrirMapaMunicipio,
             child: ClipRRect(
@@ -774,6 +808,258 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ],
     );
+  }
+
+  Widget _buildWeatherCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFEAF5EF), Color(0xFFF4FBF7)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFC8E6D9), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF1B5A3F).withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF16A34A),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  const Text(
+                    'Clima en Comarapa',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1B5A3F),
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDCFCE7),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: const Color(0xFF86EFAC), width: 0.8),
+                    ),
+                    child: const Text(
+                      'En vivo',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF15803D),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              InkWell(
+                onTap: _loadingWeather ? null : _loadWeather,
+                borderRadius: BorderRadius.circular(20),
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: _loadingWeather
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Color(0xFF1B5A3F),
+                          ),
+                        )
+                      : const Icon(
+                          Icons.refresh_rounded,
+                          size: 18,
+                          color: Color(0xFF1B5A3F),
+                        ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (_loadingWeather && _weather == null) ...[
+            const Row(
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF1B5A3F)),
+                ),
+                SizedBox(width: 10),
+                Text(
+                  'Consultando temperatura en tiempo real...',
+                  style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+                ),
+              ],
+            ),
+          ] else if (_weather != null) ...[
+            Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: _getWeatherBgColor(_weather!.weatherCode),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    _getWeatherIcon(_weather!.weatherCode),
+                    color: _getWeatherIconColor(_weather!.weatherCode),
+                    size: 26,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _weather!.temperatureC.toStringAsFixed(1),
+                          style: const TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0C3D28),
+                            height: 1.0,
+                          ),
+                        ),
+                        const Text(
+                          ' °C',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1B5A3F),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _weather!.summary,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF4B5563),
+                      ),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.thermostat, size: 16, color: Colors.orange.shade700),
+                      const SizedBox(width: 4),
+                      Text(
+                        _weather!.temperatureC >= 25
+                            ? 'Cálido'
+                            : _weather!.temperatureC >= 18
+                                ? 'Agradable'
+                                : 'Fresco',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF374151),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ] else ...[
+            Row(
+              children: [
+                const Icon(Icons.cloud_outlined, color: Color(0xFF9CA3AF), size: 26),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text(
+                    'Clima habitual templado de valle (~20 °C)',
+                    style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+                  ),
+                ),
+                TextButton(
+                  onPressed: _loadWeather,
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    minimumSize: Size.zero,
+                  ),
+                  child: const Text('Reintentar', style: TextStyle(fontSize: 12, color: Color(0xFF1B5A3F))),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  IconData _getWeatherIcon(int code) {
+    if (code == 0) return Icons.wb_sunny_rounded;
+    if (code == 1 || code == 2) return Icons.wb_cloudy_rounded;
+    if (code == 3) return Icons.cloud_rounded;
+    if (code == 45 || code == 48) return Icons.foggy;
+    if (<int>[51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].contains(code)) {
+      return Icons.water_drop_rounded;
+    }
+    if (<int>[71, 73, 75, 77, 85, 86].contains(code)) return Icons.ac_unit_rounded;
+    if (<int>[95, 96, 99].contains(code)) return Icons.thunderstorm_rounded;
+    return Icons.wb_sunny_rounded;
+  }
+
+  Color _getWeatherIconColor(int code) {
+    if (code == 0) return const Color(0xFFF59E0B);
+    if (code == 1 || code == 2) return const Color(0xFF0284C7);
+    if (code == 3) return const Color(0xFF64748B);
+    if (code == 45 || code == 48) return const Color(0xFF94A3B8);
+    if (<int>[51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].contains(code)) {
+      return const Color(0xFF2563EB);
+    }
+    if (<int>[71, 73, 75, 77, 85, 86].contains(code)) return const Color(0xFF38BDF8);
+    if (<int>[95, 96, 99].contains(code)) return const Color(0xFF7C3AED);
+    return const Color(0xFFF59E0B);
+  }
+
+  Color _getWeatherBgColor(int code) {
+    if (code == 0) return const Color(0xFFFEF3C7);
+    if (code == 1 || code == 2) return const Color(0xFFE0F2FE);
+    if (code == 3) return const Color(0xFFF1F5F9);
+    if (code == 45 || code == 48) return const Color(0xFFF1F5F9);
+    if (<int>[51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].contains(code)) {
+      return const Color(0xFFDBEAFE);
+    }
+    if (<int>[71, 73, 75, 77, 85, 86].contains(code)) return const Color(0xFFE0F2FE);
+    if (<int>[95, 96, 99].contains(code)) return const Color(0xFFEDE9FE);
+    return const Color(0xFFFEF3C7);
   }
 }
 

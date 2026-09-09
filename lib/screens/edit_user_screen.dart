@@ -22,6 +22,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
   late String _selectedRol;
   late bool _isActive;
   bool _isSaving = false;
+  String? _nombreError;
 
   @override
   void initState() {
@@ -60,15 +61,45 @@ class _EditUserScreenState extends State<EditUserScreen> {
     return const Color(0xFFA6692B);
   }
 
-  Future<void> _guardarCambios() async {
+  bool _validarFormulario() {
+    setState(() {
+      _nombreError = null;
+    });
+
     final nuevoNombre = _nombreController.text.trim();
+    bool valido = true;
+
     if (nuevoNombre.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('El nombre completo no puede estar vacío.')),
-      );
-      return;
+      setState(() => _nombreError = 'El nombre completo es obligatorio.');
+      valido = false;
+    } else if (nuevoNombre.length < 3) {
+      setState(() => _nombreError = 'El nombre debe tener al menos 3 caracteres.');
+      valido = false;
+    } else if (nuevoNombre.length > 80) {
+      setState(() => _nombreError = 'El nombre no puede superar los 80 caracteres.');
+      valido = false;
+    } else if (!RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]').hasMatch(nuevoNombre)) {
+      setState(() => _nombreError = 'El nombre debe contener al menos una letra.');
+      valido = false;
     }
 
+    if (!valido) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor, corrige los errores en el formulario.'),
+          backgroundColor: Color(0xFFDC2626),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+
+    return valido;
+  }
+
+  Future<void> _guardarCambios() async {
+    if (!_validarFormulario()) return;
+
+    final nuevoNombre = _nombreController.text.trim();
     setState(() => _isSaving = true);
 
     try {
@@ -268,28 +299,90 @@ class _EditUserScreenState extends State<EditUserScreen> {
     );
   }
 
-  Widget _buildNombreField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildLabel(String label, {bool isRequired = false, String? badgeText}) {
+    return Row(
       children: [
-        const Text(
-          'Nombre completo',
-          style: TextStyle(
+        Text(
+          label,
+          style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 14,
             color: Color(0xFF1F2937),
           ),
         ),
-        const SizedBox(height: 8),
+        if (isRequired) ...[
+          const SizedBox(width: 4),
+          const Text(
+            '*',
+            style: TextStyle(
+              color: Color(0xFFDC2626),
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+        if (badgeText != null) ...[
+          const SizedBox(width: 6),
+          Text(
+            badgeText,
+            style: const TextStyle(
+              color: Color(0xFF9CA3AF),
+              fontSize: 12,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildInputContainer({
+    required Widget child,
+    String? errorText,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(
+              color: errorText != null ? const Color(0xFFDC2626) : Colors.grey.shade300,
+              width: errorText != null ? 1.5 : 1.0,
+            ),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 14),
+          child: child,
+        ),
+        if (errorText != null) ...[
+          const SizedBox(height: 6),
+          Text(
+            errorText,
+            style: const TextStyle(
+              color: Color(0xFFDC2626),
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildNombreField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildLabel('Nombre completo', isRequired: true),
+        const SizedBox(height: 8),
+        _buildInputContainer(
+          errorText: _nombreError,
           child: TextField(
             controller: _nombreController,
+            onChanged: (_) {
+              if (_nombreError != null) setState(() => _nombreError = null);
+            },
             style: const TextStyle(fontSize: 15, color: Color(0xFF1F2937)),
             decoration: const InputDecoration(
               border: InputBorder.none,
@@ -305,14 +398,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Correo electrónico',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-            color: Color(0xFF1F2937),
-          ),
-        ),
+        _buildLabel('Correo electrónico', badgeText: '(Solo lectura)'),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
@@ -351,14 +437,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Rol',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-            color: Color(0xFF1F2937),
-          ),
-        ),
+        _buildLabel('Rol', isRequired: true),
         const SizedBox(height: 8),
         Container(
           height: 48,

@@ -38,6 +38,9 @@ class _EditEventScreenState extends State<EditEventScreen> {
   bool _isSaving = false;
   List<String> _imagenes = [];
 
+  String? _nombreError;
+  String? _fechaError;
+
   @override
   void initState() {
     super.initState();
@@ -129,6 +132,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
             _fechaInicio = _fechaFin;
           }
         }
+        _fechaError = null;
       });
     }
   }
@@ -181,15 +185,51 @@ class _EditEventScreenState extends State<EditEventScreen> {
     );
   }
 
-  Future<void> _guardarCambios() async {
+  bool _validarFormulario() {
+    setState(() {
+      _nombreError = null;
+      _fechaError = null;
+    });
+
     final nombre = _nombreController.text.trim();
+    bool valido = true;
+
     if (nombre.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('El nombre del evento no puede estar vacío.')),
-      );
-      return;
+      setState(() => _nombreError = 'El nombre del evento es obligatorio.');
+      valido = false;
+    } else if (nombre.length < 3) {
+      setState(() => _nombreError = 'El nombre debe tener al menos 3 caracteres.');
+      valido = false;
+    } else if (nombre.length > 120) {
+      setState(() => _nombreError = 'El nombre no puede superar los 120 caracteres.');
+      valido = false;
+    } else if (!RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]').hasMatch(nombre)) {
+      setState(() => _nombreError = 'El nombre debe contener al menos una letra.');
+      valido = false;
     }
 
+    if (_fechaFin.isBefore(_fechaInicio)) {
+      setState(() => _fechaError = 'La fecha de fin no puede ser anterior a la fecha de inicio.');
+      valido = false;
+    }
+
+    if (!valido) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor, corrige los errores en el formulario.'),
+          backgroundColor: Color(0xFFDC2626),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+
+    return valido;
+  }
+
+  Future<void> _guardarCambios() async {
+    if (!_validarFormulario()) return;
+
+    final nombre = _nombreController.text.trim();
     setState(() => _isSaving = true);
 
     try {
@@ -358,32 +398,93 @@ class _EditEventScreenState extends State<EditEventScreen> {
     );
   }
 
-  Widget _buildNombreField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildLabel(String label, {bool isRequired = false, bool isOptional = false}) {
+    return Row(
       children: [
-        const Text(
-          'Nombre del evento',
-          style: TextStyle(
+        Text(
+          label,
+          style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 14,
             color: Color(0xFF1F2937),
           ),
         ),
-        const SizedBox(height: 8),
+        if (isRequired) ...[
+          const SizedBox(width: 4),
+          const Text(
+            '*',
+            style: TextStyle(
+              color: Color(0xFFDC2626),
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+        if (isOptional) ...[
+          const SizedBox(width: 6),
+          const Text(
+            '(Opcional)',
+            style: TextStyle(
+              color: Color(0xFF9CA3AF),
+              fontSize: 12,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildInputContainer({
+    required Widget child,
+    String? errorText,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(
+              color: errorText != null ? const Color(0xFFDC2626) : Colors.grey.shade300,
+              width: errorText != null ? 1.5 : 1.0,
+            ),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 14),
+          child: child,
+        ),
+        if (errorText != null) ...[
+          const SizedBox(height: 6),
+          Text(
+            errorText,
+            style: const TextStyle(
+              color: Color(0xFFDC2626),
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildNombreField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildLabel('Nombre del evento', isRequired: true),
+        const SizedBox(height: 8),
+        _buildInputContainer(
+          errorText: _nombreError,
           child: TextField(
             controller: _nombreController,
+            onChanged: (_) {
+              if (_nombreError != null) setState(() => _nombreError = null);
+            },
             style: const TextStyle(fontSize: 15, color: Color(0xFF1F2937)),
             decoration: const InputDecoration(
               border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(vertical: 14),
+              contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 14),
             ),
           ),
         ),
@@ -395,14 +496,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Tipo',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-            color: Color(0xFF1F2937),
-          ),
-        ),
+        _buildLabel('Tipo', isRequired: true),
         const SizedBox(height: 10),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
@@ -467,14 +561,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Descripción',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-            color: Color(0xFF1F2937),
-          ),
-        ),
+        _buildLabel('Descripción', isOptional: true),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
@@ -500,20 +587,14 @@ class _EditEventScreenState extends State<EditEventScreen> {
 
   Widget _buildFechasRow() {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Fecha de inicio
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Fecha de inicio',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13.5,
-                  color: Color(0xFF1F2937),
-                ),
-              ),
+              _buildLabel('Fecha de inicio', isRequired: true),
               const SizedBox(height: 8),
               GestureDetector(
                 onTap: () => _seleccionarFecha(isInicio: true),
@@ -552,39 +633,34 @@ class _EditEventScreenState extends State<EditEventScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Fecha de fin',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13.5,
-                  color: Color(0xFF1F2937),
-                ),
-              ),
+              _buildLabel('Fecha de fin', isOptional: true),
               const SizedBox(height: 8),
-              GestureDetector(
-                onTap: () => _seleccionarFecha(isInicio: false),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade300),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.calendar_today_outlined, size: 16, color: Color(0xFF6B7280)),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _formatearFecha(_fechaFin),
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF1F2937),
+              _buildInputContainer(
+                errorText: _fechaError,
+                child: GestureDetector(
+                  onTap: () => _seleccionarFecha(isInicio: false),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.calendar_today_outlined, size: 16, color: Color(0xFF6B7280)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _formatearFecha(_fechaFin),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF1F2937),
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -599,14 +675,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Periodicidad',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-            color: Color(0xFF1F2937),
-          ),
-        ),
+        _buildLabel('Periodicidad', isOptional: true),
         const SizedBox(height: 10),
         Container(
           height: 48,
@@ -652,14 +721,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'Ubicación',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-                color: Color(0xFF1F2937),
-              ),
-            ),
+            _buildLabel('Ubicación interactiva', isOptional: true),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(

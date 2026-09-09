@@ -17,12 +17,8 @@ import '../repositories/hotel_repository.dart';
 import '../repositories/lugar_repository.dart';
 import '../repositories/restaurante_repository.dart';
 import '../repositories/usuario_repository.dart';
-import '../widgets/mode_banner.dart';
-import 'about_adaptation_screen.dart';
 import 'admin_users_screen.dart';
-import 'context/context_lab_screen.dart';
-import 'records_screen.dart';
-import 'settings_screen.dart';
+import 'auth_gate.dart';
 import 'places_screen.dart';
 import 'edit_place_screen.dart';
 import 'edit_hotel_screen.dart';
@@ -675,7 +671,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const ModeBanner(),
             _buildTopAppBar(initials),
             const SizedBox(height: 16),
             _buildMainCategoryTabs(),
@@ -1628,82 +1623,19 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                   title: const Text('Rol'),
                   subtitle: Text(rolLabel),
                 ),
-                ListTile(
-                  leading: const Icon(Icons.hotel_outlined, color: Color(0xFF1B5A3F)),
-                  title: const Text('Administrar Hoteles'),
-                  subtitle: const Text('Hospedajes y alojamientos'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    setState(() => _selectedTipo = TurismoTipo.hotel);
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.calendar_month_outlined, color: Color(0xFF1B5A3F)),
-                  title: const Text('Administrar Eventos'),
-                  subtitle: const Text('Ferias y fiestas patronales'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    setState(() => _selectedTipo = TurismoTipo.evento);
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.restaurant_outlined, color: Color(0xFF1B5A3F)),
-                  title: const Text('Administrar Restaurantes'),
-                  subtitle: const Text('Comida típica y locales'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    setState(() => _selectedTipo = TurismoTipo.restaurante);
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.people_alt_outlined, color: Color(0xFF1B5A3F)),
-                  title: const Text('Gestión de Usuarios'),
-                  subtitle: const Text('Administradores y editores'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const AdminUsersScreen()),
-                    );
-                  },
-                ),
-                const Divider(),
-                ListTile(
-                  leading: const Icon(Icons.storage_outlined, color: Color(0xFF1B5A3F)),
-                  title: const Text('1. Mis registros (BD)'),
-                  subtitle: const Text('CRUD de la Sesión 1'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const RecordsScreen()));
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.public, color: Color(0xFF1B5A3F)),
-                  title: const Text('2. Conexión con el mundo'),
-                  subtitle: const Text('GPS, clima y mapa'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const ContextLabScreen()));
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.tune, color: Color(0xFF1B5A3F)),
-                  title: const Text('3. Preferencias de usuario'),
-                  subtitle: const Text('Persistencia local SharedPreferences'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const SettingsScreen()));
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.design_services_outlined, color: Color(0xFF1B5A3F)),
-                  title: const Text('4. Adaptar a mi proyecto'),
-                  subtitle: const Text('Acerca del proyecto'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const AboutAdaptationScreen()));
-                  },
-                ),
+                if (_perfil?.esAdministrador == true)
+                  ListTile(
+                    leading: const Icon(Icons.people_alt_outlined, color: Color(0xFF1B5A3F)),
+                    title: const Text('Gestión de Usuarios'),
+                    subtitle: const Text('Administradores y editores'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const AdminUsersScreen()),
+                      );
+                    },
+                  ),
                 const Divider(),
                 ListTile(
                   leading: const Icon(Icons.logout, color: Colors.redAccent),
@@ -1711,6 +1643,11 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                   onTap: () async {
                     Navigator.pop(context);
                     await Supabase.instance.client.auth.signOut();
+                    if (!context.mounted) return;
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => const AuthGate()),
+                      (route) => route.isFirst,
+                    );
                   },
                 ),
               ],

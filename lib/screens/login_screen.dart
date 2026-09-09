@@ -21,10 +21,74 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
 
   @override
+  void initState() {
+    super.initState();
+    _emailController.addListener(_limpiarError);
+    _passwordController.addListener(_limpiarError);
+  }
+
+  void _limpiarError() {
+    if (_message != null) {
+      setState(() => _message = null);
+    }
+  }
+
+  @override
   void dispose() {
+    _emailController.removeListener(_limpiarError);
+    _passwordController.removeListener(_limpiarError);
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  String _traducirErrorAuth(dynamic error) {
+    if (error is AuthException) {
+      final msg = error.message.toLowerCase();
+      if (msg.contains('invalid login credentials') ||
+          msg.contains('invalid_grant') ||
+          msg.contains('invalid credentials')) {
+        return 'Correo o contraseña incorrectos. Por favor, verifica tus datos.';
+      }
+      if (msg.contains('email not confirmed')) {
+        return 'El correo electrónico no ha sido confirmado. Revisa tu bandeja de entrada.';
+      }
+      if (msg.contains('user already registered') ||
+          msg.contains('already exists')) {
+        return 'Este correo electrónico ya se encuentra registrado en el sistema.';
+      }
+      if (msg.contains('password should be at least') ||
+          msg.contains('weak_password')) {
+        return 'La contraseña debe tener al menos 6 caracteres.';
+      }
+      if (msg.contains('rate limit') || msg.contains('too many requests')) {
+        return 'Demasiados intentos. Por favor espera unos momentos antes de reintentar.';
+      }
+      if (msg.contains('user not found')) {
+        return 'Usuario no encontrado. Verifica el correo ingresado.';
+      }
+      if (msg.contains('signup disabled')) {
+        return 'El registro de nuevos usuarios se encuentra deshabilitado.';
+      }
+      if (msg.contains('invalid email')) {
+        return 'El formato de correo electrónico es inválido.';
+      }
+      return 'Error de autenticación: ${error.message}';
+    }
+
+    final errStr = error.toString().toLowerCase();
+    if (errStr.contains('socketexception') ||
+        errStr.contains('connection refused') ||
+        errStr.contains('network is unreachable') ||
+        errStr.contains('clientexception') ||
+        errStr.contains('failed host lookup')) {
+      return 'No se pudo conectar con el servidor. Verifica tu conexión a internet.';
+    }
+    if (errStr.contains('timeout')) {
+      return 'El servidor tardó demasiado en responder. Inténtalo nuevamente.';
+    }
+
+    return 'Ocurrió un error inesperado al iniciar sesión. Inténtalo de nuevo.';
   }
 
   Future<void> _submit() async {
@@ -54,11 +118,11 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } on AuthException catch (error) {
       if (mounted) {
-        setState(() => _message = error.message);
+        setState(() => _message = _traducirErrorAuth(error));
       }
     } catch (error) {
       if (mounted) {
-        setState(() => _message = 'Error: $error');
+        setState(() => _message = _traducirErrorAuth(error));
       }
     } finally {
       if (mounted) {
@@ -271,8 +335,12 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             validator: (value) {
-              if (value == null || !value.contains('@')) {
-                return 'Correo inválido';
+              final trimmed = value?.trim() ?? '';
+              if (trimmed.isEmpty) {
+                return 'El correo electrónico es obligatorio.';
+              }
+              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(trimmed)) {
+                return 'Ingresa un correo electrónico válido.';
               }
               return null;
             },
@@ -337,8 +405,11 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             validator: (value) {
-              if (value == null || value.length < 6) {
-                return 'Mínimo 6 caracteres';
+              if (value == null || value.isEmpty) {
+                return 'La contraseña es obligatoria.';
+              }
+              if (value.length < 6) {
+                return 'La contraseña debe tener al menos 6 caracteres.';
               }
               return null;
             },

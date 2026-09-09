@@ -80,6 +80,15 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
   bool _cargandoCategorias = true;
   bool _guardando = false;
 
+  String? _nombreError;
+  String? _costoError;
+  String? _tiempoError;
+  String? _duracionError;
+  String? _precioRefError;
+  String? _capacidadError;
+  String? _precioMinError;
+  String? _precioMaxError;
+
   bool get _usaUbicacion =>
       widget.tipo == TurismoTipo.lugar ||
       widget.tipo == TurismoTipo.actividad ||
@@ -259,14 +268,151 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
     }
   }
 
-  Future<void> _save() async {
+  bool _validarFormulario() {
+    setState(() {
+      _nombreError = null;
+      _costoError = null;
+      _tiempoError = null;
+      _duracionError = null;
+      _precioRefError = null;
+      _capacidadError = null;
+      _precioMinError = null;
+      _precioMaxError = null;
+    });
+
     final nombre = _nombreController.text.trim();
-    if (nombre.length < 3) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('El nombre debe tener al menos 3 caracteres.')),
-      );
-      return;
+    bool valido = true;
+
+    // Validación de nombre: obligatorio, 3 a 120 caracteres, al menos 1 letra
+    if (nombre.isEmpty) {
+      setState(() => _nombreError = 'El nombre es obligatorio.');
+      valido = false;
+    } else if (nombre.length < 3) {
+      setState(() => _nombreError = 'El nombre debe tener al menos 3 caracteres.');
+      valido = false;
+    } else if (nombre.length > 120) {
+      setState(() => _nombreError = 'El nombre no puede superar los 120 caracteres.');
+      valido = false;
+    } else if (!RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]').hasMatch(nombre)) {
+      setState(() => _nombreError = 'El nombre debe contener al menos una letra.');
+      valido = false;
     }
+
+    // Validación de categoría: obligatoria
+    if (_categoriaId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor, selecciona una categoría obligatoria.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      valido = false;
+    }
+
+    switch (widget.tipo) {
+      case TurismoTipo.lugar:
+        final costoStr = _costoEntradaController.text.trim();
+        if (costoStr.isNotEmpty) {
+          final costo = num.tryParse(costoStr);
+          if (costo == null || costo < 0) {
+            setState(() => _costoError = 'El costo debe ser un número mayor o igual a 0.');
+            valido = false;
+          }
+        }
+        final tiempoStr = _tiempoVisitaController.text.trim();
+        if (tiempoStr.isNotEmpty) {
+          final tiempo = int.tryParse(tiempoStr);
+          if (tiempo == null || tiempo < 0) {
+            setState(() => _tiempoError = 'El tiempo debe ser un número entero mayor o igual a 0.');
+            valido = false;
+          }
+        }
+        break;
+
+      case TurismoTipo.actividad:
+        final duracionStr = _duracionController.text.trim();
+        if (duracionStr.isNotEmpty) {
+          final duracion = int.tryParse(duracionStr);
+          if (duracion == null || duracion < 0) {
+            setState(() => _duracionError = 'La duración debe ser un número entero mayor o igual a 0.');
+            valido = false;
+          }
+        }
+        final precioStr = _precioRefController.text.trim();
+        if (precioStr.isNotEmpty) {
+          final precio = num.tryParse(precioStr);
+          if (precio == null || precio < 0) {
+            setState(() => _precioRefError = 'El precio debe ser un número mayor o igual a 0.');
+            valido = false;
+          }
+        }
+        final capacidadStr = _capacidadController.text.trim();
+        if (capacidadStr.isNotEmpty) {
+          final capacidad = int.tryParse(capacidadStr);
+          if (capacidad == null || capacidad <= 0) {
+            setState(() => _capacidadError = 'La capacidad debe ser un número entero mayor a 0.');
+            valido = false;
+          }
+        }
+        break;
+
+      case TurismoTipo.hotel:
+        num? pMin;
+        final minStr = _precioMinController.text.trim();
+        if (minStr.isNotEmpty) {
+          pMin = num.tryParse(minStr);
+          if (pMin == null || pMin < 0) {
+            setState(() => _precioMinError = 'El precio debe ser un número mayor o igual a 0.');
+            valido = false;
+          }
+        }
+        num? pMax;
+        final maxStr = _precioMaxController.text.trim();
+        if (maxStr.isNotEmpty) {
+          pMax = num.tryParse(maxStr);
+          if (pMax == null || pMax < 0) {
+            setState(() => _precioMaxError = 'El precio debe ser un número mayor o igual a 0.');
+            valido = false;
+          }
+        }
+        if (pMin != null && pMax != null && pMax < pMin) {
+          setState(() => _precioMaxError = 'El precio máximo no puede ser menor al precio mínimo.');
+          valido = false;
+        }
+        break;
+
+      case TurismoTipo.gastronomia:
+        final precioStr = _precioRefController.text.trim();
+        if (precioStr.isNotEmpty) {
+          final precio = num.tryParse(precioStr);
+          if (precio == null || precio < 0) {
+            setState(() => _precioRefError = 'El precio debe ser un número mayor o igual a 0.');
+            valido = false;
+          }
+        }
+        break;
+
+      case TurismoTipo.evento:
+      case TurismoTipo.restaurante:
+        break;
+    }
+
+    if (!valido && _nombreError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_nombreError!),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+
+    return valido;
+  }
+
+  Future<void> _save() async {
+    if (!_validarFormulario()) return;
+
+    final nombre = _nombreController.text.trim();
 
     setState(() => _guardando = true);
 
@@ -438,18 +584,26 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel('Nombre'),
-                    _buildTextField(_nombreController, hintText: 'Nombre'),
+                    _buildLabel('Nombre', isRequired: true),
+                    _buildTextField(
+                      _nombreController,
+                      hintText: 'Nombre',
+                      errorText: _nombreError,
+                      onChanged: (_) {
+                        if (_nombreError != null) setState(() => _nombreError = null);
+                      },
+                    ),
                     const SizedBox(height: 20),
 
-                    _buildLabel('Categoría / Tipo'),
+                    _buildLabel('Categoría / Tipo', isRequired: true),
                     _buildCategoryChips(),
                     const SizedBox(height: 20),
 
-                    _buildLabel('Descripción'),
+                    _buildLabel('Descripción', isOptional: true),
                     _buildTextField(_descripcionController, hintText: 'Descripción...', maxLines: 4),
                     const SizedBox(height: 20),
 
+                    _buildLabel('Fotografías', isOptional: true),
                     ImagenPickerField(
                       imagenes: _imagenesSeleccionadas,
                       carpeta: widget.tipo.entidad,
@@ -459,12 +613,12 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
 
                     ..._buildCamposEspecificos(),
 
-                    _buildLabel('Estado'),
+                    _buildLabel('Estado', isRequired: true),
                     _buildActivoSwitch(),
                     const SizedBox(height: 20),
 
                     if (_usaUbicacion) ...[
-                      _buildLabel('Ubicación'),
+                      _buildLabel('Ubicación (GPS)', isOptional: true),
                       _buildMapSelector(),
                       const SizedBox(height: 24),
                     ],
@@ -483,7 +637,7 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
     switch (widget.tipo) {
       case TurismoTipo.lugar:
         return [
-          _buildLabel('Dificultad'),
+          _buildLabel('Dificultad', isRequired: true),
           _buildDifficultySelector(),
           const SizedBox(height: 20),
           Row(
@@ -492,8 +646,16 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel('Tiempo estimado (min)'),
-                    _buildTextField(_tiempoVisitaController, hintText: 'Ej. 120', keyboardType: TextInputType.number),
+                    _buildLabel('Tiempo estimado (min)', isOptional: true),
+                    _buildTextField(
+                      _tiempoVisitaController,
+                      hintText: 'Ej. 120',
+                      keyboardType: TextInputType.number,
+                      errorText: _tiempoError,
+                      onChanged: (_) {
+                        if (_tiempoError != null) setState(() => _tiempoError = null);
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -502,24 +664,32 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel('Costo de entrada (Bs.)'),
-                    _buildTextField(_costoEntradaController, hintText: 'Ej. 10', keyboardType: TextInputType.number),
+                    _buildLabel('Costo entrada (Bs.)', isRequired: true),
+                    _buildTextField(
+                      _costoEntradaController,
+                      hintText: '0 para gratis',
+                      keyboardType: TextInputType.number,
+                      errorText: _costoError,
+                      onChanged: (_) {
+                        if (_costoError != null) setState(() => _costoError = null);
+                      },
+                    ),
                   ],
                 ),
               ),
             ],
           ),
           const SizedBox(height: 20),
-          _buildLabel('Mejor época para visitar'),
+          _buildLabel('Mejor época para visitar', isOptional: true),
           _buildTextField(_mejorEpocaController, hintText: 'Ej. Abril – Octubre'),
           const SizedBox(height: 20),
-          _buildLabel('Dirección de referencia'),
+          _buildLabel('Dirección de referencia', isOptional: true),
           _buildTextField(_direccionController, hintText: 'Ej. A 3 km del centro'),
           const SizedBox(height: 20),
         ];
       case TurismoTipo.actividad:
         return [
-          _buildLabel('Dificultad'),
+          _buildLabel('Dificultad', isRequired: true),
           _buildDifficultySelector(),
           const SizedBox(height: 20),
           Row(
@@ -528,8 +698,16 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel('Duración (min)'),
-                    _buildTextField(_duracionController, hintText: 'Ej. 150', keyboardType: TextInputType.number),
+                    _buildLabel('Duración (min)', isOptional: true),
+                    _buildTextField(
+                      _duracionController,
+                      hintText: 'Ej. 150',
+                      keyboardType: TextInputType.number,
+                      errorText: _duracionError,
+                      onChanged: (_) {
+                        if (_duracionError != null) setState(() => _duracionError = null);
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -538,15 +716,23 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel('Precio referencial (Bs.)'),
-                    _buildTextField(_precioRefController, hintText: 'Ej. 30', keyboardType: TextInputType.number),
+                    _buildLabel('Precio ref. (Bs.)', isOptional: true),
+                    _buildTextField(
+                      _precioRefController,
+                      hintText: 'Ej. 30',
+                      keyboardType: TextInputType.number,
+                      errorText: _precioRefError,
+                      onChanged: (_) {
+                        if (_precioRefError != null) setState(() => _precioRefError = null);
+                      },
+                    ),
                   ],
                 ),
               ),
             ],
           ),
           const SizedBox(height: 20),
-          _buildLabel('Operador / contacto'),
+          _buildLabel('Operador / contacto', isOptional: true),
           _buildTextField(_operadorController, hintText: 'Guía u operador responsable'),
           const SizedBox(height: 20),
           Row(
@@ -555,8 +741,16 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel('Capacidad máxima'),
-                    _buildTextField(_capacidadController, hintText: 'Ej. 15', keyboardType: TextInputType.number),
+                    _buildLabel('Capacidad máxima', isOptional: true),
+                    _buildTextField(
+                      _capacidadController,
+                      hintText: 'Ej. 15',
+                      keyboardType: TextInputType.number,
+                      errorText: _capacidadError,
+                      onChanged: (_) {
+                        if (_capacidadError != null) setState(() => _capacidadError = null);
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -565,7 +759,7 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel('Temporada'),
+                    _buildLabel('Temporada', isOptional: true),
                     _buildTextField(_temporadaController, hintText: 'Ej. Octubre – Marzo'),
                   ],
                 ),
@@ -582,8 +776,16 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel('Precio mínimo (Bs.)'),
-                    _buildTextField(_precioMinController, hintText: 'Ej. 80', keyboardType: TextInputType.number),
+                    _buildLabel('Precio mín. (Bs.)', isOptional: true),
+                    _buildTextField(
+                      _precioMinController,
+                      hintText: 'Ej. 80',
+                      keyboardType: TextInputType.number,
+                      errorText: _precioMinError,
+                      onChanged: (_) {
+                        if (_precioMinError != null) setState(() => _precioMinError = null);
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -592,21 +794,29 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel('Precio máximo (Bs.)'),
-                    _buildTextField(_precioMaxController, hintText: 'Ej. 150', keyboardType: TextInputType.number),
+                    _buildLabel('Precio máx. (Bs.)', isOptional: true),
+                    _buildTextField(
+                      _precioMaxController,
+                      hintText: 'Ej. 150',
+                      keyboardType: TextInputType.number,
+                      errorText: _precioMaxError,
+                      onChanged: (_) {
+                        if (_precioMaxError != null) setState(() => _precioMaxError = null);
+                      },
+                    ),
                   ],
                 ),
               ),
             ],
           ),
           const SizedBox(height: 20),
-          _buildLabel('Servicios (separados por coma)'),
+          _buildLabel('Servicios (separados por coma)', isOptional: true),
           _buildTextField(_serviciosController, hintText: 'Wifi, Parqueo, Desayuno'),
           const SizedBox(height: 20),
-          _buildLabel('Contacto para reservas'),
+          _buildLabel('Contacto para reservas', isOptional: true),
           _buildTextField(_contactoReservasController, hintText: 'Teléfono / WhatsApp'),
           const SizedBox(height: 20),
-          _buildLabel('Dirección de referencia'),
+          _buildLabel('Dirección de referencia', isOptional: true),
           _buildTextField(_direccionController, hintText: 'Ej. Media cuadra de la plaza'),
           const SizedBox(height: 20),
         ];
@@ -618,7 +828,7 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel('Temporada'),
+                    _buildLabel('Temporada', isOptional: true),
                     _buildTextField(_temporadaController, hintText: 'Ej. Temporada de durazno'),
                   ],
                 ),
@@ -628,8 +838,16 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel('Precio referencial (Bs.)'),
-                    _buildTextField(_precioRefController, hintText: 'Ej. 15', keyboardType: TextInputType.number),
+                    _buildLabel('Precio ref. (Bs.)', isOptional: true),
+                    _buildTextField(
+                      _precioRefController,
+                      hintText: 'Ej. 15',
+                      keyboardType: TextInputType.number,
+                      errorText: _precioRefError,
+                      onChanged: (_) {
+                        if (_precioRefError != null) setState(() => _precioRefError = null);
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -683,12 +901,27 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
     );
   }
 
-  Widget _buildLabel(String label) {
+  Widget _buildLabel(String label, {bool isRequired = false, bool isOptional = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: Text(
-        label,
-        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF374151)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF374151)),
+          ),
+          if (isRequired)
+            const Text(
+              ' *',
+              style: TextStyle(color: Color(0xFFDC2626), fontWeight: FontWeight.bold, fontSize: 15),
+            ),
+          if (isOptional)
+            const Text(
+              ' (Opcional)',
+              style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 12, fontWeight: FontWeight.normal),
+            ),
+        ],
       ),
     );
   }
@@ -698,25 +931,45 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
     required String hintText,
     int maxLines = 1,
     TextInputType? keyboardType,
+    String? errorText,
+    void Function(String)? onChanged,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: TextField(
-        controller: controller,
-        maxLines: maxLines,
-        keyboardType: keyboardType,
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    final hasError = errorText != null && errorText.isNotEmpty;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: hasError ? const Color(0xFFDC2626) : Colors.grey.shade200,
+              width: hasError ? 1.5 : 1.0,
+            ),
+          ),
+          child: TextField(
+            controller: controller,
+            maxLines: maxLines,
+            keyboardType: keyboardType,
+            onChanged: onChanged,
+            decoration: InputDecoration(
+              hintText: hintText,
+              hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            ),
+            style: const TextStyle(fontSize: 15, color: Color(0xFF1F2937)),
+          ),
         ),
-        style: const TextStyle(fontSize: 15, color: Color(0xFF1F2937)),
-      ),
+        if (hasError)
+          Padding(
+            padding: const EdgeInsets.only(top: 4, left: 4),
+            child: Text(
+              errorText,
+              style: const TextStyle(color: Color(0xFFDC2626), fontSize: 12, fontWeight: FontWeight.w500),
+            ),
+          ),
+      ],
     );
   }
 

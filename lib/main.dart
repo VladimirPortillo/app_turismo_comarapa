@@ -5,7 +5,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app.dart';
 import 'config/app_config.dart';
-import 'controllers/context_controller.dart';
 import 'controllers/preferences_controller.dart';
 import 'repositories/actividad_repository.dart';
 import 'repositories/categoria_repository.dart';
@@ -14,10 +13,8 @@ import 'repositories/gastronomia_repository.dart';
 import 'repositories/hotel_repository.dart';
 import 'repositories/lugar_repository.dart';
 import 'repositories/municipio_repository.dart';
-import 'repositories/registro_repository.dart';
 import 'repositories/resena_repository.dart';
 import 'repositories/restaurante_repository.dart';
-import 'repositories/supabase_registro_repository.dart';
 import 'repositories/usuario_repository.dart';
 import 'services/image_upload_service.dart';
 import 'services/location_service.dart';
@@ -40,10 +37,6 @@ Future<void> main() async {
     publishableKey: config.supabasePublishableKey,
   );
 
-  final RegistroRepository repository = SupabaseRegistroRepository(
-    Supabase.instance.client,
-  );
-
   final supabaseClient = Supabase.instance.client;
 
   runApp(
@@ -53,7 +46,6 @@ Future<void> main() async {
         ChangeNotifierProvider<PreferencesController>.value(
           value: preferencesController,
         ),
-        Provider<RegistroRepository>.value(value: repository),
         Provider<CategoriaRepository>(
           create: (_) => CategoriaRepository(supabaseClient),
         ),
@@ -98,16 +90,6 @@ Future<void> main() async {
         Provider<RoutingService>(
           create: (providerContext) =>
               const RoutingService(),
-        ),
-        ChangeNotifierProvider<ContextController>(
-          create: (providerContext) {
-            return ContextController(
-              locationService:
-                  providerContext.read<LocationService>(),
-              weatherService:
-                  providerContext.read<WeatherService>(),
-            );
-          },
         ),
       ],
       child: const ProyectoFinalApp(),

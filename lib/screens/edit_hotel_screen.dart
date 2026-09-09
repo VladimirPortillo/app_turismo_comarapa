@@ -40,6 +40,10 @@ class _EditHotelScreenState extends State<EditHotelScreen> {
   bool _isSaving = false;
   List<String> _imagenes = [];
 
+  String? _nombreError;
+  String? _precioMinError;
+  String? _precioMaxError;
+
   @override
   void initState() {
     super.initState();
@@ -179,14 +183,72 @@ class _EditHotelScreenState extends State<EditHotelScreen> {
     );
   }
 
-  Future<void> _guardarCambios() async {
+  bool _validarFormulario() {
+    setState(() {
+      _nombreError = null;
+      _precioMinError = null;
+      _precioMaxError = null;
+    });
+
     final nombre = _nombreController.text.trim();
+    bool valido = true;
+
     if (nombre.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('El nombre del hotel no puede estar vacío.')),
-      );
-      return;
+      setState(() => _nombreError = 'El nombre del hotel es obligatorio.');
+      valido = false;
+    } else if (nombre.length < 3) {
+      setState(() => _nombreError = 'El nombre debe tener al menos 3 caracteres.');
+      valido = false;
+    } else if (nombre.length > 120) {
+      setState(() => _nombreError = 'El nombre no puede superar los 120 caracteres.');
+      valido = false;
+    } else if (!RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]').hasMatch(nombre)) {
+      setState(() => _nombreError = 'El nombre debe contener al menos una letra.');
+      valido = false;
     }
+
+    num? pMin;
+    final minStr = _precioDesdeController.text.trim();
+    if (minStr.isNotEmpty) {
+      pMin = num.tryParse(minStr);
+      if (pMin == null || pMin < 0) {
+        setState(() => _precioMinError = 'El precio debe ser mayor o igual a 0.');
+        valido = false;
+      }
+    }
+
+    num? pMax;
+    final maxStr = _precioHastaController.text.trim();
+    if (maxStr.isNotEmpty) {
+      pMax = num.tryParse(maxStr);
+      if (pMax == null || pMax < 0) {
+        setState(() => _precioMaxError = 'El precio debe ser mayor o igual a 0.');
+        valido = false;
+      }
+    }
+
+    if (pMin != null && pMax != null && pMax < pMin) {
+      setState(() => _precioMaxError = 'El precio hasta no puede ser menor que el precio desde.');
+      valido = false;
+    }
+
+    if (!valido) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor, corrige los errores en el formulario.'),
+          backgroundColor: Color(0xFFDC2626),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+
+    return valido;
+  }
+
+  Future<void> _guardarCambios() async {
+    if (!_validarFormulario()) return;
+
+    final nombre = _nombreController.text.trim();
 
     final pMin = num.tryParse(_precioDesdeController.text.trim()) ?? 180;
     final pMax = num.tryParse(_precioHastaController.text.trim()) ?? 250;
@@ -364,28 +426,90 @@ class _EditHotelScreenState extends State<EditHotelScreen> {
     );
   }
 
-  Widget _buildNombreField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildLabel(String label, {bool isRequired = false, bool isOptional = false}) {
+    return Row(
       children: [
-        const Text(
-          'Nombre del hotel',
-          style: TextStyle(
+        Text(
+          label,
+          style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 14,
             color: Color(0xFF1F2937),
           ),
         ),
-        const SizedBox(height: 8),
+        if (isRequired) ...[
+          const SizedBox(width: 4),
+          const Text(
+            '*',
+            style: TextStyle(
+              color: Color(0xFFDC2626),
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+        if (isOptional) ...[
+          const SizedBox(width: 6),
+          const Text(
+            '(Opcional)',
+            style: TextStyle(
+              color: Color(0xFF9CA3AF),
+              fontSize: 12,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildInputContainer({
+    required Widget child,
+    String? errorText,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(
+              color: errorText != null ? const Color(0xFFDC2626) : Colors.grey.shade300,
+              width: errorText != null ? 1.5 : 1.0,
+            ),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 14),
+          child: child,
+        ),
+        if (errorText != null) ...[
+          const SizedBox(height: 6),
+          Text(
+            errorText,
+            style: const TextStyle(
+              color: Color(0xFFDC2626),
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildNombreField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildLabel('Nombre del hotel', isRequired: true),
+        const SizedBox(height: 8),
+        _buildInputContainer(
+          errorText: _nombreError,
           child: TextField(
             controller: _nombreController,
+            onChanged: (_) {
+              if (_nombreError != null) setState(() => _nombreError = null);
+            },
             style: const TextStyle(fontSize: 15, color: Color(0xFF1F2937)),
             decoration: const InputDecoration(
               border: InputBorder.none,
@@ -401,14 +525,7 @@ class _EditHotelScreenState extends State<EditHotelScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Tipo',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-            color: Color(0xFF1F2937),
-          ),
-        ),
+        _buildLabel('Tipo', isRequired: true),
         const SizedBox(height: 10),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
@@ -450,14 +567,7 @@ class _EditHotelScreenState extends State<EditHotelScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Descripción',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-            color: Color(0xFF1F2937),
-          ),
-        ),
+        _buildLabel('Descripción', isOptional: true),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
@@ -483,31 +593,23 @@ class _EditHotelScreenState extends State<EditHotelScreen> {
 
   Widget _buildPreciosRow() {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Precio desde
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Precio desde (Bs/noche)',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                  color: Color(0xFF1F2937),
-                ),
-              ),
+              _buildLabel('Precio desde (Bs)', isOptional: true),
               const SizedBox(height: 8),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade300),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 14),
+              _buildInputContainer(
+                errorText: _precioMinError,
                 child: TextField(
                   controller: _precioDesdeController,
                   keyboardType: TextInputType.number,
+                  onChanged: (_) {
+                    if (_precioMinError != null) setState(() => _precioMinError = null);
+                  },
                   style: const TextStyle(fontSize: 15, color: Color(0xFF1F2937)),
                   decoration: const InputDecoration(
                     border: InputBorder.none,
@@ -525,25 +627,16 @@ class _EditHotelScreenState extends State<EditHotelScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Precio hasta (Bs/noche)',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                  color: Color(0xFF1F2937),
-                ),
-              ),
+              _buildLabel('Precio hasta (Bs)', isOptional: true),
               const SizedBox(height: 8),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade300),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 14),
+              _buildInputContainer(
+                errorText: _precioMaxError,
                 child: TextField(
                   controller: _precioHastaController,
                   keyboardType: TextInputType.number,
+                  onChanged: (_) {
+                    if (_precioMaxError != null) setState(() => _precioMaxError = null);
+                  },
                   style: const TextStyle(fontSize: 15, color: Color(0xFF1F2937)),
                   decoration: const InputDecoration(
                     border: InputBorder.none,
@@ -562,14 +655,7 @@ class _EditHotelScreenState extends State<EditHotelScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Amenidades',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-            color: Color(0xFF1F2937),
-          ),
-        ),
+        _buildLabel('Amenidades', isOptional: true),
         const SizedBox(height: 10),
         Wrap(
           spacing: 8,
@@ -649,14 +735,7 @@ class _EditHotelScreenState extends State<EditHotelScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Contacto',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-            color: Color(0xFF1F2937),
-          ),
-        ),
+        _buildLabel('Contacto', isOptional: true),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
@@ -691,14 +770,7 @@ class _EditHotelScreenState extends State<EditHotelScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Calificación promedio',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-            color: Color(0xFF1F2937),
-          ),
-        ),
+        _buildLabel('Calificación promedio', isOptional: true),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -749,14 +821,7 @@ class _EditHotelScreenState extends State<EditHotelScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'Ubicación',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-                color: Color(0xFF1F2937),
-              ),
-            ),
+            _buildLabel('Ubicación interactiva', isOptional: true),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(

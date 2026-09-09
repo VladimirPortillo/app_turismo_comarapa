@@ -37,6 +37,9 @@ class _EditRestaurantScreenState extends State<EditRestaurantScreen> {
   bool _isSaving = false;
   List<String> _imagenes = [];
 
+  String? _nombreError;
+  String? _precioError;
+
   @override
   void initState() {
     super.initState();
@@ -153,14 +156,56 @@ class _EditRestaurantScreenState extends State<EditRestaurantScreen> {
     );
   }
 
-  Future<void> _guardarCambios() async {
+  bool _validarFormulario() {
+    setState(() {
+      _nombreError = null;
+      _precioError = null;
+    });
+
     final nombre = _nombreController.text.trim();
+    bool valido = true;
+
     if (nombre.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('El nombre del restaurante no puede estar vacío.')),
-      );
-      return;
+      setState(() => _nombreError = 'El nombre del restaurante es obligatorio.');
+      valido = false;
+    } else if (nombre.length < 3) {
+      setState(() => _nombreError = 'El nombre debe tener al menos 3 caracteres.');
+      valido = false;
+    } else if (nombre.length > 120) {
+      setState(() => _nombreError = 'El nombre no puede superar los 120 caracteres.');
+      valido = false;
+    } else if (!RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]').hasMatch(nombre)) {
+      setState(() => _nombreError = 'El nombre debe contener al menos una letra.');
+      valido = false;
     }
+
+    final pStr = _precioRefController.text.trim();
+    if (pStr.isNotEmpty) {
+      final cleaned = pStr.replaceAll(RegExp(r'[^0-9.]'), '');
+      final pVal = num.tryParse(cleaned);
+      if (cleaned.isNotEmpty && (pVal == null || pVal < 0)) {
+        setState(() => _precioError = 'El precio debe ser mayor o igual a 0.');
+        valido = false;
+      }
+    }
+
+    if (!valido) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor, corrige los errores en el formulario.'),
+          backgroundColor: Color(0xFFDC2626),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+
+    return valido;
+  }
+
+  Future<void> _guardarCambios() async {
+    if (!_validarFormulario()) return;
+
+    final nombre = _nombreController.text.trim();
 
     setState(() => _isSaving = true);
 
@@ -334,28 +379,90 @@ class _EditRestaurantScreenState extends State<EditRestaurantScreen> {
     );
   }
 
-  Widget _buildNombreField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildLabel(String label, {bool isRequired = false, bool isOptional = false}) {
+    return Row(
       children: [
-        const Text(
-          'Nombre del restaurante',
-          style: TextStyle(
+        Text(
+          label,
+          style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 14,
             color: Color(0xFF1F2937),
           ),
         ),
-        const SizedBox(height: 8),
+        if (isRequired) ...[
+          const SizedBox(width: 4),
+          const Text(
+            '*',
+            style: TextStyle(
+              color: Color(0xFFDC2626),
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+        if (isOptional) ...[
+          const SizedBox(width: 6),
+          const Text(
+            '(Opcional)',
+            style: TextStyle(
+              color: Color(0xFF9CA3AF),
+              fontSize: 12,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildInputContainer({
+    required Widget child,
+    String? errorText,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(
+              color: errorText != null ? const Color(0xFFDC2626) : Colors.grey.shade300,
+              width: errorText != null ? 1.5 : 1.0,
+            ),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 14),
+          child: child,
+        ),
+        if (errorText != null) ...[
+          const SizedBox(height: 6),
+          Text(
+            errorText,
+            style: const TextStyle(
+              color: Color(0xFFDC2626),
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildNombreField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildLabel('Nombre del restaurante', isRequired: true),
+        const SizedBox(height: 8),
+        _buildInputContainer(
+          errorText: _nombreError,
           child: TextField(
             controller: _nombreController,
+            onChanged: (_) {
+              if (_nombreError != null) setState(() => _nombreError = null);
+            },
             style: const TextStyle(fontSize: 15, color: Color(0xFF1F2937)),
             decoration: const InputDecoration(
               border: InputBorder.none,
@@ -371,14 +478,7 @@ class _EditRestaurantScreenState extends State<EditRestaurantScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Tipo de comida',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-            color: Color(0xFF1F2937),
-          ),
-        ),
+        _buildLabel('Tipo de comida', isRequired: true),
         const SizedBox(height: 10),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
@@ -443,14 +543,7 @@ class _EditRestaurantScreenState extends State<EditRestaurantScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Descripción',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-            color: Color(0xFF1F2937),
-          ),
-        ),
+        _buildLabel('Descripción', isOptional: true),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
@@ -476,20 +569,14 @@ class _EditRestaurantScreenState extends State<EditRestaurantScreen> {
 
   Widget _buildHorarioPrecioRow() {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Horario de atención
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Horario de atención',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13.5,
-                  color: Color(0xFF1F2937),
-                ),
-              ),
+              _buildLabel('Horario de atención', isOptional: true),
               const SizedBox(height: 8),
               Container(
                 decoration: BoxDecoration(
@@ -517,24 +604,16 @@ class _EditRestaurantScreenState extends State<EditRestaurantScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Precio referencial',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13.5,
-                  color: Color(0xFF1F2937),
-                ),
-              ),
+              _buildLabel('Precio ref. (Bs)', isOptional: true),
               const SizedBox(height: 8),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade300),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 14),
+              _buildInputContainer(
+                errorText: _precioError,
                 child: TextField(
                   controller: _precioRefController,
+                  keyboardType: TextInputType.number,
+                  onChanged: (_) {
+                    if (_precioError != null) setState(() => _precioError = null);
+                  },
                   style: const TextStyle(fontSize: 14.5, color: Color(0xFF1F2937)),
                   decoration: const InputDecoration(
                     border: InputBorder.none,
@@ -553,14 +632,7 @@ class _EditRestaurantScreenState extends State<EditRestaurantScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Contacto',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-            color: Color(0xFF1F2937),
-          ),
-        ),
+        _buildLabel('Contacto', isOptional: true),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
@@ -595,14 +667,7 @@ class _EditRestaurantScreenState extends State<EditRestaurantScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Calificación promedio',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-            color: Color(0xFF1F2937),
-          ),
-        ),
+        _buildLabel('Calificación promedio', isOptional: true),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -653,14 +718,7 @@ class _EditRestaurantScreenState extends State<EditRestaurantScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'Ubicación',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-                color: Color(0xFF1F2937),
-              ),
-            ),
+            _buildLabel('Ubicación interactiva', isOptional: true),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(

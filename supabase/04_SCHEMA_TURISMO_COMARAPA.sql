@@ -3,11 +3,9 @@
 -- Proyecto: App de turismo + panel de administración
 -- Motor: PostgreSQL (Supabase) · Ejecutar completo en SQL Editor
 --
--- Nota sobre tu script anterior ("registros_demo"): es una tabla
--- de práctica genérica, no forma parte del modelo de Comarapa.
--- Puedes conservarla sin problema (no choca con nada de aquí) o
--- borrarla descomentando la siguiente línea:
--- drop table if exists public.registros_demo cascade;
+-- "registros_demo" era una tabla de práctica genérica de una
+-- sesión anterior, ajena al modelo de Comarapa: se elimina aquí.
+drop table if exists public.registros_demo cascade;
 -- ============================================================
 
 
