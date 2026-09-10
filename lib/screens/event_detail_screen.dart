@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 
@@ -23,7 +22,6 @@ class EventDetailScreen extends StatefulWidget {
 class _EventDetailScreenState extends State<EventDetailScreen> {
   late final PageController _pageController;
   int _currentPage = 0;
-  bool _isFavorite = false;
 
   double _promedioResenas = 0;
   int _totalResenas = 0;
@@ -58,7 +56,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     if (cat != null && cat.trim().isNotEmpty) {
       return cat.toUpperCase();
     }
-    return 'FERIA TRADICIONAL';
+    return 'EVENTO';
   }
 
   String get _fechasRangoTexto {
@@ -70,8 +68,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     ];
     final mesStr = (inicio.month >= 1 && inicio.month <= 12) ? meses[inicio.month - 1] : '';
 
-    if (fin != null && (fin.day != inicio.day || fin.month != inicio.month)) {
-      if (inicio.month == fin.month) {
+    if (fin != null && (fin.day != inicio.day || fin.month != inicio.month || fin.year != inicio.year)) {
+      if (inicio.month == fin.month && inicio.year == fin.year) {
         return 'Del ${inicio.day} al ${fin.day} de $mesStr';
       } else {
         final mesFinStr = (fin.month >= 1 && fin.month <= 12) ? meses[fin.month - 1] : '';
@@ -82,187 +80,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   }
 
   String get _periodicidadTexto {
-    final per = widget.evento.periodicidad?.toLowerCase() ?? 'anual';
-    return (per == 'único' || per == 'unico') ? 'Único' : 'Anual';
-  }
-
-  String get _descripcionTexto {
-    final desc = widget.evento.descripcion;
-    if (desc.trim().isNotEmpty) {
-      return desc;
+    final per = widget.evento.periodicidad?.trim();
+    if (per != null && per.isNotEmpty) {
+      return per[0].toUpperCase() + per.substring(1).toLowerCase();
     }
-    return 'Una de las festividades más representativas de Comarapa. Reúne a productores, '
-        'comunidades campesinas, artesanos y visitantes en un ambiente de alegría, música '
-        'folclórica tradicional, danzas típicas y exposición de los mejores frutos del valle.';
-  }
-
-  List<String> get _programaDestacado {
-    final name = widget.evento.nombre.toLowerCase();
-    if (name.contains('durazno')) {
-      return [
-        'Inauguración oficial y bendición de los primeros frutos de la cosecha.',
-        'Exposición y juzgamiento de las mejores variedades de durazno comarapeño.',
-        'Elección y coronación de la Reina Nacional del Durazno.',
-        'Feria gastronómica: repostería, licores, mermeladas y platos típicos.',
-        'Gran serenata folclórica con artistas nacionales y comarapeños.',
-      ];
-    } else if (name.contains('candelaria') || name.contains('patronal')) {
-      return [
-        'Misa solemne de fiesta en el templo parroquial de Comarapa.',
-        'Procesión con la venerada imagen por las calles históricas del municipio.',
-        'Entrada folclórica con fraternidades autóctonas y danzas tradicionales.',
-        'Fuegos artificiales, verbena popular y juegos tradicionales vallunos.',
-      ];
-    } else if (name.contains('maíz') || name.contains('maiz')) {
-      return [
-        'Demostración de molienda tradicional y derivados del maíz.',
-        'Degustación de chicha dulce, humintas y api con pastel.',
-        'Concurso al choclo y mazorca de mayor tamaño y calidad.',
-        'Festival de coplas y música tradicional de los valles.',
-      ];
-    }
-    return [
-      'Acto inaugural y bienvenida a delegaciones y turistas.',
-      'Exposición artesanal y de productos típicos del municipio.',
-      'Presentaciones culturales, danzas y música folclórica en vivo.',
-      'Clausura y premiación a los expositores destacados.',
-    ];
-  }
-
-  void _onShare() {
-    Clipboard.setData(ClipboardData(
-      text: '${widget.evento.nombre} (${_fechasRangoTexto}) - Eventos Comarapa Turismo',
-    ));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Enlace de "${widget.evento.nombre}" copiado al portapapeles'),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-
-  void _showCalendarModal(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 30),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Detalles de Asistencia',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF0C3D28),
-                  fontFamily: 'serif',
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Información importante para asistir a "${widget.evento.nombre}":',
-                style: TextStyle(fontSize: 13.5, color: Colors.grey.shade600),
-              ),
-              const SizedBox(height: 16),
-
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF0F7F4),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFFC7E2D6)),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF26674B),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.event_available, color: Colors.white, size: 24),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _fechasRangoTexto,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14.5,
-                              color: Color(0xFF0C3D28),
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          const Text(
-                            'Entrada libre y gratuita para todo público',
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              color: Color(0xFF16A34A),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Recordatorio guardado para "${widget.evento.nombre}". ¡Te esperamos en Comarapa!'),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.alarm_on, size: 18),
-                  label: const Text(
-                    'Guardar recordatorio de evento',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF26674B),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+    return '';
   }
 
   void _openFullMap(BuildContext context) {
@@ -391,48 +213,17 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           ),
 
           // Barra superior con botones circulares
+          // Barra superior de navegación con botón volver
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   // Botón Volver
                   _buildCircleButton(
                     icon: Icons.chevron_left,
                     iconSize: 26,
                     onTap: () => Navigator.of(context).pop(),
-                  ),
-
-                  // Acciones: Favorito y Compartir
-                  Row(
-                    children: [
-                      _buildCircleButton(
-                        icon: _isFavorite ? Icons.favorite : Icons.favorite_border,
-                        iconColor: _isFavorite ? const Color(0xFFE53935) : Colors.black87,
-                        iconSize: 22,
-                        onTap: () {
-                          setState(() => _isFavorite = !_isFavorite);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                _isFavorite
-                                    ? 'Añadido a tus eventos guardados'
-                                    : 'Eliminado de tus eventos guardados',
-                              ),
-                              behavior: SnackBarBehavior.floating,
-                              duration: const Duration(seconds: 1),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(width: 12),
-                      _buildCircleButton(
-                        icon: Icons.share_outlined,
-                        iconSize: 20,
-                        onTap: _onShare,
-                      ),
-                    ],
                   ),
                 ],
               ),
@@ -521,6 +312,12 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   }
 
   Widget _buildContentCard() {
+    final tieneDescripcion = widget.evento.descripcion.trim().isNotEmpty;
+    final tieneUbicacion = widget.evento.latitud != null &&
+        widget.evento.longitud != null &&
+        widget.evento.latitud != 0 &&
+        widget.evento.longitud != 0;
+
     return Transform.translate(
       offset: const Offset(0, -20),
       child: Container(
@@ -577,22 +374,24 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     color: Color(0xFF26674B),
                   ),
                 ),
-                const SizedBox(width: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF3F4F6),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    _periodicidadTexto,
-                    style: const TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF4B5563),
+                if (_periodicidadTexto.isNotEmpty) ...[
+                  const SizedBox(width: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3F4F6),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      _periodicidadTexto,
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF4B5563),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ],
             ),
             const SizedBox(height: 10),
@@ -623,46 +422,38 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Fila de 4 tarjetas de métricas rápidas
+            // Fila de tarjetas de métricas rápidas (solo datos reales de la BD)
             _buildQuickInfoGrid(),
             const SizedBox(height: 28),
 
-            // Sección: Descripción
-            const Text(
-              'Sobre la festividad',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF143525),
-                fontFamily: 'serif',
+            // Sección: Descripción (solo si existe en la BD)
+            if (tieneDescripcion) ...[
+              const Text(
+                'Sobre el evento',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF143525),
+                  fontFamily: 'serif',
+                ),
               ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              _descripcionTexto,
-              style: const TextStyle(
-                fontSize: 14.5,
-                height: 1.6,
-                color: Color(0xFF4B5563),
+              const SizedBox(height: 10),
+              Text(
+                widget.evento.descripcion.trim(),
+                style: const TextStyle(
+                  fontSize: 14.5,
+                  height: 1.6,
+                  color: Color(0xFF4B5563),
+                ),
               ),
-            ),
-            const SizedBox(height: 28),
+              const SizedBox(height: 28),
+            ],
 
-            // Sección: Programa Destacado
-            _buildProgramaSection(),
-            const SizedBox(height: 28),
-
-            // Sección: Organización y Contacto
-            _buildComiteCard(),
-            const SizedBox(height: 28),
-
-            // Sección: Ubicación & Mapa
-            _buildUbicacionSection(),
-            const SizedBox(height: 28),
-
-            // Sección: Recomendaciones para el Visitante
-            _buildRecomendacionesSection(),
-            const SizedBox(height: 28),
+            // Sección: Ubicación & Mapa (solo si tiene coordenadas en la BD)
+            if (tieneUbicacion) ...[
+              _buildUbicacionSection(),
+              const SizedBox(height: 28),
+            ],
 
             // Sección: Reseñas
             if (widget.evento.id != null)
@@ -683,47 +474,52 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   }
 
   Widget _buildQuickInfoGrid() {
+    final items = <Widget>[];
+
+    // 1. Fecha de inicio
+    items.add(_buildInfoItem(
+      icon: Icons.event_outlined,
+      title: 'INICIO',
+      value: '${widget.evento.diaFormateado} ${widget.evento.mesAbreviado}',
+    ));
+
+    // 2. Duración (si fechaFin existe)
+    if (widget.evento.fechaFin != null) {
+      final diff = widget.evento.fechaFin!.difference(widget.evento.fechaInicio).inDays + 1;
+      final duracionStr = diff > 1 ? '$diff días' : '1 día';
+      items.add(_buildInfoItem(
+        icon: Icons.date_range_outlined,
+        title: 'DURACIÓN',
+        value: duracionStr,
+      ));
+    }
+
+    // 3. Periodicidad
+    if (_periodicidadTexto.isNotEmpty) {
+      items.add(_buildInfoItem(
+        icon: Icons.repeat_outlined,
+        title: 'FRECUENCIA',
+        value: _periodicidadTexto,
+      ));
+    }
+
+    // 4. Tipo / Categoría
+    if (widget.evento.categoriaNombre != null && widget.evento.categoriaNombre!.trim().isNotEmpty) {
+      items.add(_buildInfoItem(
+        icon: Icons.category_outlined,
+        title: 'TIPO',
+        value: widget.evento.categoriaNombre!.trim(),
+      ));
+    }
+
+    if (items.isEmpty) return const SizedBox.shrink();
+
     return Row(
       children: [
-        // 1. Fecha corta
-        Expanded(
-          child: _buildInfoItem(
-            icon: Icons.event_outlined,
-            title: 'FECHA',
-            value: '${widget.evento.diaFormateado} ${widget.evento.mesAbreviado}',
-          ),
-        ),
-        const SizedBox(width: 8),
-
-        // 2. Frecuencia
-        Expanded(
-          child: _buildInfoItem(
-            icon: Icons.repeat_outlined,
-            title: 'FRECUENCIA',
-            value: _periodicidadTexto,
-          ),
-        ),
-        const SizedBox(width: 8),
-
-        // 3. Lugar
-        Expanded(
-          child: _buildInfoItem(
-            icon: Icons.place_outlined,
-            title: 'LUGAR',
-            value: 'Comarapa',
-          ),
-        ),
-        const SizedBox(width: 8),
-
-        // 4. Acceso
-        Expanded(
-          child: _buildInfoItem(
-            icon: Icons.confirmation_number_outlined,
-            title: 'ACCESO',
-            value: 'Gratuito',
-            valueColor: const Color(0xFF16A34A),
-          ),
-        ),
+        for (int i = 0; i < items.length; i++) ...[
+          if (i > 0) const SizedBox(width: 8),
+          Expanded(child: items[i]),
+        ],
       ],
     );
   }
@@ -772,137 +568,6 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               fontWeight: FontWeight.bold,
               color: valueColor ?? const Color(0xFF1F2937),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProgramaSection() {
-    final actividades = _programaDestacado;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Programa y actividades destacadas',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF143525),
-            fontFamily: 'serif',
-          ),
-        ),
-        const SizedBox(height: 12),
-        ...actividades.asMap().entries.map((entry) {
-          final idx = entry.key + 1;
-          final act = entry.value;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 22,
-                  height: 22,
-                  margin: const EdgeInsets.only(top: 2),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFE2ECE7),
-                    shape: BoxShape.circle,
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    '$idx',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1B5A3F),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    act,
-                    style: const TextStyle(
-                      fontSize: 13.5,
-                      color: Color(0xFF4B5563),
-                      height: 1.35,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        }),
-      ],
-    );
-  }
-
-  Widget _buildComiteCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: const Color(0xFFE2ECE7),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: const Icon(
-              Icons.account_balance_outlined,
-              color: Color(0xFF1B5A3F),
-              size: 26,
-            ),
-          ),
-          const SizedBox(width: 14),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'ORGANIZACIÓN Y COORDINACIÓN',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF6B7280),
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'Gobierno Municipal de Comarapa',
-                  style: TextStyle(
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1F2937),
-                  ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'Dirección de Turismo y Cultura',
-                  style: TextStyle(fontSize: 12, color: Color(0xFF16A34A)),
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.info_outline, color: Color(0xFF26674B)),
-            onPressed: () => _showCalendarModal(context),
           ),
         ],
       ),
@@ -993,66 +658,12 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     );
   }
 
-  Widget _buildRecomendacionesSection() {
-    const tips = [
-      'Llegar con anticipación a las actividades principales para asegurar buena ubicación.',
-      'Llevar dinero en efectivo para adquirir artesanías, frutas y platillos típicos.',
-      'Portar sombrero o gorra durante las actividades diurnas y abrigo para las veladas nocturnas.',
-      'Seguir las indicaciones del personal de orden y cuidar los espacios públicos.',
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Recomendaciones para el visitante',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF143525),
-            fontFamily: 'serif',
-          ),
-        ),
-        const SizedBox(height: 12),
-        ...tips.map((tip) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  margin: const EdgeInsets.only(top: 2),
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFE2ECE7),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.check,
-                    size: 12,
-                    color: Color(0xFF1B5A3F),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    tip,
-                    style: const TextStyle(
-                      fontSize: 13.5,
-                      color: Color(0xFF4B5563),
-                      height: 1.35,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        }),
-      ],
-    );
-  }
-
   Widget _buildBottomBar(BuildContext context) {
+    final tieneUbicacion = widget.evento.latitud != null &&
+        widget.evento.longitud != null &&
+        widget.evento.latitud != 0 &&
+        widget.evento.longitud != 0;
+
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
       decoration: BoxDecoration(
@@ -1066,60 +677,68 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           ),
         ],
       ),
-      child: Row(
-        children: [
-          // Acceso
-          const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'ACCESO AL EVENTO',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF9CA3AF),
-                  letterSpacing: 0.5,
-                ),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            // Fecha del evento
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'FECHA DEL EVENTO',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF9CA3AF),
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _fechasRangoTexto,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF143525),
+                    ),
+                  ),
+                ],
               ),
-              SizedBox(height: 2),
-              Text(
-                'Entrada Libre',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF143525),
+            ),
+
+            // Botón de acción: Ver en el mapa si tiene ubicación
+            if (tieneUbicacion) ...[
+              const SizedBox(width: 14),
+              SizedBox(
+                height: 48,
+                child: ElevatedButton.icon(
+                  onPressed: () => _openFullMap(context),
+                  icon: const Icon(Icons.map_outlined, size: 18),
+                  label: const Text(
+                    'Ver en el mapa',
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF26674B),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
                 ),
               ),
             ],
-          ),
-          const SizedBox(width: 16),
-
-          // Botón principal
-          Expanded(
-            child: SizedBox(
-              height: 48,
-              child: ElevatedButton(
-                onPressed: () => _showCalendarModal(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF26674B),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-                child: const Text(
-                  'Recordatorio / Asistir',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

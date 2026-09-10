@@ -3,9 +3,12 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 import 'package:provider/provider.dart';
 
+import '../models/categoria.dart';
 import '../models/evento.dart';
+import '../repositories/categoria_repository.dart';
 import '../repositories/evento_repository.dart';
 import '../widgets/imagen_picker_field.dart';
+import '../widgets/fullscreen_location_picker.dart';
 
 class EditEventScreen extends StatefulWidget {
   final Evento? evento;
@@ -24,8 +27,9 @@ class _EditEventScreenState extends State<EditEventScreen> {
   late final TextEditingController _descripcionController;
   late final TextEditingController _direccionController;
 
-  late String _tipoSeleccionado;
-  final List<String> _tiposDisponibles = ['Feria', 'Fiesta patronal', 'Cultural'];
+  List<Categoria> _categorias = [];
+  String? _categoriaId;
+  bool _cargandoCategorias = true;
 
   late DateTime _fechaInicio;
   late DateTime _fechaFin;
@@ -35,6 +39,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
 
   late bool _isActive;
   late LatLng _coordenadas;
+  late final MapController _mapController;
   bool _isSaving = false;
   List<String> _imagenes = [];
 
@@ -58,10 +63,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
       text: 'Campo ferial, Comarapa',
     );
 
-    _tipoSeleccionado = ev?.categoriaNombre ?? 'Feria';
-    if (!_tiposDisponibles.contains(_tipoSeleccionado)) {
-      _tiposDisponibles.insert(0, _tipoSeleccionado);
-    }
+    _categoriaId = ev?.categoriaId;
 
     _fechaInicio = ev?.fechaInicio ?? DateTime(2027, 1, 15);
     _fechaFin = ev?.fechaFin ?? DateTime(2027, 1, 18);
@@ -78,9 +80,29 @@ class _EditEventScreenState extends State<EditEventScreen> {
 
     _imagenes = List.of(ev?.imagenes ?? const <String>[]);
 
+    _mapController = MapController();
     _nombreController.addListener(() {
       setState(() {});
     });
+    _cargarCategorias();
+  }
+
+  Future<void> _cargarCategorias() async {
+    try {
+      final repo = context.read<CategoriaRepository>();
+      final categorias = await repo.fetchByEntidad('evento');
+      if (!mounted) return;
+      setState(() {
+        _categorias = categorias;
+        _cargandoCategorias = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _cargandoCategorias = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudieron cargar las categorías: $error')),
+      );
+    }
   }
 
   @override
@@ -88,6 +110,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
     _nombreController.dispose();
     _descripcionController.dispose();
     _direccionController.dispose();
+    _mapController.dispose();
     super.dispose();
   }
 
@@ -166,17 +189,25 @@ class _EditEventScreenState extends State<EditEventScreen> {
               backgroundColor: const Color(0xFF26674B),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            onPressed: () {
+            onPressed: () async {
               final text = controller.text.trim();
-              if (text.isNotEmpty) {
-                setState(() {
-                  if (!_tiposDisponibles.contains(text)) {
-                    _tiposDisponibles.add(text);
-                  }
-                  _tipoSeleccionado = text;
-                });
-              }
               Navigator.pop(ctx);
+              if (text.isEmpty) return;
+
+              try {
+                final repo = context.read<CategoriaRepository>();
+                final categoria = await repo.create(entidad: 'evento', nombre: text);
+                if (!mounted) return;
+                setState(() {
+                  _categorias = [..._categorias, categoria];
+                  _categoriaId = categoria.id;
+                });
+              } catch (error) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('No se pudo crear la categoría: $error')),
+                );
+              }
             },
             child: const Text('Agregar'),
           ),
@@ -213,6 +244,16 @@ class _EditEventScreenState extends State<EditEventScreen> {
       valido = false;
     }
 
+    if (_categoriaId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor, selecciona un tipo de evento.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      valido = false;
+    }
+
     if (!valido) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -240,7 +281,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
               ))
           .copyWith(
         nombre: nombre,
-        categoriaNombre: _tipoSeleccionado,
+        categoriaId: _categoriaId,
         descripcion: _descripcionController.text.trim(),
         imagenes: _imagenes,
         fechaInicio: _fechaInicio,
@@ -493,6 +534,17 @@ class _EditEventScreenState extends State<EditEventScreen> {
   }
 
   Widget _buildTipoSelector() {
+    if (_cargandoCategorias) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 8),
+        child: SizedBox(
+          height: 20,
+          width: 20,
+          child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF26674B)),
+        ),
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -502,12 +554,12 @@ class _EditEventScreenState extends State<EditEventScreen> {
           scrollDirection: Axis.horizontal,
           child: Row(
             children: [
-              ..._tiposDisponibles.map((tipo) {
-                final isSelected = _tipoSeleccionado == tipo;
+              ..._categorias.map((cat) {
+                final isSelected = _categoriaId == cat.id;
                 return Padding(
                   padding: const EdgeInsets.only(right: 10),
                   child: GestureDetector(
-                    onTap: () => setState(() => _tipoSeleccionado = tipo),
+                    onTap: () => setState(() => _categoriaId = cat.id),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8.5),
                       decoration: BoxDecoration(
@@ -518,7 +570,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
                         ),
                       ),
                       child: Text(
-                        tipo,
+                        cat.nombre,
                         style: TextStyle(
                           color: isSelected ? Colors.white : const Color(0xFF374151),
                           fontWeight: FontWeight.bold,
@@ -714,6 +766,18 @@ class _EditEventScreenState extends State<EditEventScreen> {
     );
   }
 
+  Future<void> _abrirMapaCompleto() async {
+    final nuevaUbicacion = await FullscreenLocationPicker.pick(
+      context: context,
+      initialLocation: _coordenadas,
+      title: 'Ubicación del evento',
+    );
+    if (nuevaUbicacion != null && mounted) {
+      setState(() => _coordenadas = nuevaUbicacion);
+      _mapController.move(nuevaUbicacion, 14.5);
+    }
+  }
+
   Widget _buildUbicacionSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -722,75 +786,102 @@ class _EditEventScreenState extends State<EditEventScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             _buildLabel('Ubicación interactiva', isOptional: true),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE2F0E8),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.touch_app, size: 13, color: Color(0xFF26674B)),
-                  SizedBox(width: 4),
-                  Text(
-                    'Toca para reubicar pin',
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF26674B),
-                    ),
-                  ),
-                ],
+            TextButton.icon(
+              onPressed: _abrirMapaCompleto,
+              icon: const Icon(Icons.open_in_full_rounded, size: 15, color: Color(0xFF26674B)),
+              label: const Text(
+                'Ampliar mapa',
+                style: TextStyle(
+                  color: Color(0xFF26674B),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12.5,
+                ),
               ),
             ),
           ],
         ),
         const SizedBox(height: 8),
         Container(
-          height: 110,
+          height: 130,
           decoration: BoxDecoration(
             color: const Color(0xFFE5EFEA),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: Colors.grey.shade300),
           ),
           clipBehavior: Clip.antiAlias,
-          child: FlutterMap(
-            options: MapOptions(
-              initialCenter: _coordenadas,
-              initialZoom: 14.5,
-              onTap: (tapPosition, point) {
-                setState(() => _coordenadas = point);
-                ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Ubicación fijada: ${point.latitude.toStringAsFixed(4)}, ${point.longitude.toStringAsFixed(4)}',
-                    ),
-                    duration: const Duration(seconds: 2),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              },
-            ),
+          child: Stack(
             children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'bo.edu.uajms.proyecto_final_360',
-              ),
-              MarkerLayer(
-                markers: [
-                  Marker(
-                    point: _coordenadas,
-                    width: 32,
-                    height: 32,
-                    child: const Icon(
-                      Icons.location_on,
-                      color: Color(0xFF26674B),
-                      size: 32,
-                    ),
+              FlutterMap(
+                mapController: _mapController,
+                options: MapOptions(
+                  initialCenter: _coordenadas,
+                  initialZoom: 14.5,
+                  onTap: (tapPosition, point) {
+                    setState(() => _coordenadas = point);
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Ubicación fijada: ${point.latitude.toStringAsFixed(4)}, ${point.longitude.toStringAsFixed(4)}',
+                        ),
+                        duration: const Duration(seconds: 2),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  },
+                ),
+                children: [
+                  TileLayer(
+                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'bo.edu.uajms.proyecto_final_360',
+                  ),
+                  MarkerLayer(
+                    markers: [
+                      Marker(
+                        point: _coordenadas,
+                        width: 32,
+                        height: 32,
+                        child: const Icon(
+                          Icons.location_on,
+                          color: Color(0xFF26674B),
+                          size: 32,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
+              ),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Material(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  elevation: 2,
+                  shadowColor: Colors.black38,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: _abrirMapaCompleto,
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.fullscreen, size: 16, color: Color(0xFF26674B)),
+                          SizedBox(width: 3),
+                          Text(
+                            'Ampliar',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF26674B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ],
           ),

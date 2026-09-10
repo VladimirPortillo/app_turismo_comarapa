@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' hide Path;
+import 'package:provider/provider.dart';
 
+import '../models/gastronomia_item.dart';
 import '../models/restaurante.dart';
+import '../repositories/gastronomia_repository.dart';
 import '../widgets/full_map_sheet.dart';
 import '../widgets/fullscreen_image_gallery.dart';
 import '../widgets/resenas_section.dart';
+import 'gastronomy_detail_screen.dart';
 
 class RestaurantDetailScreen extends StatefulWidget {
   final Restaurante restaurante;
@@ -23,10 +27,12 @@ class RestaurantDetailScreen extends StatefulWidget {
 class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
   late final PageController _pageController;
   int _currentPage = 0;
-  bool _isFavorite = false;
 
   double _promedioResenas = 0;
   int _totalResenas = 0;
+
+  List<GastronomiaItem> _platosVinculados = <GastronomiaItem>[];
+  bool _cargandoPlatos = false;
 
   // Coordenadas por defecto (Comarapa) si el restaurante no tiene ubicación asignada
   static const double _defaultLat = -18.0447;
@@ -36,6 +42,26 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
   void initState() {
     super.initState();
     _pageController = PageController();
+    final restauranteId = widget.restaurante.id;
+    if (restauranteId != null) {
+      _cargarPlatosVinculados(restauranteId);
+    }
+  }
+
+  Future<void> _cargarPlatosVinculados(String restauranteId) async {
+    setState(() => _cargandoPlatos = true);
+    try {
+      final repo = context.read<GastronomiaRepository>();
+      final platos = await repo.fetchByRestaurante(restauranteId);
+      if (!mounted) return;
+      setState(() {
+        _platosVinculados = platos;
+        _cargandoPlatos = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _cargandoPlatos = false);
+    }
   }
 
   @override
@@ -58,15 +84,15 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
     if (cat != null && cat.trim().isNotEmpty) {
       return cat.toUpperCase();
     }
-    return 'COMIDA TÍPICA';
+    return 'RESTAURANTE';
   }
 
   String get _horarioTexto {
     final h = widget.restaurante.horarioAtencion;
     if (h != null && h.trim().isNotEmpty) {
-      return h;
+      return h.trim();
     }
-    return '11:30 - 21:30';
+    return '';
   }
 
   String get _preciosTexto {
@@ -74,151 +100,15 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
     if (p != null && p > 0) {
       return 'Bs ${p.toInt()} ref.';
     }
-    return 'Bs 35 - 65';
+    return '';
   }
 
   String get _contactoTexto {
     final c = widget.restaurante.contacto;
     if (c != null && c.trim().isNotEmpty) {
-      return c;
+      return c.trim();
     }
-    return '+591 3 936 1120';
-  }
-
-  String get _descripcionTexto {
-    final desc = widget.restaurante.descripcion;
-    if (desc.trim().isNotEmpty) {
-      return desc;
-    }
-    return 'Acogedor rincón culinario en el corazón de Comarapa. Ofrece lo más representativo '
-        'de la gastronomía valluna cruceña, preparado con recetas tradicionales, ingredientes '
-        'frescos cosechados en huertos locales y un esmerado ambiente de calidez familiar.';
-  }
-
-  List<Map<String, String>> get _platosEspeciales {
-    final cat = widget.restaurante.categoriaNombre?.toLowerCase() ?? '';
-    final name = widget.restaurante.nombre.toLowerCase();
-
-    if (cat.contains('café') || cat.contains('repostería') || name.contains('durazno')) {
-      return [
-        {
-          'nombre': 'Empanadas Blanqueadas con Cayote',
-          'desc': 'Masa crujiente artesanal con dulce de cayote y suave merengue comarapeño.',
-          'precio': 'Bs 6'
-        },
-        {
-          'nombre': 'Tarta Casera de Durazno Valluno',
-          'desc': 'Porción generosa de tarta horneada con duraznos frescos en almíbar natural.',
-          'precio': 'Bs 18'
-        },
-        {
-          'nombre': 'Café de Altura con Masitas Típicas',
-          'desc': 'Café recién molido acompañado de biscochos de maíz y cuñapés calientes.',
-          'precio': 'Bs 15'
-        },
-        {
-          'nombre': 'Mermelada y Licor de Durazno',
-          'desc': 'Degustación de confituras selectas y licor artesanal elaborado en el valle.',
-          'precio': 'Bs 25'
-        },
-      ];
-    } else if (cat.contains('parrilla') || name.contains('fogón') || name.contains('fogon')) {
-      return [
-        {
-          'nombre': 'Parrillada Mixta de los Valles',
-          'desc': 'Cortes jugosos de res a la leña, chorizo parrillero casero, papa y ensalada.',
-          'precio': 'Bs 65'
-        },
-        {
-          'nombre': 'Pacumutos a la Brasa',
-          'desc': 'Brochetas de lomo tierno marinadas con especias vallunas y yuca cocida.',
-          'precio': 'Bs 45'
-        },
-        {
-          'nombre': 'Costillitas de Cerdo Glaseadas',
-          'desc': 'Costillas doradas lentamente con reducción de jugo de durazno agridulce.',
-          'precio': 'Bs 50'
-        },
-        {
-          'nombre': 'Sopa Tradicional de Maní',
-          'desc': 'Entrada caliente con maní triturado en batán, trozos de res y papas pai.',
-          'precio': 'Bs 25'
-        },
-      ];
-    } else if (cat.contains('pizza') || name.contains('beto')) {
-      return [
-        {
-          'nombre': 'Pizza Artesanal Comarapeña',
-          'desc': 'Masa a la piedra con queso criollo fundido, jamón artesanal y orégano fresco.',
-          'precio': 'Bs 55'
-        },
-        {
-          'nombre': 'Pizza Cuatro Quesos Andinos',
-          'desc': 'Exquisita combinación de quesos de la región con borde crujiente.',
-          'precio': 'Bs 60'
-        },
-        {
-          'nombre': 'Calzone Rústico a la Leña',
-          'desc': 'Relleno de carne mechada, salsa de tomate de huerto y queso fundido.',
-          'precio': 'Bs 45'
-        },
-        {
-          'nombre': 'Focaccia con Romero y Ajo',
-          'desc': 'Pan plano italiano bañado en aceite de oliva y hierbas aromáticas.',
-          'precio': 'Bs 22'
-        },
-      ];
-    } else {
-      return [
-        {
-          'nombre': 'Picante de Pollo con Durazno',
-          'desc': 'Plato estelar: pollo cocinado en ají rojo comarapeño con duraznos dulces.',
-          'precio': 'Bs 40'
-        },
-        {
-          'nombre': 'Pique Macho Comarapeño',
-          'desc': 'Generosa porción de lomo, salchicha, papas fritas crocantes y locoto.',
-          'precio': 'Bs 55'
-        },
-        {
-          'nombre': 'Chicharrón de Cerdo al Perol',
-          'desc': 'Trozos dorados y crujientes con mote pelado, papas hervidas y llajwa.',
-          'precio': 'Bs 45'
-        },
-        {
-          'nombre': 'Sopa de Maní Tradicional',
-          'desc': 'Cremosa y reconfortante, servida con carne blanda y papitas crocantes.',
-          'precio': 'Bs 25'
-        },
-      ];
-    }
-  }
-
-  List<String> get _amenidades {
-    return [
-      'Mesas al aire libre',
-      'Wifi de cortesía',
-      'Ambiente familiar',
-      'Cobro con QR / Efectivo',
-      'Opciones para llevar',
-      'Menú infantil',
-      'Parqueo cercano',
-    ];
-  }
-
-  void _onShare() {
-    Clipboard.setData(ClipboardData(
-      text: '${widget.restaurante.nombre} - Restaurante en Comarapa\n'
-          'Ubicación: ${widget.restaurante.direccionReferencia ?? "Comarapa, Bolivia"}\n'
-          'Contacto: $_contactoTexto',
-    ));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Enlace y datos de "${widget.restaurante.nombre}" copiados'),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    return '';
   }
 
   void _openFullMap(BuildContext context) {
@@ -234,7 +124,9 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
           builder: (context, scrollController) {
             return FullMapSheet(
               titulo: widget.restaurante.nombre,
-              subtitulo: widget.restaurante.direccionReferencia,
+              subtitulo: widget.restaurante.direccionReferencia?.isNotEmpty == true
+                  ? widget.restaurante.direccionReferencia
+                  : 'Comarapa, Santa Cruz',
               destino: _locationPoint,
             );
           },
@@ -244,6 +136,8 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
   }
 
   void _showContactModal(BuildContext context) {
+    if (_contactoTexto.isEmpty) return;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -261,13 +155,15 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    widget.restaurante.nombre,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF0C3D28),
-                      fontFamily: 'serif',
+                  Expanded(
+                    child: Text(
+                      widget.restaurante.nombre,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0C3D28),
+                        fontFamily: 'serif',
+                      ),
                     ),
                   ),
                   IconButton(
@@ -308,19 +204,20 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                   },
                 ),
               ),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFF9EFE5),
-                    shape: BoxShape.circle,
+              if (_horarioTexto.isNotEmpty)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFF9EFE5),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.access_time, color: Color(0xFFC68B59)),
                   ),
-                  child: const Icon(Icons.access_time, color: Color(0xFFC68B59)),
+                  title: const Text('Horario habitual'),
+                  subtitle: Text(_horarioTexto),
                 ),
-                title: const Text('Horario habitual'),
-                subtitle: Text(_horarioTexto),
-              ),
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
@@ -330,13 +227,13 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                     Navigator.pop(ctx);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Listo para llamar a $_contactoTexto'),
+                        content: Text('Contacto "$_contactoTexto" copiado al portapapeles'),
                         behavior: SnackBarBehavior.floating,
                       ),
                     );
                   },
-                  icon: const Icon(Icons.call),
-                  label: const Text('Llamar ahora'),
+                  icon: const Icon(Icons.copy),
+                  label: const Text('Copiar contacto'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1B5A3F),
                     foregroundColor: Colors.white,
@@ -457,49 +354,17 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
             ),
           ),
 
-          // Barra superior de navegación con botones circulares
+          // Barra superior de navegación con botón volver
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   // Botón Volver
                   _buildCircleButton(
                     icon: Icons.chevron_left,
                     iconSize: 26,
                     onTap: () => Navigator.of(context).pop(),
-                  ),
-
-                  // Acciones: Favorito y Compartir
-                  Row(
-                    children: [
-                      _buildCircleButton(
-                        icon: _isFavorite ? Icons.favorite : Icons.favorite_border,
-                        iconColor: _isFavorite ? const Color(0xFFE53935) : Colors.black87,
-                        iconSize: 22,
-                        onTap: () {
-                          setState(() => _isFavorite = !_isFavorite);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                _isFavorite
-                                    ? 'Añadido a tus restaurantes favoritos'
-                                    : 'Eliminado de tus favoritos',
-                              ),
-                              behavior: SnackBarBehavior.floating,
-                              duration: const Duration(seconds: 1),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(width: 12),
-                      _buildCircleButton(
-                        icon: Icons.share_outlined,
-                        iconSize: 20,
-                        onTap: _onShare,
-                      ),
-                    ],
                   ),
                 ],
               ),
@@ -561,6 +426,13 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
   }
 
   Widget _buildContentCard() {
+    final tieneDescripcion = widget.restaurante.descripcion.trim().isNotEmpty;
+    final tieneUbicacion = widget.restaurante.latitud != null &&
+        widget.restaurante.longitud != null &&
+        widget.restaurante.latitud != 0 &&
+        widget.restaurante.longitud != 0;
+    final tienePlatos = _cargandoPlatos || _platosVinculados.isNotEmpty;
+
     return Transform.translate(
       offset: const Offset(0, -20),
       child: Container(
@@ -630,76 +502,75 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
             ),
             const SizedBox(height: 24),
 
-            // 3 Tarjetas de información rápida
+            // Tarjetas de información rápida (solo datos reales de la BD)
             _buildQuickInfoRow(),
             const SizedBox(height: 28),
 
-            // Sección: Descripción
-            const Text(
-              'Sobre el restaurante',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF143525),
-                fontFamily: 'serif',
+            // Sección: Descripción (solo si existe en la BD)
+            if (tieneDescripcion) ...[
+              const Text(
+                'Sobre el restaurante',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF143525),
+                  fontFamily: 'serif',
+                ),
               ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              _descripcionTexto,
-              style: const TextStyle(
-                fontSize: 15,
-                color: Color(0xFF4B5563),
-                height: 1.55,
+              const SizedBox(height: 10),
+              Text(
+                widget.restaurante.descripcion.trim(),
+                style: const TextStyle(
+                  fontSize: 15,
+                  color: Color(0xFF4B5563),
+                  height: 1.55,
+                ),
               ),
-            ),
-            const SizedBox(height: 28),
+              const SizedBox(height: 28),
+            ],
 
             // Sección: Platos y especialidades de la casa
-            _buildEspecialidadesSection(),
-            const SizedBox(height: 28),
+            if (tienePlatos) ...[
+              _buildEspecialidadesSection(),
+              const SizedBox(height: 28),
+            ],
 
-            // Sección: Servicios y amenidades
-            _buildAmenidadesSection(),
-            const SizedBox(height: 28),
-
-            // Sección: Ubicación
-            const Text(
-              'Ubicación y mapa',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF143525),
-                fontFamily: 'serif',
+            // Sección: Ubicación y mapa (solo si tiene coordenadas en la BD)
+            if (tieneUbicacion) ...[
+              const Text(
+                'Ubicación y mapa',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF143525),
+                  fontFamily: 'serif',
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-
-            // Mini mapa de preview
-            _buildMiniMap(),
-
-            if (widget.restaurante.direccionReferencia != null &&
-                widget.restaurante.direccionReferencia!.trim().isNotEmpty) ...[
               const SizedBox(height: 12),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(Icons.place_outlined, size: 18, color: Color(0xFFC68B59)),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      widget.restaurante.direccionReferencia!,
-                      style: const TextStyle(
-                        fontSize: 13.5,
-                        color: Color(0xFF4B5563),
-                        height: 1.3,
+              _buildMiniMap(),
+              if (widget.restaurante.direccionReferencia != null &&
+                  widget.restaurante.direccionReferencia!.trim().isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.place_outlined, size: 18, color: Color(0xFFC68B59)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        widget.restaurante.direccionReferencia!.trim(),
+                        style: const TextStyle(
+                          fontSize: 13.5,
+                          color: Color(0xFF4B5563),
+                          height: 1.3,
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+              ],
+              const SizedBox(height: 28),
             ],
-            const SizedBox(height: 28),
 
             // Sección: Reseñas
             if (widget.restaurante.id != null)
@@ -720,31 +591,55 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
   }
 
   Widget _buildQuickInfoRow() {
+    final items = <Widget>[];
+
+    // 1. Horario de atención
+    if (_horarioTexto.isNotEmpty) {
+      items.add(_buildInfoCard(
+        icon: Icons.access_time_outlined,
+        title: 'Horario',
+        value: _horarioTexto,
+      ));
+    }
+
+    // 2. Precios referenciales
+    if (_preciosTexto.isNotEmpty) {
+      items.add(_buildInfoCard(
+        icon: Icons.payments_outlined,
+        title: 'Precios',
+        value: _preciosTexto,
+        valueColor: const Color(0xFF1B5A3F),
+      ));
+    }
+
+    // 3. Contacto telefónico
+    if (_contactoTexto.isNotEmpty) {
+      items.add(_buildInfoCard(
+        icon: Icons.phone_in_talk_outlined,
+        title: 'Contacto',
+        value: _contactoTexto,
+      ));
+    }
+
+    // 4. Ubicación de referencia (si no hay 3 tarjetas aún)
+    if (items.length < 3 &&
+        widget.restaurante.direccionReferencia != null &&
+        widget.restaurante.direccionReferencia!.trim().isNotEmpty) {
+      items.add(_buildInfoCard(
+        icon: Icons.place_outlined,
+        title: 'Referencia',
+        value: widget.restaurante.direccionReferencia!.trim(),
+      ));
+    }
+
+    if (items.isEmpty) return const SizedBox.shrink();
+
     return Row(
       children: [
-        Expanded(
-          child: _buildInfoCard(
-            icon: Icons.access_time_outlined,
-            title: 'Horario',
-            value: _horarioTexto,
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _buildInfoCard(
-            icon: Icons.attach_money_outlined,
-            title: 'Precios',
-            value: _preciosTexto,
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _buildInfoCard(
-            icon: Icons.phone_in_talk_outlined,
-            title: 'Contacto',
-            value: _contactoTexto.split(' ').last,
-          ),
-        ),
+        for (int i = 0; i < items.length; i++) ...[
+          if (i > 0) const SizedBox(width: 8),
+          Expanded(child: items[i]),
+        ],
       ],
     );
   }
@@ -753,6 +648,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
     required IconData icon,
     required String title,
     required String value,
+    Color? valueColor,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
@@ -783,10 +679,10 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 13,
+            style: TextStyle(
+              fontSize: 12.5,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF1F2937),
+              color: valueColor ?? const Color(0xFF1F2937),
             ),
           ),
         ],
@@ -795,13 +691,11 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
   }
 
   Widget _buildEspecialidadesSection() {
-    final platos = _platosEspeciales;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Especialidades recomendadas',
+          'Platos típicos que ofrece',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -810,130 +704,108 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
           ),
         ),
         const SizedBox(height: 14),
-        ...platos.map((p) {
-          return Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey.shade200),
+        if (_cargandoPlatos)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: CircularProgressIndicator(strokeWidth: 2),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFF9EFE5),
-                    shape: BoxShape.circle,
+          )
+        else if (_platosVinculados.isEmpty)
+          Text(
+            'Aún no se registraron platos típicos para este restaurante.',
+            style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+          )
+        else
+          ..._platosVinculados.map((plato) {
+            final precio = plato.precioReferencial;
+            return GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => GastronomyDetailScreen(item: plato),
                   ),
-                  child: const Icon(
-                    Icons.restaurant_menu,
-                    color: Color(0xFFC68B59),
-                    size: 20,
-                  ),
+                );
+              },
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey.shade200),
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFF9EFE5),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.restaurant_menu,
+                        color: Color(0xFFC68B59),
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: Text(
-                              p['nombre']!,
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  plato.nombre,
+                                  style: const TextStyle(
+                                    fontSize: 14.5,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF1F2937),
+                                  ),
+                                ),
+                              ),
+                              if (precio != null && precio > 0)
+                                Text(
+                                  'Bs ${precio.toInt()}',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF1B5A3F),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          if (plato.descripcion.trim().isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              plato.descripcion,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                fontSize: 14.5,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF1F2937),
+                                fontSize: 12.5,
+                                color: Color(0xFF6B7280),
+                                height: 1.35,
                               ),
                             ),
-                          ),
-                          Text(
-                            p['precio']!,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1B5A3F),
-                            ),
-                          ),
+                          ],
                         ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        p['desc']!,
-                        style: const TextStyle(
-                          fontSize: 12.5,
-                          color: Color(0xFF6B7280),
-                          height: 1.35,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          );
-        }),
-      ],
-    );
-  }
-
-  Widget _buildAmenidadesSection() {
-    final amenidades = _amenidades;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Servicios y comodidades',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF143525),
-            fontFamily: 'serif',
-          ),
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: amenidades.map((a) {
-            return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade200),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.check_circle_outline,
-                    size: 15,
-                    color: Color(0xFF1B5A3F),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    a,
-                    style: const TextStyle(
-                      fontSize: 12.5,
-                      color: Color(0xFF374151),
-                      fontWeight: FontWeight.w500,
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             );
-          }).toList(),
-        ),
+          }),
       ],
     );
   }
+
+
 
   Widget _buildMiniMap() {
     return ClipRRect(
@@ -1027,6 +899,13 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
   }
 
   Widget _buildBottomBar(BuildContext context) {
+    final tienePrecio = _preciosTexto.isNotEmpty;
+    final tieneContacto = _contactoTexto.isNotEmpty;
+    final tieneUbicacion = widget.restaurante.latitud != null &&
+        widget.restaurante.longitud != null &&
+        widget.restaurante.latitud != 0 &&
+        widget.restaurante.longitud != 0;
+
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
       decoration: BoxDecoration(
@@ -1044,43 +923,56 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
         top: false,
         child: Row(
           children: [
-            // Resumen de precios
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'PRECIO APROX.',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF9CA3AF),
-                    letterSpacing: 0.5,
+            // Resumen de precios (si existen en la BD)
+            if (tienePrecio) ...[
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'PRECIO APROX.',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF9CA3AF),
+                      letterSpacing: 0.5,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  _preciosTexto,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF143525),
+                  const SizedBox(height: 2),
+                  Text(
+                    _preciosTexto,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF143525),
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(width: 16),
+                ],
+              ),
+              const SizedBox(width: 16),
+            ],
 
-            // Botón de contacto / reserva
+            // Botón de contacto / ver mapa
             Expanded(
               child: SizedBox(
                 height: 48,
                 child: ElevatedButton.icon(
-                  onPressed: () => _showContactModal(context),
-                  icon: const Icon(Icons.phone_outlined, size: 18),
-                  label: const Text(
-                    'Contactar / Reservar',
-                    style: TextStyle(
+                  onPressed: () {
+                    if (tieneContacto) {
+                      _showContactModal(context);
+                    } else if (tieneUbicacion) {
+                      _openFullMap(context);
+                    }
+                  },
+                  icon: Icon(
+                    tieneContacto ? Icons.phone_outlined : Icons.map_outlined,
+                    size: 18,
+                  ),
+                  label: Text(
+                    tieneContacto
+                        ? 'Contactar / Reservar'
+                        : (tieneUbicacion ? 'Ver en el mapa' : 'Ubicación no disponible'),
+                    style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
                     ),

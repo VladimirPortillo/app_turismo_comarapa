@@ -23,7 +23,6 @@ class HotelDetailScreen extends StatefulWidget {
 class _HotelDetailScreenState extends State<HotelDetailScreen> {
   late final PageController _pageController;
   int _currentPage = 0;
-  bool _isFavorite = false;
 
   double _promedioResenas = 0;
   int _totalResenas = 0;
@@ -68,29 +67,14 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
       return 'Bs ${min.toInt()} - ${max.toInt()}';
     } else if (min != null) {
       return 'Desde Bs ${min.toInt()}';
+    } else if (max != null) {
+      return 'Hasta Bs ${max.toInt()}';
     }
-    return 'Bs 150 - 250';
-  }
-
-  String get _tipoHospedaje {
-    return widget.hotel.categoriaNombre ?? 'Hotel';
-  }
-
-  String get _descripcionTexto {
-    final desc = widget.hotel.descripcion;
-    if (desc.trim().isNotEmpty) {
-      return desc;
-    }
-    return 'Acogedor establecimiento en Comarapa diseñado para ofrecer una estadía tranquila '
-        'y confortable. Con habitaciones completamente equipadas, hermosas vistas a los valles '
-        'y atención personalizada para que disfrutes al máximo de tus vacaciones en la región.';
+    return '';
   }
 
   List<String> get _amenidadesList {
-    if (widget.hotel.servicios.isNotEmpty) {
-      return widget.hotel.servicios;
-    }
-    return ['Wifi gratis', 'Parqueo privado', 'Desayuno incluido', 'Agua caliente', 'Atención 24h'];
+    return widget.hotel.servicios;
   }
 
   IconData _iconForAmenity(String amenity) {
@@ -105,23 +89,10 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
     return Icons.check_circle_outline;
   }
 
-  void _onShare() {
-    Clipboard.setData(ClipboardData(
-      text: '${widget.hotel.nombre} - Hospedaje en Comarapa Turismo',
-    ));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Enlace de "${widget.hotel.nombre}" copiado al portapapeles'),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
 
   void _showBookingDialog(BuildContext context) {
-    final contacto = widget.hotel.contactoReservas?.isNotEmpty == true
-        ? widget.hotel.contactoReservas!
-        : '+591 3 936 1000';
+    final contacto = widget.hotel.contactoReservas?.trim();
+    if (contacto == null || contacto.isEmpty) return;
 
     showModalBottomSheet(
       context: context,
@@ -158,7 +129,7 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
               ),
               const SizedBox(height: 6),
               Text(
-                'Comunícate directamente con recepción para consultar disponibilidad de habitaciones en "${widget.hotel.nombre}":',
+                'Contacto registrado para reservas en "${widget.hotel.nombre}":',
                 style: TextStyle(fontSize: 13.5, color: Colors.grey.shade600),
               ),
               const SizedBox(height: 16),
@@ -185,21 +156,22 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            widget.hotel.nombre,
-                            style: const TextStyle(
+                          const Text(
+                            'RECEPCIÓN',
+                            style: TextStyle(
+                              fontSize: 10,
                               fontWeight: FontWeight.bold,
-                              fontSize: 14.5,
-                              color: Color(0xFF0C3D28),
+                              color: Color(0xFF6B7280),
+                              letterSpacing: 0.5,
                             ),
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: 4),
                           Text(
                             contacto,
                             style: const TextStyle(
-                              fontSize: 13,
-                              color: Color(0xFF26674B),
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: Color(0xFF0C3D28),
                             ),
                           ),
                         ],
@@ -215,16 +187,17 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                 child: ElevatedButton.icon(
                   onPressed: () {
                     Navigator.pop(ctx);
+                    Clipboard.setData(ClipboardData(text: contacto));
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Número copiado. Abriendo canal de reservas...'),
+                      SnackBar(
+                        content: Text('Contacto "$contacto" copiado al portapapeles'),
                         behavior: SnackBarBehavior.floating,
                       ),
                     );
                   },
-                  icon: const Icon(Icons.phone, size: 18),
+                  icon: const Icon(Icons.copy, size: 18),
                   label: const Text(
-                    'Llamar / Contactar por WhatsApp',
+                    'Copiar Contacto',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                   style: ElevatedButton.styleFrom(
@@ -371,48 +344,17 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
           ),
 
           // Barra superior con botones circulares
+          // Barra superior de navegación con botón volver
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   // Botón Volver
                   _buildCircleButton(
                     icon: Icons.chevron_left,
                     iconSize: 26,
                     onTap: () => Navigator.of(context).pop(),
-                  ),
-
-                  // Acciones: Favorito y Compartir
-                  Row(
-                    children: [
-                      _buildCircleButton(
-                        icon: _isFavorite ? Icons.favorite : Icons.favorite_border,
-                        iconColor: _isFavorite ? const Color(0xFFE53935) : Colors.black87,
-                        iconSize: 22,
-                        onTap: () {
-                          setState(() => _isFavorite = !_isFavorite);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                _isFavorite
-                                    ? 'Añadido a tus hoteles favoritos'
-                                    : 'Eliminado de tus hoteles favoritos',
-                              ),
-                              behavior: SnackBarBehavior.floating,
-                              duration: const Duration(seconds: 1),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(width: 12),
-                      _buildCircleButton(
-                        icon: Icons.share_outlined,
-                        iconSize: 20,
-                        onTap: _onShare,
-                      ),
-                    ],
                   ),
                 ],
               ),
@@ -501,6 +443,14 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
   }
 
   Widget _buildContentCard() {
+    final tieneDescripcion = widget.hotel.descripcion.trim().isNotEmpty;
+    final tieneServicios = widget.hotel.servicios.isNotEmpty;
+    final tieneContacto = widget.hotel.contactoReservas?.trim().isNotEmpty == true;
+    final tieneUbicacion = widget.hotel.latitud != null &&
+        widget.hotel.longitud != null &&
+        widget.hotel.latitud != 0 &&
+        widget.hotel.longitud != 0;
+
     return Transform.translate(
       offset: const Offset(0, -20),
       child: Container(
@@ -570,48 +520,52 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Fila de 4 tarjetas de métricas rápidas
+            // Fila de tarjetas de información rápida (solo datos reales de la BD)
             _buildQuickInfoGrid(),
             const SizedBox(height: 28),
 
-            // Sección: Descripción
-            const Text(
-              'Sobre el hospedaje',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF143525),
-                fontFamily: 'serif',
+            // Sección: Descripción (solo si está guardada en la BD)
+            if (tieneDescripcion) ...[
+              const Text(
+                'Sobre el hospedaje',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF143525),
+                  fontFamily: 'serif',
+                ),
               ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              _descripcionTexto,
-              style: const TextStyle(
-                fontSize: 14.5,
-                height: 1.6,
-                color: Color(0xFF4B5563),
+              const SizedBox(height: 10),
+              Text(
+                widget.hotel.descripcion.trim(),
+                style: const TextStyle(
+                  fontSize: 14.5,
+                  height: 1.6,
+                  color: Color(0xFF4B5563),
+                ),
               ),
-            ),
-            const SizedBox(height: 28),
+              const SizedBox(height: 28),
+            ],
 
-            // Sección: Amenidades y Servicios
-            _buildAmenidadesSection(),
-            const SizedBox(height: 28),
+            // Sección: Servicios y Comodidades (solo si existen en la BD)
+            if (tieneServicios) ...[
+              _buildAmenidadesSection(),
+              const SizedBox(height: 28),
+            ],
 
-            // Sección: Contacto de Recepción
-            _buildContactoCard(),
-            const SizedBox(height: 28),
+            // Sección: Contacto de Recepción (solo si está registrado en la BD)
+            if (tieneContacto) ...[
+              _buildContactoCard(),
+              const SizedBox(height: 28),
+            ],
 
-            // Sección: Ubicación & Mapa
-            _buildUbicacionSection(),
-            const SizedBox(height: 28),
+            // Sección: Ubicación & Mapa (solo si tiene coordenadas en la BD)
+            if (tieneUbicacion) ...[
+              _buildUbicacionSection(),
+              const SizedBox(height: 28),
+            ],
 
-            // Sección: Normas de la Estancia
-            _buildNormasSection(),
-            const SizedBox(height: 28),
-
-            // Sección: Reseñas
+            // Sección: Reseñas (guardadas en la BD)
             if (widget.hotel.id != null)
               ResenasSection(
                 entidad: 'hotel',
@@ -630,47 +584,53 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
   }
 
   Widget _buildQuickInfoGrid() {
+    final items = <Widget>[];
+
+    // 1. Tipo / Categoría
+    if (widget.hotel.categoriaNombre != null && widget.hotel.categoriaNombre!.trim().isNotEmpty) {
+      items.add(_buildInfoItem(
+        icon: Icons.apartment_outlined,
+        title: 'TIPO',
+        value: widget.hotel.categoriaNombre!.trim(),
+      ));
+    }
+
+    // 2. Precios (solo si están registrados en la BD)
+    if (_precioTexto.isNotEmpty) {
+      items.add(_buildInfoItem(
+        icon: Icons.payments_outlined,
+        title: 'PRECIOS',
+        value: _precioTexto,
+        valueColor: const Color(0xFF26674B),
+      ));
+    }
+
+    // 3. Cantidad de servicios registrados
+    if (widget.hotel.servicios.isNotEmpty) {
+      items.add(_buildInfoItem(
+        icon: Icons.room_service_outlined,
+        title: 'SERVICIOS',
+        value: '${widget.hotel.servicios.length} incluidos',
+      ));
+    }
+
+    // 4. Ubicación de referencia
+    if (widget.hotel.direccionReferencia != null && widget.hotel.direccionReferencia!.trim().isNotEmpty) {
+      items.add(_buildInfoItem(
+        icon: Icons.place_outlined,
+        title: 'REFERENCIA',
+        value: widget.hotel.direccionReferencia!.trim(),
+      ));
+    }
+
+    if (items.isEmpty) return const SizedBox.shrink();
+
     return Row(
       children: [
-        // 1. Tipo
-        Expanded(
-          child: _buildInfoItem(
-            icon: Icons.apartment_outlined,
-            title: 'TIPO',
-            value: _tipoHospedaje,
-          ),
-        ),
-        const SizedBox(width: 8),
-
-        // 2. Precios
-        Expanded(
-          child: _buildInfoItem(
-            icon: Icons.payments_outlined,
-            title: 'PRECIOS',
-            value: _precioTexto,
-            valueColor: const Color(0xFF26674B),
-          ),
-        ),
-        const SizedBox(width: 8),
-
-        // 3. Check-in
-        Expanded(
-          child: _buildInfoItem(
-            icon: Icons.schedule_outlined,
-            title: 'CHECK-IN',
-            value: '13:00 / 11:00',
-          ),
-        ),
-        const SizedBox(width: 8),
-
-        // 4. Ubicación
-        Expanded(
-          child: _buildInfoItem(
-            icon: Icons.place_outlined,
-            title: 'ZONA',
-            value: 'Comarapa',
-          ),
-        ),
+        for (int i = 0; i < items.length; i++) ...[
+          if (i > 0) const SizedBox(width: 8),
+          Expanded(child: items[i]),
+        ],
       ],
     );
   }
@@ -779,9 +739,10 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
   }
 
   Widget _buildContactoCard() {
-    final contacto = widget.hotel.contactoReservas?.isNotEmpty == true
-        ? widget.hotel.contactoReservas!
-        : '+591 3 936 1000';
+    final contacto = widget.hotel.contactoReservas?.trim();
+    if (contacto == null || contacto.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -943,66 +904,10 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
     );
   }
 
-  Widget _buildNormasSection() {
-    const normas = [
-      'Check-in a partir de las 13:00 / Check-out hasta las 11:00.',
-      'Horario de silencio y descanso a partir de las 22:30.',
-      'Prohibido fumar en las habitaciones.',
-      'Consultar previamente con recepción sobre mascotas (pet-friendly bajo solicitud).',
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Políticas y normas',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF143525),
-            fontFamily: 'serif',
-          ),
-        ),
-        const SizedBox(height: 12),
-        ...normas.map((norma) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  margin: const EdgeInsets.only(top: 2),
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFE2ECE7),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.check,
-                    size: 12,
-                    color: Color(0xFF1B5A3F),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    norma,
-                    style: const TextStyle(
-                      fontSize: 13.5,
-                      color: Color(0xFF4B5563),
-                      height: 1.35,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        }),
-      ],
-    );
-  }
-
   Widget _buildBottomBar(BuildContext context) {
+    final tienePrecio = _precioTexto.isNotEmpty;
+    final tieneContacto = widget.hotel.contactoReservas?.trim().isNotEmpty == true;
+
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
       decoration: BoxDecoration(
@@ -1016,74 +921,89 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
           ),
         ],
       ),
-      child: Row(
-        children: [
-          // Precios
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'PRECIO POR NOCHE',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF9CA3AF),
-                  letterSpacing: 0.5,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            // Precios si existen en la BD
+            if (tienePrecio) ...[
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    _precioTexto,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF143525),
+                  const Text(
+                    'PRECIO POR NOCHE',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF9CA3AF),
+                      letterSpacing: 0.5,
                     ),
                   ),
-                  const SizedBox(width: 4),
-                  const Text(
-                    '/ noche',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF6B7280),
-                    ),
+                  const SizedBox(height: 2),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        _precioTexto,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF143525),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Text(
+                        '/ noche',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF6B7280),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
+              const SizedBox(width: 16),
             ],
-          ),
-          const SizedBox(width: 16),
 
-          // Botón principal
-          Expanded(
-            child: SizedBox(
-              height: 48,
-              child: ElevatedButton(
-                onPressed: () => _showBookingDialog(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF26674B),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+            // Botón principal: Contactar o Ver en el mapa
+            Expanded(
+              child: SizedBox(
+                height: 48,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    if (tieneContacto) {
+                      _showBookingDialog(context);
+                    } else {
+                      _openFullMap(context);
+                    }
+                  },
+                  icon: Icon(
+                    tieneContacto ? Icons.phone_outlined : Icons.map_outlined,
+                    size: 18,
                   ),
-                ),
-                child: const Text(
-                  'Reservar / Contactar',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
+                  label: Text(
+                    tieneContacto ? 'Contactar Recepción' : 'Ver en el mapa',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF26674B),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

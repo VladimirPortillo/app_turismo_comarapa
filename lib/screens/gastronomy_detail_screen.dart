@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 import '../models/gastronomia_item.dart';
+import '../models/restaurante.dart';
+import '../repositories/gastronomia_repository.dart';
+import '../repositories/restaurante_repository.dart';
 import '../widgets/fullscreen_image_gallery.dart';
 import '../widgets/resenas_section.dart';
-import 'admin_restaurants_screen.dart';
 
 class GastronomyDetailScreen extends StatefulWidget {
   final GastronomiaItem item;
@@ -21,15 +23,137 @@ class GastronomyDetailScreen extends StatefulWidget {
 class _GastronomyDetailScreenState extends State<GastronomyDetailScreen> {
   late final PageController _pageController;
   int _currentPage = 0;
-  bool _isFavorite = false;
 
   double _promedioResenas = 0;
   int _totalResenas = 0;
+
+  Restaurante? _restauranteVinculado;
+  List<String> _restaurantesRelacionadosNombres = <String>[];
+  bool _cargandoRestaurantesRelacionados = false;
+
+  bool get _esCategoriaComida {
+    final cat = widget.item.categoriaNombre?.trim().toLowerCase() ?? '';
+    if (cat.isEmpty) return false;
+    return cat.contains('comid') || cat.contains('plato');
+  }
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
+    final restauranteId = widget.item.restauranteId;
+    if (restauranteId != null) {
+      _cargarRestauranteVinculado(restauranteId);
+    }
+    if (_esCategoriaComida) {
+      _cargarRestaurantesRelacionados();
+    }
+  }
+
+  Future<void> _cargarRestauranteVinculado(String restauranteId) async {
+    try {
+      final repo = context.read<RestauranteRepository>();
+      final restaurante = await repo.fetchById(restauranteId);
+      if (!mounted) return;
+      setState(() {
+        _restauranteVinculado = restaurante;
+        if (restaurante != null &&
+            !_restaurantesRelacionadosNombres.contains(restaurante.nombre.trim())) {
+          _restaurantesRelacionadosNombres.add(restaurante.nombre.trim());
+          _restaurantesRelacionadosNombres.sort();
+        }
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _cargarRestaurantesRelacionados() async {
+    setState(() => _cargandoRestaurantesRelacionados = true);
+    final nombresEncontrados = <String>{};
+
+    try {
+      // 1. Restaurante vinculado directo o registrado en el item
+      if (_restauranteVinculado != null) {
+        nombresEncontrados.add(_restauranteVinculado!.nombre.trim());
+      } else if (widget.item.restauranteNombre != null &&
+          widget.item.restauranteNombre!.trim().isNotEmpty) {
+        nombresEncontrados.add(widget.item.restauranteNombre!.trim());
+      }
+
+      // 2. Buscar en restaurantes activos
+      final restauranteRepo = context.read<RestauranteRepository>();
+      final restaurantes = await restauranteRepo.fetchActivos();
+
+      final nombrePlato = widget.item.nombre.trim().toLowerCase();
+
+      const stopWords = {
+        'para', 'como', 'todo', 'toda', 'este', 'esta', 'estos', 'estas',
+        'comarapa', 'comarapeño', 'comarapeña', 'estilo', 'sabor',
+        'tradicional', 'tipico', 'tipica', 'plato', 'platos'
+      };
+      final palabrasClave = nombrePlato
+          .split(RegExp(r'\s+'))
+          .map((w) => w.replaceAll(RegExp(r'[^\wáéíóúñ]'), '').trim())
+          .where((w) => w.length >= 4 && !stopWords.contains(w))
+          .toList();
+
+      for (final r in restaurantes) {
+        if (widget.item.restauranteId != null && r.id == widget.item.restauranteId) {
+          nombresEncontrados.add(r.nombre.trim());
+          continue;
+        }
+
+        final desc = r.descripcion.toLowerCase();
+        final rNom = r.nombre.toLowerCase();
+
+        if (desc.contains(nombrePlato) || rNom.contains(nombrePlato)) {
+          nombresEncontrados.add(r.nombre.trim());
+          continue;
+        }
+
+        if (palabrasClave.isNotEmpty) {
+          final coincidePalabra = palabrasClave.any(
+            (p) => desc.contains(p) || rNom.contains(p),
+          );
+          if (coincidePalabra) {
+            nombresEncontrados.add(r.nombre.trim());
+          }
+        }
+      }
+
+      // 3. Buscar en la tabla gastronomía otros platos con el mismo nombre vinculados a restaurantes
+      final gastroRepo = context.read<GastronomiaRepository>();
+      final otrosPlatos = await gastroRepo.fetchActivos();
+
+      for (final p in otrosPlatos) {
+        final pNom = p.nombre.trim().toLowerCase();
+        final esMismoPlato = pNom == nombrePlato ||
+            pNom.contains(nombrePlato) ||
+            nombrePlato.contains(pNom);
+
+        if (esMismoPlato) {
+          if (p.restauranteNombre != null && p.restauranteNombre!.trim().isNotEmpty) {
+            nombresEncontrados.add(p.restauranteNombre!.trim());
+          } else if (p.restauranteId != null) {
+            final match = restaurantes.where((r) => r.id == p.restauranteId).firstOrNull;
+            if (match != null) {
+              nombresEncontrados.add(match.nombre.trim());
+            }
+          }
+        }
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _restaurantesRelacionadosNombres = nombresEncontrados.toList()..sort();
+        _cargandoRestaurantesRelacionados = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _restaurantesRelacionadosNombres = nombresEncontrados.toList()..sort();
+        _cargandoRestaurantesRelacionados = false;
+      });
+    }
   }
 
   @override
@@ -43,7 +167,7 @@ class _GastronomyDetailScreenState extends State<GastronomyDetailScreen> {
     if (cat != null && cat.trim().isNotEmpty) {
       return cat.toUpperCase();
     }
-    return 'PLATOS TÍPICOS';
+    return 'GASTRONOMÍA';
   }
 
   String get _precioTexto {
@@ -51,231 +175,16 @@ class _GastronomyDetailScreenState extends State<GastronomyDetailScreen> {
     if (p != null && p > 0) {
       return 'Bs ${p.toInt()}';
     }
-    return 'Bs 35';
+    if (p == 0) return 'Gratis';
+    return '';
   }
 
   String get _temporadaTexto {
     final t = widget.item.temporada;
     if (t != null && t.trim().isNotEmpty) {
-      return t;
+      return t.trim();
     }
-    return 'Todo el año';
-  }
-
-  String get _tipoPlatoTexto {
-    final name = widget.item.nombre.toLowerCase();
-    final cat = (widget.item.categoriaNombre ?? '').toLowerCase();
-    if (name.contains('licor') || name.contains('bebida') || cat.contains('bebida')) {
-      return 'Bebida / Licor';
-    }
-    if (name.contains('mermelada') || name.contains('empanada') || name.contains('dulce') || cat.contains('postre')) {
-      return 'Postre / Repostería';
-    }
-    return 'Plato fuerte';
-  }
-
-  String get _descripcionTexto {
-    final desc = widget.item.descripcion;
-    if (desc.trim().isNotEmpty) {
-      return desc;
-    }
-    return 'Exquisito exponente de la culinaria comarapeña, preparado con ingredientes '
-        'frescos cosechados directamente en los huertos y valles del municipio. Destaca por su '
-        'equilibrio de sabores andino-vallunos y su elaboración artesanal transmitida de generación en generación.';
-  }
-
-  List<String> get _ingredientesPrincipales {
-    final name = widget.item.nombre.toLowerCase();
-    if (name.contains('picante') || name.contains('pollo')) {
-      return [
-        'Pollo criollo de granja',
-        'Ají colorado dulce comarapeño',
-        'Duraznos del valle caramelizados',
-        'Papa imilla harinosa',
-        'Arroz graneado y ensalada criolla',
-      ];
-    } else if (name.contains('pique')) {
-      return [
-        'Carne tierna de lomo de res',
-        'Salchichas de primera calidad',
-        'Papas fritas crocantes',
-        'Locoto y tomate fresco del huerto',
-        'Huevo duro y cebolla morada',
-      ];
-    } else if (name.contains('empanada') || name.contains('pan')) {
-      return [
-        'Harina selecta de trigo local',
-        'Dulce artesanal de cayote',
-        'Blanqueado con merengue de huevo',
-        'Canela y anís estrellado',
-      ];
-    } else if (name.contains('licor') || name.contains('mermelada')) {
-      return [
-        'Durazno comarapeño madurado al sol',
-        'Azúcar morena o miel natural',
-        'Macerado en alcohol destilado puro',
-        'Especias aromáticas de los valles',
-      ];
-    }
-    return [
-      'Ingredientes frescos del valle de Comarapa',
-      'Especias tradicionales de la región',
-      'Cocción lenta en olla de barro o leña',
-      'Acompañamientos típicos vallunos',
-    ];
-  }
-
-  void _onShare() {
-    Clipboard.setData(ClipboardData(
-      text: '${widget.item.nombre} - Gastronomía Tradicional de Comarapa',
-    ));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Enlace de "${widget.item.nombre}" copiado al portapapeles'),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-
-  void _showDondeDegustarModal(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 30),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                '¿Dónde degustarlo?',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF0C3D28),
-                  fontFamily: 'serif',
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Lugares recomendados en Comarapa para saborear "${widget.item.nombre}":',
-                style: TextStyle(fontSize: 13.5, color: Colors.grey.shade600),
-              ),
-              const SizedBox(height: 16),
-
-              // Opción 1: Mercado Municipal
-              _buildVenueItem(
-                title: 'Mercado Municipal de Comarapa',
-                subtitle: 'Sector Comidas Típicas · Abierto desde las 07:00',
-                icon: Icons.storefront_outlined,
-              ),
-              const SizedBox(height: 10),
-
-              // Opción 2: Restaurantes de la Plaza Principal
-              _buildVenueItem(
-                title: 'El Fogón Comarapeño y Locales de la Plaza',
-                subtitle: 'Alrededores de la Plaza Principal 25 de Mayo',
-                icon: Icons.restaurant_outlined,
-              ),
-              const SizedBox(height: 20),
-
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const AdminRestaurantsScreen(),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.map_outlined, size: 18),
-                  label: const Text(
-                    'Ver restaurantes de Comarapa',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF26674B),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildVenueItem({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFBF6F0),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFEEDCC8)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: const Color(0xFFB45309).withValues(alpha: 0.15),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: const Color(0xFFB45309), size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: Color(0xFF1F2937),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+    return '';
   }
 
   @override
@@ -382,48 +291,17 @@ class _GastronomyDetailScreenState extends State<GastronomyDetailScreen> {
           ),
 
           // Barra superior con botones circulares
+          // Barra superior de navegación con botón volver
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   // Botón Volver
                   _buildCircleButton(
                     icon: Icons.chevron_left,
                     iconSize: 26,
                     onTap: () => Navigator.of(context).pop(),
-                  ),
-
-                  // Acciones: Favorito y Compartir
-                  Row(
-                    children: [
-                      _buildCircleButton(
-                        icon: _isFavorite ? Icons.favorite : Icons.favorite_border,
-                        iconColor: _isFavorite ? const Color(0xFFE53935) : Colors.black87,
-                        iconSize: 22,
-                        onTap: () {
-                          setState(() => _isFavorite = !_isFavorite);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                _isFavorite
-                                    ? 'Añadido a tus platos favoritos'
-                                    : 'Eliminado de tus platos favoritos',
-                              ),
-                              behavior: SnackBarBehavior.floating,
-                              duration: const Duration(seconds: 1),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(width: 12),
-                      _buildCircleButton(
-                        icon: Icons.share_outlined,
-                        iconSize: 20,
-                        onTap: _onShare,
-                      ),
-                    ],
                   ),
                 ],
               ),
@@ -512,6 +390,9 @@ class _GastronomyDetailScreenState extends State<GastronomyDetailScreen> {
   }
 
   Widget _buildContentCard() {
+    final tieneDescripcion = widget.item.descripcion.trim().isNotEmpty;
+    final tieneRestaurante = _restauranteVinculado != null;
+
     return Transform.translate(
       offset: const Offset(0, -20),
       child: Container(
@@ -581,44 +462,40 @@ class _GastronomyDetailScreenState extends State<GastronomyDetailScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Fila de 4 tarjetas de métricas rápidas
+            // Fila de tarjetas de información rápida (solo con datos de la BD)
             _buildQuickInfoGrid(),
             const SizedBox(height: 28),
 
-            // Sección: Descripción y Tradición
-            const Text(
-              'Historia y tradición gastronómica',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF143525),
-                fontFamily: 'serif',
+            // Sección: Descripción (solo si está registrada en la BD)
+            if (tieneDescripcion) ...[
+              const Text(
+                'Descripción',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF143525),
+                  fontFamily: 'serif',
+                ),
               ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              _descripcionTexto,
-              style: const TextStyle(
-                fontSize: 14.5,
-                height: 1.6,
-                color: Color(0xFF4B5563),
+              const SizedBox(height: 10),
+              Text(
+                widget.item.descripcion.trim(),
+                style: const TextStyle(
+                  fontSize: 14.5,
+                  height: 1.6,
+                  color: Color(0xFF4B5563),
+                ),
               ),
-            ),
-            const SizedBox(height: 28),
+              const SizedBox(height: 28),
+            ],
 
-            // Sección: Ingredientes Tradicionales
-            _buildIngredientesSection(),
-            const SizedBox(height: 28),
+            // Sección: Dónde degustarlo (solo si tiene restaurante vinculado en la BD)
+            if (tieneRestaurante) ...[
+              _buildDondeDegustarCard(),
+              const SizedBox(height: 28),
+            ],
 
-            // Sección: ¿Dónde degustarlo?
-            _buildDondeDegustarCard(),
-            const SizedBox(height: 28),
-
-            // Sección: Consejos de Maridaje
-            _buildMaridajeSection(),
-            const SizedBox(height: 28),
-
-            // Sección: Reseñas
+            // Sección: Reseñas (guardadas en la BD)
             if (widget.item.id != null)
               ResenasSection(
                 entidad: 'gastronomia',
@@ -637,47 +514,53 @@ class _GastronomyDetailScreenState extends State<GastronomyDetailScreen> {
   }
 
   Widget _buildQuickInfoGrid() {
+    final items = <Widget>[];
+
+    // 1. Categoría (registrada en la BD)
+    if (widget.item.categoriaNombre != null && widget.item.categoriaNombre!.trim().isNotEmpty) {
+      items.add(_buildInfoItem(
+        icon: Icons.category_outlined,
+        title: 'CATEGORÍA',
+        value: widget.item.categoriaNombre!.trim(),
+      ));
+    }
+
+    // 2. Precio referencial (solo si está registrado en la BD)
+    if (_precioTexto.isNotEmpty) {
+      items.add(_buildInfoItem(
+        icon: Icons.payments_outlined,
+        title: 'PRECIO REF.',
+        value: _precioTexto,
+        valueColor: const Color(0xFFB45309),
+      ));
+    }
+
+    // 3. Temporada (columna real en la BD)
+    if (_temporadaTexto.isNotEmpty) {
+      items.add(_buildInfoItem(
+        icon: Icons.calendar_today_outlined,
+        title: 'TEMPORADA',
+        value: _temporadaTexto,
+      ));
+    }
+
+    // 4. Restaurante asignado en la BD
+    if (_restauranteVinculado != null) {
+      items.add(_buildInfoItem(
+        icon: Icons.restaurant_outlined,
+        title: 'RESTAURANTE',
+        value: _restauranteVinculado!.nombre,
+      ));
+    }
+
+    if (items.isEmpty) return const SizedBox.shrink();
+
     return Row(
       children: [
-        // 1. Tipo
-        Expanded(
-          child: _buildInfoItem(
-            icon: Icons.lunch_dining_outlined,
-            title: 'TIPO',
-            value: _tipoPlatoTexto,
-          ),
-        ),
-        const SizedBox(width: 8),
-
-        // 2. Precio referencial
-        Expanded(
-          child: _buildInfoItem(
-            icon: Icons.payments_outlined,
-            title: 'PRECIO REF.',
-            value: _precioTexto,
-            valueColor: const Color(0xFFB45309),
-          ),
-        ),
-        const SizedBox(width: 8),
-
-        // 3. Temporada
-        Expanded(
-          child: _buildInfoItem(
-            icon: Icons.calendar_today_outlined,
-            title: 'TEMPORADA',
-            value: _temporadaTexto,
-          ),
-        ),
-        const SizedBox(width: 8),
-
-        // 4. Origen
-        Expanded(
-          child: _buildInfoItem(
-            icon: Icons.place_outlined,
-            title: 'ORIGEN',
-            value: 'Comarapa',
-          ),
-        ),
+        for (int i = 0; i < items.length; i++) ...[
+          if (i > 0) const SizedBox(width: 8),
+          Expanded(child: items[i]),
+        ],
       ],
     );
   }
@@ -732,61 +615,11 @@ class _GastronomyDetailScreenState extends State<GastronomyDetailScreen> {
     );
   }
 
-  Widget _buildIngredientesSection() {
-    final ingredientes = _ingredientesPrincipales;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Ingredientes tradicionales',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF143525),
-            fontFamily: 'serif',
-          ),
-        ),
-        const SizedBox(height: 12),
-        ...ingredientes.map((ingrediente) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  margin: const EdgeInsets.only(top: 2),
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFBECE2),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.check,
-                    size: 12,
-                    color: Color(0xFFB45309),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    ingrediente,
-                    style: const TextStyle(
-                      fontSize: 13.5,
-                      color: Color(0xFF4B5563),
-                      height: 1.35,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        }),
-      ],
-    );
-  }
-
   Widget _buildDondeDegustarCard() {
+    if (_restauranteVinculado == null) {
+      return const SizedBox.shrink();
+    }
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -817,12 +650,12 @@ class _GastronomyDetailScreenState extends State<GastronomyDetailScreen> {
             ),
           ),
           const SizedBox(width: 14),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'DISPONIBILIDAD LOCAL',
+                const Text(
+                  'DÓNDE DEGUSTARLO',
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
@@ -830,91 +663,183 @@ class _GastronomyDetailScreenState extends State<GastronomyDetailScreen> {
                     letterSpacing: 0.5,
                   ),
                 ),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Text(
-                  'Restaurantes y Mercado de Comarapa',
-                  style: TextStyle(
-                    fontSize: 14.5,
+                  _restauranteVinculado!.nombre,
+                  style: const TextStyle(
+                    fontSize: 15,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF1F2937),
                   ),
                 ),
-                SizedBox(height: 2),
-                Text(
-                  'Disponible a diario al mediodía y noche',
-                  style: TextStyle(fontSize: 12, color: Color(0xFF16A34A)),
-                ),
+                if (_restauranteVinculado!.direccionReferencia?.trim().isNotEmpty == true) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    _restauranteVinculado!.direccionReferencia!,
+                    style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                  ),
+                ],
               ],
             ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.arrow_forward_ios, size: 16, color: Color(0xFFB45309)),
-            onPressed: () => _showDondeDegustarModal(context),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildMaridajeSection() {
-    const tips = [
-      'Acompañar los platos picantes con refresco natural de mocochinchi o chicha dulce de maíz.',
-      'Degustar las empanadas blanqueadas junto a un café de los valles o mate de hierbas frescas.',
-      'Los licores artesanales son ideales como bajativo después de las comidas principales.',
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Recomendaciones del comensal',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF143525),
-            fontFamily: 'serif',
+  void _mostrarModalRestaurantes(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return Container(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 30),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
-        ),
-        const SizedBox(height: 12),
-        ...tips.map((tip) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  margin: const EdgeInsets.only(top: 2),
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFE2ECE7),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.tips_and_updates_outlined,
-                    size: 13,
-                    color: Color(0xFF1B5A3F),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    tip,
-                    style: const TextStyle(
-                      fontSize: 13.5,
-                      color: Color(0xFF4B5563),
-                      height: 1.35,
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Restaurantes',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF143525),
+                            fontFamily: 'serif',
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Lugares donde degustar ${widget.item.nombre}',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade600,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
                   ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.grey),
+                    onPressed: () => Navigator.of(ctx).pop(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const Divider(height: 1),
+              const SizedBox(height: 12),
+              if (_cargandoRestaurantesRelacionados)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 30),
+                  child: Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                )
+              else if (_restaurantesRelacionadosNombres.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Icon(Icons.restaurant_outlined, size: 40, color: Colors.grey.shade400),
+                        const SizedBox(height: 12),
+                        Text(
+                          'No hay restaurantes registrados que ofrezcan este plato actualmente.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(ctx).size.height * 0.45,
+                  ),
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: _restaurantesRelacionadosNombres.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1, indent: 48),
+                    itemBuilder: (context, index) {
+                      final nombre = _restaurantesRelacionadosNombres[index];
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 38,
+                              height: 38,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFBECE2),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(
+                                Icons.restaurant,
+                                color: Color(0xFFB45309),
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Text(
+                                nombre,
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF1F2937),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              ],
-            ),
-          );
-        }),
-      ],
+            ],
+          ),
+        );
+      },
     );
   }
 
   Widget _buildBottomBar(BuildContext context) {
+    final tienePrecio = widget.item.precioReferencial != null &&
+        widget.item.precioReferencial! > 0;
+    final esComida = _esCategoriaComida;
+
+    if (!tienePrecio && !esComida) {
+      return const SizedBox.shrink();
+    }
+
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
       decoration: BoxDecoration(
@@ -928,74 +853,81 @@ class _GastronomyDetailScreenState extends State<GastronomyDetailScreen> {
           ),
         ],
       ),
-      child: Row(
-        children: [
-          // Precio referencial
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'PRECIO REFERENCIAL',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF9CA3AF),
-                  letterSpacing: 0.5,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            // Precio referencial (si existe en la BD)
+            if (tienePrecio) ...[
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    _precioTexto,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF143525),
+                  const Text(
+                    'PRECIO REFERENCIAL',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF9CA3AF),
+                      letterSpacing: 0.5,
                     ),
                   ),
-                  const SizedBox(width: 4),
-                  const Text(
-                    '/ porción',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF6B7280),
-                    ),
+                  const SizedBox(height: 2),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        _precioTexto,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF143525),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Text(
+                        '/ porción',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF6B7280),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
+              if (esComida) const SizedBox(width: 16),
             ],
-          ),
-          const SizedBox(width: 16),
 
-          // Botón principal
-          Expanded(
-            child: SizedBox(
-              height: 48,
-              child: ElevatedButton(
-                onPressed: () => _showDondeDegustarModal(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF26674B),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-                child: const Text(
-                  '¿Dónde degustar?',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
+            // Botón "Ver restaurantes" (SOLO aparece si la categoría es comida)
+            if (esComida)
+              Expanded(
+                child: SizedBox(
+                  height: 48,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _mostrarModalRestaurantes(context),
+                    icon: const Icon(Icons.restaurant_menu, size: 18),
+                    label: const Text(
+                      'Ver restaurantes',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF26674B),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

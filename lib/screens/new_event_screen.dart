@@ -3,9 +3,12 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 import 'package:provider/provider.dart';
 
+import '../models/categoria.dart';
 import '../models/evento.dart';
+import '../repositories/categoria_repository.dart';
 import '../repositories/evento_repository.dart';
 import '../widgets/imagen_picker_field.dart';
+import '../widgets/fullscreen_location_picker.dart';
 
 class NewEventScreen extends StatefulWidget {
   const NewEventScreen({super.key});
@@ -19,8 +22,9 @@ class _NewEventScreenState extends State<NewEventScreen> {
   final TextEditingController _descripcionController = TextEditingController();
   final TextEditingController _direccionController = TextEditingController();
 
-  String _tipoSeleccionado = 'Feria';
-  final List<String> _tiposDisponibles = ['Feria', 'Fiesta patronal', 'Cultural'];
+  List<Categoria> _categorias = [];
+  String? _categoriaId;
+  bool _cargandoCategorias = true;
 
   late DateTime _fechaInicio;
   late DateTime _fechaFin;
@@ -30,6 +34,7 @@ class _NewEventScreenState extends State<NewEventScreen> {
 
   bool _isActive = true;
   LatLng _coordenadas = const LatLng(-18.0447, -64.5301);
+  final MapController _mapController = MapController();
   bool _isSaving = false;
   List<String> _imagenes = [];
 
@@ -47,6 +52,25 @@ class _NewEventScreenState extends State<NewEventScreen> {
     _nombreController.addListener(() {
       setState(() {});
     });
+    _cargarCategorias();
+  }
+
+  Future<void> _cargarCategorias() async {
+    try {
+      final repo = context.read<CategoriaRepository>();
+      final categorias = await repo.fetchByEntidad('evento');
+      if (!mounted) return;
+      setState(() {
+        _categorias = categorias;
+        _cargandoCategorias = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _cargandoCategorias = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudieron cargar las categorías: $error')),
+      );
+    }
   }
 
   @override
@@ -54,6 +78,7 @@ class _NewEventScreenState extends State<NewEventScreen> {
     _nombreController.dispose();
     _descripcionController.dispose();
     _direccionController.dispose();
+    _mapController.dispose();
     super.dispose();
   }
 
@@ -132,17 +157,25 @@ class _NewEventScreenState extends State<NewEventScreen> {
               backgroundColor: const Color(0xFF26674B),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            onPressed: () {
+            onPressed: () async {
               final text = controller.text.trim();
-              if (text.isNotEmpty) {
-                setState(() {
-                  if (!_tiposDisponibles.contains(text)) {
-                    _tiposDisponibles.add(text);
-                  }
-                  _tipoSeleccionado = text;
-                });
-              }
               Navigator.pop(ctx);
+              if (text.isEmpty) return;
+
+              try {
+                final repo = context.read<CategoriaRepository>();
+                final categoria = await repo.create(entidad: 'evento', nombre: text);
+                if (!mounted) return;
+                setState(() {
+                  _categorias = [..._categorias, categoria];
+                  _categoriaId = categoria.id;
+                });
+              } catch (error) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('No se pudo crear la categoría: $error')),
+                );
+              }
             },
             child: const Text('Agregar'),
           ),
@@ -179,6 +212,16 @@ class _NewEventScreenState extends State<NewEventScreen> {
       valido = false;
     }
 
+    if (_categoriaId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor, selecciona un tipo de evento.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      valido = false;
+    }
+
     if (!valido) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -203,7 +246,7 @@ class _NewEventScreenState extends State<NewEventScreen> {
       final newEvento = Evento(
         id: 'evento-${DateTime.now().millisecondsSinceEpoch}',
         nombre: nombre,
-        categoriaNombre: _tipoSeleccionado,
+        categoriaId: _categoriaId,
         descripcion: _descripcionController.text.trim().isNotEmpty
             ? _descripcionController.text.trim()
             : 'Celebración y encuentro tradicional en Comarapa, abierta a todos los turistas y la comunidad.',
@@ -465,6 +508,17 @@ class _NewEventScreenState extends State<NewEventScreen> {
   }
 
   Widget _buildTipoSelector() {
+    if (_cargandoCategorias) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 8),
+        child: SizedBox(
+          height: 20,
+          width: 20,
+          child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF26674B)),
+        ),
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -474,10 +528,10 @@ class _NewEventScreenState extends State<NewEventScreen> {
           spacing: 8,
           runSpacing: 8,
           children: [
-            ..._tiposDisponibles.map((tipo) {
-              final isSelected = _tipoSeleccionado == tipo;
+            ..._categorias.map((cat) {
+              final isSelected = _categoriaId == cat.id;
               return GestureDetector(
-                onTap: () => setState(() => _tipoSeleccionado = tipo),
+                onTap: () => setState(() => _categoriaId = cat.id),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -489,7 +543,7 @@ class _NewEventScreenState extends State<NewEventScreen> {
                     ),
                   ),
                   child: Text(
-                    tipo,
+                    cat.nombre,
                     style: TextStyle(
                       color: isSelected ? Colors.white : const Color(0xFF374151),
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
@@ -695,6 +749,18 @@ class _NewEventScreenState extends State<NewEventScreen> {
   }
 
   /// Sección de Ubicación con Mini-Mapa Interactivo (Tap-to-Pin)
+  Future<void> _abrirMapaCompleto() async {
+    final nuevaUbicacion = await FullscreenLocationPicker.pick(
+      context: context,
+      initialLocation: _coordenadas,
+      title: 'Ubicación del evento',
+    );
+    if (nuevaUbicacion != null && mounted) {
+      setState(() => _coordenadas = nuevaUbicacion);
+      _mapController.move(nuevaUbicacion, 14.5);
+    }
+  }
+
   Widget _buildUbicacionSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -703,26 +769,16 @@ class _NewEventScreenState extends State<NewEventScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             _buildLabel('Ubicación del evento', isOptional: true),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE2F0E8),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.touch_app, size: 13, color: Color(0xFF26674B)),
-                  SizedBox(width: 4),
-                  Text(
-                    'Toca para reubicar pin',
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF26674B),
-                    ),
-                  ),
-                ],
+            TextButton.icon(
+              onPressed: _abrirMapaCompleto,
+              icon: const Icon(Icons.open_in_full_rounded, size: 15, color: Color(0xFF26674B)),
+              label: const Text(
+                'Ampliar mapa',
+                style: TextStyle(
+                  color: Color(0xFF26674B),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12.5,
+                ),
               ),
             ),
           ],
@@ -731,49 +787,86 @@ class _NewEventScreenState extends State<NewEventScreen> {
 
         // Mini-mapa interactivo con FlutterMap
         Container(
-          height: 125,
+          height: 130,
           decoration: BoxDecoration(
             color: const Color(0xFFE5EFEA),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: Colors.grey.shade300),
           ),
           clipBehavior: Clip.antiAlias,
-          child: FlutterMap(
-            options: MapOptions(
-              initialCenter: _coordenadas,
-              initialZoom: 14.5,
-              onTap: (tapPosition, point) {
-                setState(() => _coordenadas = point);
-                ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Ubicación fijada: ${point.latitude.toStringAsFixed(4)}, ${point.longitude.toStringAsFixed(4)}',
-                    ),
-                    duration: const Duration(seconds: 2),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              },
-            ),
+          child: Stack(
             children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'bo.edu.uajms.proyecto_final_360',
-              ),
-              MarkerLayer(
-                markers: [
-                  Marker(
-                    point: _coordenadas,
-                    width: 36,
-                    height: 36,
-                    child: const Icon(
-                      Icons.location_on,
-                      color: Color(0xFF26674B),
-                      size: 36,
-                    ),
+              FlutterMap(
+                mapController: _mapController,
+                options: MapOptions(
+                  initialCenter: _coordenadas,
+                  initialZoom: 14.5,
+                  onTap: (tapPosition, point) {
+                    setState(() => _coordenadas = point);
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Ubicación fijada: ${point.latitude.toStringAsFixed(4)}, ${point.longitude.toStringAsFixed(4)}',
+                        ),
+                        duration: const Duration(seconds: 2),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  },
+                ),
+                children: [
+                  TileLayer(
+                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'bo.edu.uajms.proyecto_final_360',
+                  ),
+                  MarkerLayer(
+                    markers: [
+                      Marker(
+                        point: _coordenadas,
+                        width: 36,
+                        height: 36,
+                        child: const Icon(
+                          Icons.location_on,
+                          color: Color(0xFF26674B),
+                          size: 36,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
+              ),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Material(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  elevation: 2,
+                  shadowColor: Colors.black38,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: _abrirMapaCompleto,
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.fullscreen, size: 16, color: Color(0xFF26674B)),
+                          SizedBox(width: 3),
+                          Text(
+                            'Ampliar',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF26674B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ],
           ),

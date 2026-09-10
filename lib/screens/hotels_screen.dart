@@ -22,85 +22,6 @@ class _HotelsScreenState extends State<HotelsScreen> {
   String? _error;
   List<Hotel> _hoteles = <Hotel>[];
 
-  // Datos de hospedajes curados para Comarapa en caso de offline o tabla vacía
-  static final List<Hotel> _demoHoteles = [
-    const Hotel(
-      id: 'demo-hotel-1',
-      nombre: 'Hotel Valle Verde',
-      categoriaNombre: 'Hotel',
-      descripcion: 'Alojamiento confortable en el centro de Comarapa, habitaciones con baño privado, agua caliente 24 horas y señal wifi de alta velocidad.',
-      precioMin: 180,
-      precioMax: 250,
-      direccionReferencia: 'Av. Circunvalación, a 2 cuadras de la plaza principal',
-      contactoReservas: '+591 3 936 1145',
-      servicios: ['Wifi gratis', 'Parqueo privado', 'Desayuno incluido', 'Agua caliente'],
-      latitud: -18.0401,
-      longitud: -64.5276,
-      activo: true,
-      calificacionPromedio: 4.8,
-    ),
-    const Hotel(
-      id: 'demo-hotel-2',
-      nombre: 'Hostal El Mirador del Valle',
-      categoriaNombre: 'Hostal',
-      descripcion: 'Acogedor hostal familiar con terraza y vistas panorámicas a los huertos de durazno y serranías de Comarapa.',
-      precioMin: 90,
-      precioMax: 140,
-      direccionReferencia: 'Calle Sucre esq. Bolívar, Comarapa',
-      contactoReservas: '+591 712 34567',
-      servicios: ['Wifi gratis', 'Desayuno casero', 'Agua caliente', 'Terraza mirador'],
-      latitud: -18.0375,
-      longitud: -64.5290,
-      activo: true,
-      calificacionPromedio: 4.6,
-    ),
-    const Hotel(
-      id: 'demo-hotel-3',
-      nombre: 'Cabañas Rústicas La Pajcha',
-      categoriaNombre: 'Cabaña',
-      descripcion: 'Cabañas independientes de madera y piedra en entorno campestre rodeadas de vegetación y arroyos, con área de fogata nocturna.',
-      precioMin: 220,
-      precioMax: 350,
-      direccionReferencia: 'Camino a La Pajcha, km 4, Comarapa',
-      contactoReservas: '+591 721 98765',
-      servicios: ['Fogata nocturna', 'Parqueo', 'Parrilleros', 'Senderos privados'],
-      latitud: -18.0280,
-      longitud: -64.5150,
-      activo: true,
-      calificacionPromedio: 4.9,
-    ),
-    const Hotel(
-      id: 'demo-hotel-4',
-      nombre: 'Camping Ecológico Los Sauces',
-      categoriaNombre: 'Camping',
-      descripcion: 'Espacio verde seguro a orillas del río para acampar bajo las estrellas, con baños limpios, duchas y parrilleros comunitarios.',
-      precioMin: 40,
-      precioMax: 70,
-      direccionReferencia: 'Ribera del Río Comarapa, Sector Los Sauces',
-      contactoReservas: '+591 730 45678',
-      servicios: ['Baños y duchas', 'Fogatas permitidas', 'Seguridad 24h', 'Parrilleros'],
-      latitud: -18.0510,
-      longitud: -64.5320,
-      activo: true,
-      calificacionPromedio: 4.5,
-    ),
-    const Hotel(
-      id: 'demo-hotel-5',
-      nombre: 'Residencial Comarapa Colonial',
-      categoriaNombre: 'Hostal',
-      descripcion: 'Casona tradicional restaurada con patio central lleno de plantas ornamentales, ambiente sereno y trato cordial.',
-      precioMin: 110,
-      precioMax: 160,
-      direccionReferencia: 'Calle 16 de Julio #45, Centro Histórico',
-      contactoReservas: '+591 3 936 1020',
-      servicios: ['Wifi gratis', 'Agua caliente', 'Patio central', 'Cafetería'],
-      latitud: -18.0392,
-      longitud: -64.5265,
-      activo: true,
-      calificacionPromedio: 4.7,
-    ),
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -127,14 +48,14 @@ class _HotelsScreenState extends State<HotelsScreen> {
       final list = await repo.fetchActivos();
       if (!mounted) return;
       setState(() {
-        _hoteles = list.isNotEmpty ? list : _demoHoteles;
+        _hoteles = list;
         _loading = false;
       });
     } catch (_) {
       if (!mounted) return;
-      // En caso de modo offline o sin datos en Supabase, cargar la muestra demo representativa
       setState(() {
-        _hoteles = _demoHoteles;
+        _hoteles = <Hotel>[];
+        _error = 'No se pudieron cargar los hospedajes desde la base de datos.';
         _loading = false;
       });
     }
@@ -184,8 +105,10 @@ class _HotelsScreenState extends State<HotelsScreen> {
       return 'Bs ${min.toInt()} - ${max.toInt()}';
     } else if (min != null) {
       return 'Desde Bs ${min.toInt()}';
+    } else if (max != null) {
+      return 'Hasta Bs ${max.toInt()}';
     }
-    return 'Bs 150 - 250';
+    return '';
   }
 
   @override
@@ -370,6 +293,8 @@ class _HotelsScreenState extends State<HotelsScreen> {
   }
 
   Widget _buildHotelCard(Hotel hotel) {
+    final precio = _preciosLabel(hotel);
+
     return GestureDetector(
       onTap: () {
         Navigator.of(context).push(
@@ -440,22 +365,21 @@ class _HotelsScreenState extends State<HotelsScreen> {
                             ),
                           ),
                         ),
-                        Row(
-                          children: [
-                            const Icon(Icons.star, size: 14, color: Color(0xFFD97706)),
-                            const SizedBox(width: 3),
-                            Text(
-                              hotel.calificacionPromedio > 0
-                                  ? hotel.calificacionPromedio.toStringAsFixed(1)
-                                  : '4.8',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFFB45309),
+                        if (hotel.calificacionPromedio > 0)
+                          Row(
+                            children: [
+                              const Icon(Icons.star, size: 14, color: Color(0xFFD97706)),
+                              const SizedBox(width: 3),
+                              Text(
+                                hotel.calificacionPromedio.toStringAsFixed(1),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFFB45309),
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
+                            ],
+                          ),
                       ],
                     ),
                     const SizedBox(height: 6),
@@ -473,24 +397,43 @@ class _HotelsScreenState extends State<HotelsScreen> {
                     ),
                     const SizedBox(height: 6),
 
-                    // Fila con precio por noche
-                    Row(
-                      children: [
-                        const Icon(Icons.night_shelter_outlined, size: 14, color: Color(0xFF1B5A3F)),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            '${_preciosLabel(hotel)} / noche',
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF1B5A3F),
-                              fontWeight: FontWeight.w600,
+                    // Fila con precio por noche o referencia
+                    if (precio.isNotEmpty)
+                      Row(
+                        children: [
+                          const Icon(Icons.night_shelter_outlined, size: 14, color: Color(0xFF1B5A3F)),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              '$precio / noche',
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF1B5A3F),
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      )
+                    else if (hotel.direccionReferencia != null && hotel.direccionReferencia!.trim().isNotEmpty)
+                      Row(
+                        children: [
+                          const Icon(Icons.place_outlined, size: 14, color: Color(0xFF6B7280)),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              hotel.direccionReferencia!.trim(),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF6B7280),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                   ],
                 ),
               ),

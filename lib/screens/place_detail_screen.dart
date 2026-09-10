@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 
@@ -24,7 +23,6 @@ class PlaceDetailScreen extends StatefulWidget {
 class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
   late final PageController _pageController;
   int _currentPage = 0;
-  bool _isFavorite = false;
 
   double _promedioResenas = 0;
   int _totalResenas = 0;
@@ -96,18 +94,6 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
         'para varias caminatas cortas con vista a los valles y serranías de Comarapa.';
   }
 
-  void _onShare() {
-    Clipboard.setData(ClipboardData(
-      text: '${widget.lugar.nombre} - Descubre Comarapa Turismo',
-    ));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Enlace de "${widget.lugar.nombre}" copiado'),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
 
   void _openFullMap(BuildContext context) {
     showModalBottomSheet(
@@ -234,49 +220,17 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
             ),
           ),
 
-          // Barra superior de navegación con botones circulares
+          // Barra superior de navegación con botón volver
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   // Botón Volver
                   _buildCircleButton(
                     icon: Icons.chevron_left,
                     iconSize: 26,
                     onTap: () => Navigator.of(context).pop(),
-                  ),
-
-                  // Acciones superiores: Favorito y Compartir
-                  Row(
-                    children: [
-                      _buildCircleButton(
-                        icon: _isFavorite ? Icons.favorite : Icons.favorite_border,
-                        iconColor: _isFavorite ? const Color(0xFFE53935) : Colors.black87,
-                        iconSize: 22,
-                        onTap: () {
-                          setState(() => _isFavorite = !_isFavorite);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                _isFavorite
-                                    ? 'Añadido a tus favoritos'
-                                    : 'Eliminado de tus favoritos',
-                              ),
-                              behavior: SnackBarBehavior.floating,
-                              duration: const Duration(seconds: 1),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(width: 12),
-                      _buildCircleButton(
-                        icon: Icons.share_outlined,
-                        iconSize: 20,
-                        onTap: _onShare,
-                      ),
-                    ],
                   ),
                 ],
               ),

@@ -7,7 +7,7 @@ class GastronomiaRepository {
 
   final SupabaseClient client;
 
-  static const String _select = '*, categorias(nombre)';
+  static const String _select = '*, categorias(nombre), restaurantes(nombre)';
 
   Future<List<GastronomiaItem>> fetchAll() async {
     final rows = await client
@@ -24,6 +24,19 @@ class GastronomiaRepository {
         .select(_select)
         .eq('activo', true)
         .order('created_at', ascending: false);
+
+    return rows.map(GastronomiaItem.fromMap).toList();
+  }
+
+  /// Platos/bebidas típicos que se pueden encontrar en un restaurante
+  /// específico (según el "dónde encontrarlo" asignado desde el panel).
+  Future<List<GastronomiaItem>> fetchByRestaurante(String restauranteId) async {
+    final rows = await client
+        .from('gastronomia')
+        .select(_select)
+        .eq('restaurante_id', restauranteId)
+        .eq('activo', true)
+        .order('nombre', ascending: true);
 
     return rows.map(GastronomiaItem.fromMap).toList();
   }

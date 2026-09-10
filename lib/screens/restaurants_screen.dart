@@ -22,90 +22,6 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
   String? _error;
   List<Restaurante> _restaurantes = <Restaurante>[];
 
-  // Datos curados de restaurantes de Comarapa en caso de offline o tabla vacía
-  static final List<Restaurante> _demoRestaurantes = [
-    const Restaurante(
-      id: 'demo-rest-1',
-      nombre: 'El Fogón Comarapeño',
-      categoriaNombre: 'Comida típica',
-      descripcion:
-          'Restaurante tradicional con ambiente rústico campestre. Especialidad en picante de pollo criollo con duraznos caramelizados, pique macho y sopa de maní.',
-      direccionReferencia: 'Calle Sucre esq. Bolívar, a media cuadra de la plaza principal',
-      horarioAtencion: '11:30 - 21:30',
-      precioReferencial: 45,
-      contacto: '+591 3 936 1120',
-      calificacionPromedio: 4.8,
-      latitud: -18.0388,
-      longitud: -64.5283,
-      activo: true,
-      imagenes: [],
-    ),
-    const Restaurante(
-      id: 'demo-rest-2',
-      nombre: 'La Terraza del Durazno',
-      categoriaNombre: 'Café & repostería',
-      descripcion:
-          'Cafetería y salón de té con terraza panorámica. Repostería artesanal a base de durazno comarapeño, empanadas blanqueadas y jugos de fruta fresca.',
-      direccionReferencia: 'Av. Circunvalación #85, mirador este',
-      horarioAtencion: '08:00 - 20:00',
-      precioReferencial: 25,
-      contacto: '+591 712 98450',
-      calificacionPromedio: 4.6,
-      latitud: -18.0410,
-      longitud: -64.5260,
-      activo: true,
-      imagenes: [],
-    ),
-    const Restaurante(
-      id: 'demo-rest-3',
-      nombre: 'Parrilla y Asador El Chaqueño',
-      categoriaNombre: 'Parrilla',
-      descripcion:
-          'Especialistas en carnes a la brasa de quebracho blanco, costillitas de cerdo marinadas, pacumutos mixtos y ensaladas de la huerta.',
-      direccionReferencia: 'Carretera Antigua a Cochabamba km 2, sector El Molino',
-      horarioAtencion: '12:00 - 22:30',
-      precioReferencial: 55,
-      contacto: '+591 721 45678',
-      calificacionPromedio: 4.7,
-      latitud: -18.0460,
-      longitud: -64.5320,
-      activo: true,
-      imagenes: [],
-    ),
-    const Restaurante(
-      id: 'demo-rest-4',
-      nombre: 'Pizzería y Trattoria Don Beto',
-      categoriaNombre: 'Pizzería',
-      descripcion:
-          'Pizzas artesanales horneadas a la piedra con queso criollo de los valles y jamones caseros, además de pastas frescas y ensaladas.',
-      direccionReferencia: 'Calle 16 de Julio frente al mercado central',
-      horarioAtencion: '17:30 - 23:00',
-      precioReferencial: 40,
-      contacto: '+591 3 936 1450',
-      calificacionPromedio: 4.4,
-      latitud: -18.0425,
-      longitud: -64.5295,
-      activo: true,
-      imagenes: [],
-    ),
-    const Restaurante(
-      id: 'demo-rest-5',
-      nombre: 'Rincón Camba Valluno',
-      categoriaNombre: 'Comida oriental',
-      descripcion:
-          'Fusión de la cocina oriental cruceña y valluna: majadito de pato tostado, pacumutos de res, sopa tapada y refresco natural de somó bien frío.',
-      direccionReferencia: 'Barrio San José, calle Los Sauces',
-      horarioAtencion: '11:00 - 16:00',
-      precioReferencial: 35,
-      contacto: '+591 730 67890',
-      calificacionPromedio: 4.5,
-      latitud: -18.0370,
-      longitud: -64.5240,
-      activo: true,
-      imagenes: [],
-    ),
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -132,14 +48,14 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
       final list = await repo.fetchActivos();
       if (!mounted) return;
       setState(() {
-        _restaurantes = list.isNotEmpty ? list : _demoRestaurantes;
+        _restaurantes = list;
         _loading = false;
       });
     } catch (_) {
       if (!mounted) return;
-      // En caso de modo offline o sin datos en Supabase, cargar la muestra demo representativa
       setState(() {
-        _restaurantes = _demoRestaurantes;
+        _restaurantes = <Restaurante>[];
+        _error = 'No se pudieron cargar los restaurantes desde la base de datos.';
         _loading = false;
       });
     }
@@ -366,9 +282,9 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
   }
 
   Widget _buildRestauranteCard(Restaurante restaurante) {
-    final rating = restaurante.calificacionPromedio > 0
-        ? restaurante.calificacionPromedio.toDouble()
-        : 4.8;
+    final tieneHorario = restaurante.horarioAtencion != null && restaurante.horarioAtencion!.trim().isNotEmpty;
+    final tienePrecio = restaurante.precioReferencial != null && restaurante.precioReferencial! > 0;
+    final tieneDireccion = restaurante.direccionReferencia != null && restaurante.direccionReferencia!.trim().isNotEmpty;
 
     return GestureDetector(
       onTap: () {
@@ -448,28 +364,29 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
                             ),
                           ),
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFEF3C7),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.star, size: 12, color: Color(0xFFD97706)),
-                              const SizedBox(width: 3),
-                              Text(
-                                rating.toStringAsFixed(1),
-                                style: const TextStyle(
-                                  color: Color(0xFFB45309),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 11,
+                        if (restaurante.calificacionPromedio > 0)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEF3C7),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.star, size: 12, color: Color(0xFFD97706)),
+                                const SizedBox(width: 3),
+                                Text(
+                                  restaurante.calificacionPromedio.toStringAsFixed(1),
+                                  style: const TextStyle(
+                                    color: Color(0xFFB45309),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 11,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
                       ],
                     ),
                     const SizedBox(height: 6),
@@ -486,67 +403,71 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
                         fontFamily: 'serif',
                       ),
                     ),
-                    const SizedBox(height: 5),
 
-                    // Horario y precio aproximado
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.access_time,
-                          size: 13,
-                          color: Color(0xFF6B7280),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          restaurante.horarioAtencion?.isNotEmpty == true
-                              ? restaurante.horarioAtencion!
-                              : '11:30 - 21:30',
-                          style: const TextStyle(
-                            fontSize: 11.5,
-                            color: Color(0xFF6B7280),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Text('·', style: TextStyle(color: Color(0xFF9CA3AF))),
-                        const SizedBox(width: 8),
-                        Text(
-                          restaurante.precioReferencial != null
-                              ? 'Bs ${restaurante.precioReferencial}'
-                              : 'Bs 35-60',
-                          style: const TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF1B5A3F),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-
-                    // Dirección de referencia
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.location_on_outlined,
-                          size: 13,
-                          color: Color(0xFF9CA3AF),
-                        ),
-                        const SizedBox(width: 3),
-                        Expanded(
-                          child: Text(
-                            restaurante.direccionReferencia?.isNotEmpty == true
-                                ? restaurante.direccionReferencia!
-                                : 'Comarapa Centro',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: Color(0xFF9CA3AF),
+                    // Horario y precio aproximado (solo si existen en la BD)
+                    if (tieneHorario || tienePrecio) ...[
+                      const SizedBox(height: 5),
+                      Row(
+                        children: [
+                          if (tieneHorario) ...[
+                            const Icon(
+                              Icons.access_time,
+                              size: 13,
+                              color: Color(0xFF6B7280),
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                            const SizedBox(width: 4),
+                            Text(
+                              restaurante.horarioAtencion!.trim(),
+                              style: const TextStyle(
+                                fontSize: 11.5,
+                                color: Color(0xFF6B7280),
+                              ),
+                            ),
+                          ],
+                          if (tieneHorario && tienePrecio) ...[
+                            const SizedBox(width: 8),
+                            const Text('·', style: TextStyle(color: Color(0xFF9CA3AF))),
+                            const SizedBox(width: 8),
+                          ],
+                          if (tienePrecio) ...[
+                            Text(
+                              'Bs ${restaurante.precioReferencial!.toInt()} ref.',
+                              style: const TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF1B5A3F),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+
+                    // Dirección de referencia (solo si existe en la BD)
+                    if (tieneDireccion) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.location_on_outlined,
+                            size: 13,
+                            color: Color(0xFF9CA3AF),
                           ),
-                        ),
-                      ],
-                    ),
+                          const SizedBox(width: 3),
+                          Expanded(
+                            child: Text(
+                              restaurante.direccionReferencia!.trim(),
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF9CA3AF),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),

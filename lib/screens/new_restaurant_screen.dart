@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 import 'package:provider/provider.dart';
 
+import '../models/categoria.dart';
 import '../models/restaurante.dart';
+import '../repositories/categoria_repository.dart';
 import '../repositories/restaurante_repository.dart';
 import '../widgets/imagen_picker_field.dart';
+import '../widgets/fullscreen_location_picker.dart';
 
 class NewRestaurantScreen extends StatefulWidget {
   const NewRestaurantScreen({super.key});
@@ -22,28 +26,48 @@ class _NewRestaurantScreenState extends State<NewRestaurantScreen> {
   final TextEditingController _contactoController = TextEditingController();
   final TextEditingController _direccionController = TextEditingController();
 
-  String _tipoSeleccionado = 'Comida típica';
-  final List<String> _tiposDisponibles = ['Comida típica', 'Parrilla', 'Café & repostería'];
+  List<Categoria> _categorias = [];
+  String? _categoriaId;
+  bool _cargandoCategorias = true;
 
   bool _isActive = true;
   LatLng _coordenadas = const LatLng(-18.0388, -64.5283);
+  final MapController _mapController = MapController();
   bool _isSaving = false;
   List<String> _imagenes = [];
 
   String? _nombreError;
   String? _precioError;
+  String? _contactoError;
 
   @override
   void initState() {
     super.initState();
-    _horarioController.text = '12:00 - 21:00';
-    _precioRefController.text = '35 - 60';
-    _contactoController.text = '+591 3 936 1120';
-    _direccionController.text = 'A media cuadra de la plaza principal, Comarapa';
-
     _nombreController.addListener(() {
       setState(() {});
     });
+    _contactoController.addListener(() {
+      if (_contactoError != null) setState(() => _contactoError = null);
+    });
+    _cargarCategorias();
+  }
+
+  Future<void> _cargarCategorias() async {
+    try {
+      final repo = context.read<CategoriaRepository>();
+      final categorias = await repo.fetchByEntidad('restaurante');
+      if (!mounted) return;
+      setState(() {
+        _categorias = categorias;
+        _cargandoCategorias = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _cargandoCategorias = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudieron cargar las categorías: $error')),
+      );
+    }
   }
 
   @override
@@ -54,6 +78,7 @@ class _NewRestaurantScreenState extends State<NewRestaurantScreen> {
     _precioRefController.dispose();
     _contactoController.dispose();
     _direccionController.dispose();
+    _mapController.dispose();
     super.dispose();
   }
 
@@ -86,17 +111,25 @@ class _NewRestaurantScreenState extends State<NewRestaurantScreen> {
               backgroundColor: const Color(0xFF26674B),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            onPressed: () {
+            onPressed: () async {
               final text = controller.text.trim();
-              if (text.isNotEmpty) {
-                setState(() {
-                  if (!_tiposDisponibles.contains(text)) {
-                    _tiposDisponibles.add(text);
-                  }
-                  _tipoSeleccionado = text;
-                });
-              }
               Navigator.pop(ctx);
+              if (text.isEmpty) return;
+
+              try {
+                final repo = context.read<CategoriaRepository>();
+                final categoria = await repo.create(entidad: 'restaurante', nombre: text);
+                if (!mounted) return;
+                setState(() {
+                  _categorias = [..._categorias, categoria];
+                  _categoriaId = categoria.id;
+                });
+              } catch (error) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('No se pudo crear la categoría: $error')),
+                );
+              }
             },
             child: const Text('Agregar'),
           ),
@@ -109,6 +142,7 @@ class _NewRestaurantScreenState extends State<NewRestaurantScreen> {
     setState(() {
       _nombreError = null;
       _precioError = null;
+      _contactoError = null;
     });
 
     final nombre = _nombreController.text.trim();
@@ -138,6 +172,30 @@ class _NewRestaurantScreenState extends State<NewRestaurantScreen> {
       }
     }
 
+    final contacto = _contactoController.text.trim();
+    if (contacto.isNotEmpty) {
+      if (!RegExp(r'^\d+$').hasMatch(contacto)) {
+        setState(() => _contactoError = 'Solo se permiten números.');
+        valido = false;
+      } else if (!RegExp(r'^[67]').hasMatch(contacto)) {
+        setState(() => _contactoError = 'Debe comenzar con 6 o 7 (celular Bolivia).');
+        valido = false;
+      } else if (contacto.length != 8) {
+        setState(() => _contactoError = 'Debe tener exactamente 8 dígitos.');
+        valido = false;
+      }
+    }
+
+    if (_categoriaId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor, selecciona un tipo de comida.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      valido = false;
+    }
+
     if (!valido) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -163,21 +221,20 @@ class _NewRestaurantScreenState extends State<NewRestaurantScreen> {
       final num? precio = num.tryParse(precioRaw.replaceAll(RegExp(r'[^0-9.]'), ''));
 
       final newRestaurante = Restaurante(
-        id: 'rest-${DateTime.now().millisecondsSinceEpoch}',
         nombre: nombre,
-        categoriaNombre: _tipoSeleccionado,
-        descripcion: _descripcionController.text.trim().isNotEmpty
-            ? _descripcionController.text.trim()
-            : 'Gastronomía tradicional y ambiente acogedor en el corazón de Comarapa.',
+        categoriaId: _categoriaId,
+        descripcion: _descripcionController.text.trim(),
         imagenes: _imagenes,
         horarioAtencion: _horarioController.text.trim().isNotEmpty
             ? _horarioController.text.trim()
-            : '12:00 - 21:00',
-        precioReferencial: precio ?? 45,
+            : null,
+        precioReferencial: precio,
         contacto: _contactoController.text.trim().isNotEmpty
             ? _contactoController.text.trim()
-            : '+591 3 936 1120',
-        direccionReferencia: _direccionController.text.trim(),
+            : null,
+        direccionReferencia: _direccionController.text.trim().isNotEmpty
+            ? _direccionController.text.trim()
+            : null,
         calificacionPromedio: 0,
         activo: _isActive,
         latitud: _coordenadas.latitude,
@@ -185,11 +242,7 @@ class _NewRestaurantScreenState extends State<NewRestaurantScreen> {
       );
 
       final repo = context.read<RestauranteRepository>();
-      try {
-        await repo.create(newRestaurante);
-      } catch (_) {
-        // En caso de entorno offline o sin autenticación de inserción, retorna para reflejo local
-      }
+      await repo.create(newRestaurante);
 
       if (!mounted) return;
       Navigator.pop(context, newRestaurante);
@@ -434,6 +487,17 @@ class _NewRestaurantScreenState extends State<NewRestaurantScreen> {
   }
 
   Widget _buildTipoComidaSelector() {
+    if (_cargandoCategorias) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 8),
+        child: SizedBox(
+          height: 20,
+          width: 20,
+          child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF26674B)),
+        ),
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -443,10 +507,10 @@ class _NewRestaurantScreenState extends State<NewRestaurantScreen> {
           spacing: 8,
           runSpacing: 8,
           children: [
-            ..._tiposDisponibles.map((tipo) {
-              final isSelected = _tipoSeleccionado == tipo;
+            ..._categorias.map((cat) {
+              final isSelected = _categoriaId == cat.id;
               return GestureDetector(
-                onTap: () => setState(() => _tipoSeleccionado = tipo),
+                onTap: () => setState(() => _categoriaId = cat.id),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -458,7 +522,7 @@ class _NewRestaurantScreenState extends State<NewRestaurantScreen> {
                     ),
                   ),
                   child: Text(
-                    tipo,
+                    cat.nombre,
                     style: TextStyle(
                       color: isSelected ? Colors.white : const Color(0xFF374151),
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
@@ -601,28 +665,58 @@ class _NewRestaurantScreenState extends State<NewRestaurantScreen> {
   }
 
   Widget _buildContactoField() {
+    final hasError = _contactoError != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildLabel('Contacto', isOptional: true),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _buildLabel('Contacto', isOptional: true),
+            Text(
+              '8 dígitos · inicia con 6 o 7',
+              style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+            ),
+          ],
+        ),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(
+              color: hasError ? const Color(0xFFDC2626) : Colors.grey.shade300,
+              width: hasError ? 1.5 : 1.0,
+            ),
           ),
           child: TextField(
             controller: _contactoController,
+            keyboardType: TextInputType.number,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(8),
+            ],
             style: const TextStyle(fontSize: 14, color: Color(0xFF1F2937)),
-            decoration: const InputDecoration(
-              hintText: '+591 3 936 1120',
-              prefixIcon: Icon(Icons.phone_outlined, size: 18, color: Color(0xFF6B7280)),
+            decoration: InputDecoration(
+              hintText: 'Ej. 71234567 o 61234567',
+              prefixIcon: Icon(
+                Icons.phone_android,
+                size: 18,
+                color: hasError ? const Color(0xFFDC2626) : const Color(0xFF6B7280),
+              ),
               border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             ),
           ),
         ),
+        if (hasError)
+          Padding(
+            padding: const EdgeInsets.only(top: 4, left: 4),
+            child: Text(
+              _contactoError!,
+              style: const TextStyle(color: Color(0xFFDC2626), fontSize: 12, fontWeight: FontWeight.w500),
+            ),
+          ),
       ],
     );
   }
@@ -676,7 +770,18 @@ class _NewRestaurantScreenState extends State<NewRestaurantScreen> {
     );
   }
 
-  /// Sección de Ubicación con Mini-Mapa Interactivo (Tap-to-Pin)
+  Future<void> _abrirMapaCompleto() async {
+    final nuevaUbicacion = await FullscreenLocationPicker.pick(
+      context: context,
+      initialLocation: _coordenadas,
+      title: 'Ubicación del restaurante',
+    );
+    if (nuevaUbicacion != null && mounted) {
+      setState(() => _coordenadas = nuevaUbicacion);
+      _mapController.move(nuevaUbicacion, 14.5);
+    }
+  }
+
   Widget _buildUbicacionSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -684,27 +789,17 @@ class _NewRestaurantScreenState extends State<NewRestaurantScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _buildLabel('Ubicación interactiva', isOptional: true),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE2F0E8),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.touch_app, size: 13, color: Color(0xFF26674B)),
-                  SizedBox(width: 4),
-                  Text(
-                    'Toca para reubicar pin',
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF26674B),
-                    ),
-                  ),
-                ],
+            _buildLabel('Ubicación del restaurante', isOptional: true),
+            TextButton.icon(
+              onPressed: _abrirMapaCompleto,
+              icon: const Icon(Icons.open_in_full_rounded, size: 15, color: Color(0xFF26674B)),
+              label: const Text(
+                'Ampliar mapa',
+                style: TextStyle(
+                  color: Color(0xFF26674B),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12.5,
+                ),
               ),
             ),
           ],
@@ -713,49 +808,86 @@ class _NewRestaurantScreenState extends State<NewRestaurantScreen> {
 
         // Mini mapa interactivo con FlutterMap
         Container(
-          height: 125,
+          height: 130,
           decoration: BoxDecoration(
             color: const Color(0xFFE5EFEA),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: Colors.grey.shade300),
           ),
           clipBehavior: Clip.antiAlias,
-          child: FlutterMap(
-            options: MapOptions(
-              initialCenter: _coordenadas,
-              initialZoom: 14.5,
-              onTap: (tapPosition, point) {
-                setState(() => _coordenadas = point);
-                ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Ubicación fijada: ${point.latitude.toStringAsFixed(4)}, ${point.longitude.toStringAsFixed(4)}',
-                    ),
-                    duration: const Duration(seconds: 2),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              },
-            ),
+          child: Stack(
             children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'bo.edu.uajms.proyecto_final_360',
-              ),
-              MarkerLayer(
-                markers: [
-                  Marker(
-                    point: _coordenadas,
-                    width: 36,
-                    height: 36,
-                    child: const Icon(
-                      Icons.location_on,
-                      color: Color(0xFF26674B),
-                      size: 36,
-                    ),
+              FlutterMap(
+                mapController: _mapController,
+                options: MapOptions(
+                  initialCenter: _coordenadas,
+                  initialZoom: 14.5,
+                  onTap: (tapPosition, point) {
+                    setState(() => _coordenadas = point);
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Ubicación fijada: ${point.latitude.toStringAsFixed(4)}, ${point.longitude.toStringAsFixed(4)}',
+                        ),
+                        duration: const Duration(seconds: 2),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  },
+                ),
+                children: [
+                  TileLayer(
+                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'bo.edu.uajms.proyecto_final_360',
+                  ),
+                  MarkerLayer(
+                    markers: [
+                      Marker(
+                        point: _coordenadas,
+                        width: 36,
+                        height: 36,
+                        child: const Icon(
+                          Icons.location_on,
+                          color: Color(0xFF26674B),
+                          size: 36,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
+              ),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Material(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  elevation: 2,
+                  shadowColor: Colors.black38,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: _abrirMapaCompleto,
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.fullscreen, size: 16, color: Color(0xFF26674B)),
+                          SizedBox(width: 3),
+                          Text(
+                            'Ampliar',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF26674B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ],
           ),

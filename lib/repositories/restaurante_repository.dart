@@ -28,6 +28,17 @@ class RestauranteRepository {
     return rows.map(Restaurante.fromMap).toList();
   }
 
+  Future<Restaurante?> fetchById(String id) async {
+    final row = await client
+        .from('restaurantes')
+        .select(_select)
+        .eq('id', id)
+        .maybeSingle();
+
+    if (row == null) return null;
+    return Restaurante.fromMap(row);
+  }
+
   Future<void> create(Restaurante restaurante) async {
     await client.from('restaurantes').insert(restaurante.toWriteMap());
   }

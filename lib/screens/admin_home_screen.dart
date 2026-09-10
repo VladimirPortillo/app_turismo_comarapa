@@ -76,45 +76,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final TextEditingController _searchController = TextEditingController();
 
-  static final List<Hotel> _demoHoteles = [
-    const Hotel(
-      id: 'demo-hotel-1',
-      nombre: 'Hotel Valle Verde',
-      categoriaNombre: 'Hotel',
-      precioMin: 180,
-      precioMax: 250,
-      calificacionPromedio: 4.5,
-      activo: true,
-    ),
-    const Hotel(
-      id: 'demo-hotel-2',
-      nombre: 'Cabañas El Durazno',
-      categoriaNombre: 'Cabaña',
-      precioMin: 220,
-      precioMax: 320,
-      calificacionPromedio: 4.8,
-      activo: true,
-    ),
-    const Hotel(
-      id: 'demo-hotel-3',
-      nombre: 'Hostal Serranía',
-      categoriaNombre: 'Hostal',
-      precioMin: 90,
-      precioMax: 140,
-      calificacionPromedio: 4.1,
-      activo: true,
-    ),
-    const Hotel(
-      id: 'demo-hotel-4',
-      nombre: 'Camping Ambóró',
-      categoriaNombre: 'Camping',
-      precioMin: 60,
-      precioMax: 90,
-      calificacionPromedio: 4.2,
-      activo: false,
-    ),
-  ];
-
   static final List<Evento> _demoEventos = [
     Evento(
       id: 'demo-evento-1',
@@ -146,37 +107,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
       categoriaNombre: 'Cultural',
       fechaInicio: DateTime(2026, 11, 21),
       periodicidad: 'único',
-      activo: false,
-    ),
-  ];
-
-  static final List<Restaurante> _demoRestaurantes = [
-    const Restaurante(
-      id: 'demo-restaurante-1',
-      nombre: 'El Fogón Comarapeño',
-      categoriaNombre: 'Comida típica',
-      calificacionPromedio: 4.8,
-      activo: true,
-    ),
-    const Restaurante(
-      id: 'demo-restaurante-2',
-      nombre: 'La Terraza del Durazno',
-      categoriaNombre: 'Café & repostería',
-      calificacionPromedio: 4.6,
-      activo: true,
-    ),
-    const Restaurante(
-      id: 'demo-restaurante-3',
-      nombre: 'Rincón Camba',
-      categoriaNombre: 'Comida oriental',
-      calificacionPromedio: 4.5,
-      activo: true,
-    ),
-    const Restaurante(
-      id: 'demo-restaurante-4',
-      nombre: 'Pizzería Don Beto',
-      categoriaNombre: 'Pizzería',
-      calificacionPromedio: 4.0,
       activo: false,
     ),
   ];
@@ -327,11 +257,11 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                   nombre: e.nombre,
                   categoria: e.categoriaNombre ?? 'Sin categoría',
                   activo: e.activo,
+                  imagenes: e.imagenes,
                 ))
             .toList();
       case TurismoTipo.hotel:
-        final list = _hoteles.isNotEmpty ? _hoteles : _demoHoteles;
-        return list.map((e) {
+        return _hoteles.map((e) {
           String? precio;
           if (e.precioMin != null && e.precioMax != null) {
             precio = 'Bs ${e.precioMin?.toInt() ?? e.precioMin}–${e.precioMax?.toInt() ?? e.precioMax}';
@@ -356,6 +286,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                   nombre: e.nombre,
                   categoria: e.categoriaNombre ?? 'Sin categoría',
                   activo: e.activo,
+                  imagenes: e.imagenes,
                 ))
             .toList();
       case TurismoTipo.evento:
@@ -375,8 +306,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
           );
         }).toList();
       case TurismoTipo.restaurante:
-        final list = _restaurantes.isNotEmpty ? _restaurantes : _demoRestaurantes;
-        return list.map((e) {
+        return _restaurantes.map((e) {
           return _CardData(
             id: e.id ?? '',
             nombre: e.nombre,
@@ -419,15 +349,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
           await context.read<ActividadRepository>().setActivo(card.id, !card.activo);
           break;
         case TurismoTipo.hotel:
-          if (card.id.startsWith('demo-')) {
-            final idx = _demoHoteles.indexWhere((h) => h.id == card.id);
-            if (idx != -1) {
-              setState(() {
-                _demoHoteles[idx] = _demoHoteles[idx].copyWith(activo: !card.activo);
-              });
-              return;
-            }
-          }
           await context.read<HotelRepository>().setActivo(card.id, !card.activo);
           break;
         case TurismoTipo.gastronomia:
@@ -446,15 +367,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
           await context.read<EventoRepository>().setActivo(card.id, !card.activo);
           break;
         case TurismoTipo.restaurante:
-          if (card.id.startsWith('demo-')) {
-            final idx = _demoRestaurantes.indexWhere((r) => r.id == card.id);
-            if (idx != -1) {
-              setState(() {
-                _demoRestaurantes[idx] = _demoRestaurantes[idx].copyWith(activo: !card.activo);
-              });
-              return;
-            }
-          }
           await context.read<RestauranteRepository>().setActivo(card.id, !card.activo);
           break;
       }
@@ -486,9 +398,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
             MaterialPageRoute(builder: (context) => const NewHotelScreen()),
           );
           if (newHotel != null) {
-            setState(() {
-              _demoHoteles.insert(0, newHotel);
-            });
             await _loadAll();
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -501,22 +410,13 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
           }
           return;
         }
-        final allHoteles = _hoteles.isNotEmpty ? _hoteles : _demoHoteles;
-        final hotel = allHoteles.firstWhere((e) => e.id == card.id, orElse: () => allHoteles.first);
+        final hotel = _hoteles.firstWhere((e) => e.id == card.id);
         final updatedHotel = await Navigator.push<Hotel>(
           context,
           MaterialPageRoute(builder: (context) => EditHotelScreen(hotel: hotel)),
         );
         if (updatedHotel != null) {
-          if (updatedHotel.id != null &&
-              (updatedHotel.id!.startsWith('demo-') || updatedHotel.id!.startsWith('hotel-'))) {
-            final idx = _demoHoteles.indexWhere((h) => h.id == updatedHotel.id);
-            if (idx != -1) {
-              setState(() => _demoHoteles[idx] = updatedHotel);
-            }
-          } else {
-            await _loadAll();
-          }
+          await _loadAll();
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -586,9 +486,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
             MaterialPageRoute(builder: (context) => const NewRestaurantScreen()),
           );
           if (newRestaurante != null) {
-            setState(() {
-              _demoRestaurantes.insert(0, newRestaurante);
-            });
             await _loadAll();
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -601,22 +498,13 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
           }
           return;
         }
-        final allRestaurantes = _restaurantes.isNotEmpty ? _restaurantes : _demoRestaurantes;
-        final restaurante = allRestaurantes.firstWhere((e) => e.id == card.id, orElse: () => allRestaurantes.first);
+        final restaurante = _restaurantes.firstWhere((e) => e.id == card.id);
         final updatedRestaurante = await Navigator.push<Restaurante>(
           context,
           MaterialPageRoute(builder: (context) => EditRestaurantScreen(restaurante: restaurante)),
         );
         if (updatedRestaurante != null) {
-          if (updatedRestaurante.id != null &&
-              (updatedRestaurante.id!.startsWith('demo-') || updatedRestaurante.id!.startsWith('rest-'))) {
-            final idx = _demoRestaurantes.indexWhere((r) => r.id == updatedRestaurante.id);
-            if (idx != -1) {
-              setState(() => _demoRestaurantes[idx] = updatedRestaurante);
-            }
-          } else {
-            await _loadAll();
-          }
+          await _loadAll();
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -679,7 +567,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
             if (_isSearching) _buildSearchInput(),
             const SizedBox(height: 12),
             Expanded(child: _buildListBody(filteredList)),
-            _buildNoticeBanner(),
           ],
         ),
       ),
@@ -990,37 +877,58 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
           padding: const EdgeInsets.all(14),
           child: Row(
             children: [
-              // Badge de fecha en formato calendario
+              // Badge de fecha en formato calendario, con la foto del
+              // evento (si tiene) como fondo para que también sea visible.
               Container(
                 width: 62,
                 height: 62,
+                clipBehavior: Clip.antiAlias,
                 decoration: BoxDecoration(
                   color: card.badgeBgColor ??
                       (card.activo ? const Color(0xFFE2F0E8) : const Color(0xFFF3F4F6)),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                child: Stack(
+                  fit: StackFit.expand,
                   children: [
-                    Text(
-                      card.fechaBadgeDay ?? '01',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        height: 1.1,
-                        color: card.badgeTextColor ??
-                            (card.activo ? const Color(0xFF26674B) : const Color(0xFF9CA3AF)),
+                    if (card.imagenes.isNotEmpty)
+                      Image.network(
+                        card.imagenes.first,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      card.fechaBadgeMonth ?? 'ENE',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.8,
-                        color: card.badgeTextColor ??
-                            (card.activo ? const Color(0xFF26674B) : const Color(0xFF9CA3AF)),
+                    if (card.imagenes.isNotEmpty)
+                      Container(color: Colors.black.withValues(alpha: 0.35)),
+                    Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            card.fechaBadgeDay ?? '01',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              height: 1.1,
+                              color: card.imagenes.isNotEmpty
+                                  ? Colors.white
+                                  : (card.badgeTextColor ??
+                                      (card.activo ? const Color(0xFF26674B) : const Color(0xFF9CA3AF))),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            card.fechaBadgeMonth ?? 'ENE',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.8,
+                              color: card.imagenes.isNotEmpty
+                                  ? Colors.white
+                                  : (card.badgeTextColor ??
+                                      (card.activo ? const Color(0xFF26674B) : const Color(0xFF9CA3AF))),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -1546,51 +1454,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildNoticeBanner() {
-    final String mensaje;
-    if (_selectedTipo == TurismoTipo.hotel) {
-      mensaje =
-          'Desactivar un hotel lo oculta de la app (borrado lógico); se puede reactivar cuando quieras. La calificación se calcula sola con las reseñas.';
-    } else if (_selectedTipo == TurismoTipo.evento) {
-      mensaje =
-          'Un evento inactivo no se muestra en la app aunque ya haya pasado la fecha; reactívalo cuando vuelva a celebrarse.';
-    } else if (_selectedTipo == TurismoTipo.restaurante) {
-      mensaje =
-          'Desactivar un restaurante lo oculta de la app (borrado lógico); se puede reactivar cuando quieras. La calificación se calcula sola con las reseñas.';
-    } else {
-      mensaje =
-          'Desactivar un elemento lo oculta de la app (borrado lógico); se puede reactivar cuando quieras.';
-    }
-
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF0F7F4),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFD6EAE0)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.info_outline, color: Color(0xFF26674B), size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              mensaje,
-              style: const TextStyle(
-                color: Color(0xFF26674B),
-                fontSize: 12.5,
-                height: 1.45,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 

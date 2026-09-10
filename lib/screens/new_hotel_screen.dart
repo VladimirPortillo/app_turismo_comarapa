@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 import 'package:provider/provider.dart';
 
+import '../models/categoria.dart';
 import '../models/hotel.dart';
+import '../repositories/categoria_repository.dart';
 import '../repositories/hotel_repository.dart';
 import '../widgets/imagen_picker_field.dart';
+import '../widgets/fullscreen_location_picker.dart';
 
 class NewHotelScreen extends StatefulWidget {
   const NewHotelScreen({super.key});
@@ -22,28 +26,101 @@ class _NewHotelScreenState extends State<NewHotelScreen> {
   final TextEditingController _contactoController = TextEditingController();
   final TextEditingController _direccionController = TextEditingController();
 
-  String _tipoSeleccionado = 'Hotel';
-  final List<String> _tiposDisponibles = ['Hotel', 'Hostal', 'Cabaña', 'Camping'];
+  List<Categoria> _categorias = [];
+  String? _categoriaId;
+  bool _cargandoCategorias = true;
 
   final List<String> _amenidades = ['Wifi', 'Parqueo', 'Desayuno', 'Fogata'];
   final Set<String> _amenidadesSeleccionadas = {'Wifi', 'Parqueo'};
 
   bool _isActive = true;
   LatLng _coordenadas = const LatLng(-18.0401, -64.5276);
+  final MapController _mapController = MapController();
   bool _isSaving = false;
   List<String> _imagenes = [];
 
   String? _nombreError;
   String? _precioMinError;
   String? _precioMaxError;
+  String? _contactoError;
 
   @override
   void initState() {
     super.initState();
-    _direccionController.text = 'Av. Circunvalación, Comarapa';
     _nombreController.addListener(() {
       setState(() {});
     });
+    _contactoController.addListener(() {
+      if (_contactoError != null) setState(() => _contactoError = null);
+    });
+    _cargarCategorias();
+  }
+
+  Future<void> _cargarCategorias() async {
+    try {
+      final repo = context.read<CategoriaRepository>();
+      final categorias = await repo.fetchByEntidad('hotel');
+      if (!mounted) return;
+      setState(() {
+        _categorias = categorias;
+        _cargandoCategorias = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _cargandoCategorias = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudieron cargar las categorías: $error')),
+      );
+    }
+  }
+
+  Future<void> _addNewCategory() async {
+    final textController = TextEditingController();
+    final nombre = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          title: const Text(
+            'Nueva categoría / Tipo',
+            style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0C3D28)),
+          ),
+          content: TextField(
+            controller: textController,
+            autofocus: true,
+            decoration: const InputDecoration(hintText: 'Ej. Hostal, Cabaña...'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: const Color(0xFF26674B)),
+              onPressed: () => Navigator.pop(dialogContext, textController.text.trim()),
+              child: const Text('Agregar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (nombre == null || nombre.isEmpty || !mounted) return;
+
+    try {
+      final repo = context.read<CategoriaRepository>();
+      final categoria = await repo.create(entidad: 'hotel', nombre: nombre);
+      if (!mounted) return;
+      setState(() {
+        _categorias = [..._categorias, categoria];
+        _categoriaId = categoria.id;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo crear la categoría: $error')),
+      );
+    }
   }
 
   @override
@@ -54,6 +131,7 @@ class _NewHotelScreenState extends State<NewHotelScreen> {
     _precioHastaController.dispose();
     _contactoController.dispose();
     _direccionController.dispose();
+    _mapController.dispose();
     super.dispose();
   }
 
@@ -127,6 +205,7 @@ class _NewHotelScreenState extends State<NewHotelScreen> {
       _nombreError = null;
       _precioMinError = null;
       _precioMaxError = null;
+      _contactoError = null;
     });
 
     final nombre = _nombreController.text.trim();
@@ -171,6 +250,30 @@ class _NewHotelScreenState extends State<NewHotelScreen> {
       valido = false;
     }
 
+    if (_categoriaId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor, selecciona un tipo de hospedaje.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      valido = false;
+    }
+
+    final contacto = _contactoController.text.trim();
+    if (contacto.isNotEmpty) {
+      if (!RegExp(r'^\d+$').hasMatch(contacto)) {
+        setState(() => _contactoError = 'Solo se permiten números.');
+        valido = false;
+      } else if (!RegExp(r'^[67]').hasMatch(contacto)) {
+        setState(() => _contactoError = 'Debe comenzar con 6 o 7 (celular Bolivia).');
+        valido = false;
+      } else if (contacto.length != 8) {
+        setState(() => _contactoError = 'Debe tener exactamente 8 dígitos.');
+        valido = false;
+      }
+    }
+
     if (!valido) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -188,26 +291,25 @@ class _NewHotelScreenState extends State<NewHotelScreen> {
     if (!_validarFormulario()) return;
 
     final nombre = _nombreController.text.trim();
-    final pMin = num.tryParse(_precioDesdeController.text.trim()) ?? 150;
-    final pMax = num.tryParse(_precioHastaController.text.trim()) ?? 250;
+    final pMin = num.tryParse(_precioDesdeController.text.trim());
+    final pMax = num.tryParse(_precioHastaController.text.trim());
 
     setState(() => _isSaving = true);
 
     try {
       final newHotel = Hotel(
-        id: 'hotel-${DateTime.now().millisecondsSinceEpoch}',
         nombre: nombre,
-        categoriaNombre: _tipoSeleccionado,
-        descripcion: _descripcionController.text.trim().isNotEmpty
-            ? _descripcionController.text.trim()
-            : 'Alojamiento confortable en Comarapa, ideal para descansar y disfrutar del valle.',
+        categoriaId: _categoriaId,
+        descripcion: _descripcionController.text.trim(),
         imagenes: _imagenes,
         precioMin: pMin,
         precioMax: pMax,
         contactoReservas: _contactoController.text.trim().isNotEmpty
             ? _contactoController.text.trim()
-            : '+591 3 936 1000',
-        direccionReferencia: _direccionController.text.trim(),
+            : null,
+        direccionReferencia: _direccionController.text.trim().isNotEmpty
+            ? _direccionController.text.trim()
+            : null,
         servicios: _amenidadesSeleccionadas.toList(),
         activo: _isActive,
         latitud: _coordenadas.latitude,
@@ -216,11 +318,7 @@ class _NewHotelScreenState extends State<NewHotelScreen> {
       );
 
       final repo = context.read<HotelRepository>();
-      try {
-        await repo.create(newHotel);
-      } catch (_) {
-        // En caso de entorno offline o sin autenticación de inserción, retorna para reflejo local
-      }
+      await repo.create(newHotel);
 
       if (!mounted) return;
       Navigator.pop(context, newHotel);
@@ -465,42 +563,65 @@ class _NewHotelScreenState extends State<NewHotelScreen> {
   }
 
   Widget _buildTipoSelector() {
+    if (_cargandoCategorias) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 8),
+        child: SizedBox(
+          height: 20,
+          width: 20,
+          child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF26674B)),
+        ),
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildLabel('Tipo', isRequired: true),
         const SizedBox(height: 10),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: _tiposDisponibles.map((tipo) {
-              final isSelected = _tipoSeleccionado == tipo;
-              return Padding(
-                padding: const EdgeInsets.only(right: 10),
-                child: GestureDetector(
-                  onTap: () => setState(() => _tipoSeleccionado = tipo),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 9),
-                    decoration: BoxDecoration(
-                      color: isSelected ? const Color(0xFF26674B) : Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: isSelected ? const Color(0xFF26674B) : Colors.grey.shade300,
-                      ),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            ..._categorias.map((cat) {
+              final isSelected = _categoriaId == cat.id;
+              return GestureDetector(
+                onTap: () => setState(() => _categoriaId = cat.id),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 9),
+                  decoration: BoxDecoration(
+                    color: isSelected ? const Color(0xFF26674B) : Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isSelected ? const Color(0xFF26674B) : Colors.grey.shade300,
                     ),
-                    child: Text(
-                      tipo,
-                      style: TextStyle(
-                        color: isSelected ? Colors.white : const Color(0xFF374151),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13.5,
-                      ),
+                  ),
+                  child: Text(
+                    cat.nombre,
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : const Color(0xFF374151),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13.5,
                     ),
                   ),
                 ),
               );
-            }).toList(),
-          ),
+            }),
+            GestureDetector(
+              onTap: _addNewCategory,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.grey.shade400),
+                ),
+                child: Text(
+                  '+ Nueva',
+                  style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w500, fontSize: 13),
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -681,29 +802,50 @@ class _NewHotelScreenState extends State<NewHotelScreen> {
   }
 
   Widget _buildContactoField() {
+    final hasError = _contactoError != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildLabel('Contacto', isOptional: true),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _buildLabel('Contacto / Reservas', isOptional: true),
+            Text(
+              '8 dígitos · inicia con 6 o 7',
+              style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+            ),
+          ],
+        ),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(
+              color: hasError ? const Color(0xFFDC2626) : Colors.grey.shade300,
+              width: hasError ? 1.5 : 1.0,
+            ),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 14),
           child: Row(
             children: [
-              const Icon(Icons.phone_outlined, size: 18, color: Color(0xFF6B7280)),
+              Icon(
+                Icons.phone_android,
+                size: 18,
+                color: hasError ? const Color(0xFFDC2626) : const Color(0xFF6B7280),
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: TextField(
                   controller: _contactoController,
-                  keyboardType: TextInputType.phone,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(8),
+                  ],
                   style: const TextStyle(fontSize: 15, color: Color(0xFF1F2937)),
                   decoration: const InputDecoration(
-                    hintText: '+591 71234567',
+                    hintText: 'Ej. 71234567 o 61234567',
                     hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.symmetric(vertical: 14),
@@ -713,6 +855,14 @@ class _NewHotelScreenState extends State<NewHotelScreen> {
             ],
           ),
         ),
+        if (hasError)
+          Padding(
+            padding: const EdgeInsets.only(top: 4, left: 4),
+            child: Text(
+              _contactoError!,
+              style: const TextStyle(color: Color(0xFFDC2626), fontSize: 12, fontWeight: FontWeight.w500),
+            ),
+          ),
       ],
     );
   }
@@ -765,6 +915,18 @@ class _NewHotelScreenState extends State<NewHotelScreen> {
     );
   }
 
+  Future<void> _abrirMapaCompleto() async {
+    final nuevaUbicacion = await FullscreenLocationPicker.pick(
+      context: context,
+      initialLocation: _coordenadas,
+      title: 'Ubicación del hotel',
+    );
+    if (nuevaUbicacion != null && mounted) {
+      setState(() => _coordenadas = nuevaUbicacion);
+      _mapController.move(nuevaUbicacion, 14.5);
+    }
+  }
+
   Widget _buildUbicacionSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -773,51 +935,92 @@ class _NewHotelScreenState extends State<NewHotelScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             _buildLabel('Ubicación interactiva', isOptional: true),
-            Text(
-              'Toca el mapa para fijar el pin',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade500,
-                fontStyle: FontStyle.italic,
+            TextButton.icon(
+              onPressed: _abrirMapaCompleto,
+              icon: const Icon(Icons.open_in_full_rounded, size: 15, color: Color(0xFF26674B)),
+              label: const Text(
+                'Ampliar mapa',
+                style: TextStyle(
+                  color: Color(0xFF26674B),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12.5,
+                ),
               ),
             ),
           ],
         ),
         const SizedBox(height: 8),
         Container(
-          height: 120,
+          height: 130,
           decoration: BoxDecoration(
             color: const Color(0xFFE5EFEA),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: Colors.grey.shade300),
           ),
           clipBehavior: Clip.antiAlias,
-          child: FlutterMap(
-            options: MapOptions(
-              initialCenter: _coordenadas,
-              initialZoom: 14.5,
-              onTap: (tapPosition, point) {
-                setState(() => _coordenadas = point);
-              },
-            ),
+          child: Stack(
             children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'bo.edu.uajms.proyecto_final_360',
-              ),
-              MarkerLayer(
-                markers: [
-                  Marker(
-                    point: _coordenadas,
-                    width: 34,
-                    height: 34,
-                    child: const Icon(
-                      Icons.location_on,
-                      color: Color(0xFF26674B),
-                      size: 34,
-                    ),
+              FlutterMap(
+                mapController: _mapController,
+                options: MapOptions(
+                  initialCenter: _coordenadas,
+                  initialZoom: 14.5,
+                  onTap: (tapPosition, point) {
+                    setState(() => _coordenadas = point);
+                  },
+                ),
+                children: [
+                  TileLayer(
+                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'bo.edu.uajms.proyecto_final_360',
+                  ),
+                  MarkerLayer(
+                    markers: [
+                      Marker(
+                        point: _coordenadas,
+                        width: 34,
+                        height: 34,
+                        child: const Icon(
+                          Icons.location_on,
+                          color: Color(0xFF26674B),
+                          size: 34,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
+              ),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Material(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  elevation: 2,
+                  shadowColor: Colors.black38,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: _abrirMapaCompleto,
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.fullscreen, size: 16, color: Color(0xFF26674B)),
+                          SizedBox(width: 3),
+                          Text(
+                            'Ampliar',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF26674B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ],
           ),

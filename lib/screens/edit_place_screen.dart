@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 import 'package:provider/provider.dart';
@@ -8,13 +9,16 @@ import '../models/categoria.dart';
 import '../models/gastronomia_item.dart';
 import '../models/hotel.dart';
 import '../models/lugar.dart';
+import '../models/restaurante.dart';
 import '../models/turismo_tipo.dart';
 import '../repositories/actividad_repository.dart';
 import '../repositories/categoria_repository.dart';
 import '../repositories/gastronomia_repository.dart';
 import '../repositories/hotel_repository.dart';
 import '../repositories/lugar_repository.dart';
+import '../repositories/restaurante_repository.dart';
 import '../widgets/imagen_picker_field.dart';
+import '../widgets/fullscreen_location_picker.dart';
 
 const Color _kPrimary = Color(0xFF1B5A3F);
 const Color _kAccent = Color(0xFF2A7353);
@@ -80,6 +84,11 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
   bool _cargandoCategorias = true;
   bool _guardando = false;
 
+  // gastronomia: restaurante donde se puede encontrar el plato (opcional)
+  List<Restaurante> _restaurantes = [];
+  String? _restauranteId;
+  bool _cargandoRestaurantes = false;
+
   String? _nombreError;
   String? _costoError;
   String? _tiempoError;
@@ -88,6 +97,8 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
   String? _capacidadError;
   String? _precioMinError;
   String? _precioMaxError;
+  String? _operadorError;
+  String? _contactoReservasError;
 
   bool get _usaUbicacion =>
       widget.tipo == TurismoTipo.lugar ||
@@ -100,6 +111,9 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
     _mapController = MapController();
     _cargarValoresIniciales();
     _cargarCategorias();
+    if (widget.tipo == TurismoTipo.gastronomia) {
+      _cargarRestaurantes();
+    }
   }
 
   void _cargarValoresIniciales() {
@@ -129,7 +143,7 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
         _dificultad = a?.dificultad ?? 'facil';
         _duracionController.text = a?.duracionMin?.toString() ?? '';
         _precioRefController.text = a?.precioReferencial?.toString() ?? '';
-        _operadorController.text = a?.operadorContacto ?? '';
+        _operadorController.text = _limpiarContactoBolivia(a?.operadorContacto);
         _capacidadController.text = a?.capacidadMaxima?.toString() ?? '';
         _temporadaController.text = a?.temporada ?? '';
         _activo = a?.activo ?? true;
@@ -147,7 +161,7 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
         _precioMinController.text = h?.precioMin?.toString() ?? '';
         _precioMaxController.text = h?.precioMax?.toString() ?? '';
         _serviciosController.text = h?.servicios.join(', ') ?? '';
-        _contactoReservasController.text = h?.contactoReservas ?? '';
+        _contactoReservasController.text = _limpiarContactoBolivia(h?.contactoReservas);
         _activo = h?.activo ?? true;
         _categoriaId = h?.categoriaId;
         _ubicacion = (h?.latitud != null && h?.longitud != null)
@@ -163,6 +177,7 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
         _precioRefController.text = g?.precioReferencial?.toString() ?? '';
         _activo = g?.activo ?? true;
         _categoriaId = g?.categoriaId;
+        _restauranteId = g?.restauranteId;
         break;
       case TurismoTipo.evento:
         // Los eventos se gestionan desde AdminEventsScreen, no desde aquí.
@@ -171,6 +186,15 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
         // Los restaurantes se gestionan desde AdminRestaurantsScreen, no desde aquí.
         break;
     }
+  }
+
+  String _limpiarContactoBolivia(String? raw) {
+    if (raw == null) return '';
+    final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.startsWith('591') && digits.length == 11) {
+      return digits.substring(3);
+    }
+    return digits.length > 8 ? digits.substring(0, 8) : digits;
   }
 
   Future<void> _cargarCategorias() async {
@@ -191,6 +215,25 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
       setState(() => _cargandoCategorias = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('No se pudieron cargar las categorías: $error')),
+      );
+    }
+  }
+
+  Future<void> _cargarRestaurantes() async {
+    setState(() => _cargandoRestaurantes = true);
+    try {
+      final repo = context.read<RestauranteRepository>();
+      final restaurantes = await repo.fetchActivos();
+      if (!mounted) return;
+      setState(() {
+        _restaurantes = restaurantes;
+        _cargandoRestaurantes = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _cargandoRestaurantes = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudieron cargar los restaurantes: $error')),
       );
     }
   }
@@ -278,6 +321,8 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
       _capacidadError = null;
       _precioMinError = null;
       _precioMaxError = null;
+      _operadorError = null;
+      _contactoReservasError = null;
     });
 
     final nombre = _nombreController.text.trim();
@@ -354,6 +399,19 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
             valido = false;
           }
         }
+        final operador = _operadorController.text.trim();
+        if (operador.isNotEmpty) {
+          if (!RegExp(r'^\d+$').hasMatch(operador)) {
+            setState(() => _operadorError = 'Solo se permiten números.');
+            valido = false;
+          } else if (!RegExp(r'^[67]').hasMatch(operador)) {
+            setState(() => _operadorError = 'Debe comenzar con 6 o 7 (celular Bolivia).');
+            valido = false;
+          } else if (operador.length != 8) {
+            setState(() => _operadorError = 'Debe tener exactamente 8 dígitos.');
+            valido = false;
+          }
+        }
         break;
 
       case TurismoTipo.hotel:
@@ -378,6 +436,19 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
         if (pMin != null && pMax != null && pMax < pMin) {
           setState(() => _precioMaxError = 'El precio máximo no puede ser menor al precio mínimo.');
           valido = false;
+        }
+        final contactoRes = _contactoReservasController.text.trim();
+        if (contactoRes.isNotEmpty) {
+          if (!RegExp(r'^\d+$').hasMatch(contactoRes)) {
+            setState(() => _contactoReservasError = 'Solo se permiten números.');
+            valido = false;
+          } else if (!RegExp(r'^[67]').hasMatch(contactoRes)) {
+            setState(() => _contactoReservasError = 'Debe comenzar con 6 o 7 (celular Bolivia).');
+            valido = false;
+          } else if (contactoRes.length != 8) {
+            setState(() => _contactoReservasError = 'Debe tener exactamente 8 dígitos.');
+            valido = false;
+          }
         }
         break;
 
@@ -552,6 +623,7 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
     final item = GastronomiaItem(
       id: widget.gastronomia?.id,
       categoriaId: _categoriaId,
+      restauranteId: _restauranteId,
       nombre: nombre,
       descripcion: _descripcionController.text,
       imagenes: _imagenesSeleccionadas,
@@ -618,7 +690,24 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
                     const SizedBox(height: 20),
 
                     if (_usaUbicacion) ...[
-                      _buildLabel('Ubicación (GPS)', isOptional: true),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _buildLabel('Ubicación (GPS)', isOptional: true),
+                          TextButton.icon(
+                            onPressed: _abrirMapaCompleto,
+                            icon: const Icon(Icons.open_in_full_rounded, size: 15, color: _kPrimary),
+                            label: const Text(
+                              'Ampliar mapa',
+                              style: TextStyle(
+                                color: _kPrimary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12.5,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                       _buildMapSelector(),
                       const SizedBox(height: 24),
                     ],
@@ -732,8 +821,30 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
             ],
           ),
           const SizedBox(height: 20),
-          _buildLabel('Operador / contacto', isOptional: true),
-          _buildTextField(_operadorController, hintText: 'Guía u operador responsable'),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildLabel('Operador / contacto celular', isOptional: true),
+              Text(
+                '8 dígitos · inicia con 6 o 7',
+                style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+              ),
+            ],
+          ),
+          _buildTextField(
+            _operadorController,
+            hintText: 'Ej. 71234567 o 61234567',
+            keyboardType: TextInputType.number,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(8),
+            ],
+            prefixIcon: const Icon(Icons.phone_android, size: 18, color: Color(0xFF6B7280)),
+            errorText: _operadorError,
+            onChanged: (_) {
+              if (_operadorError != null) setState(() => _operadorError = null);
+            },
+          ),
           const SizedBox(height: 20),
           Row(
             children: [
@@ -813,8 +924,30 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
           _buildLabel('Servicios (separados por coma)', isOptional: true),
           _buildTextField(_serviciosController, hintText: 'Wifi, Parqueo, Desayuno'),
           const SizedBox(height: 20),
-          _buildLabel('Contacto para reservas', isOptional: true),
-          _buildTextField(_contactoReservasController, hintText: 'Teléfono / WhatsApp'),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildLabel('Contacto para reservas', isOptional: true),
+              Text(
+                '8 dígitos · inicia con 6 o 7',
+                style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+              ),
+            ],
+          ),
+          _buildTextField(
+            _contactoReservasController,
+            hintText: 'Ej. 71234567 o 61234567',
+            keyboardType: TextInputType.number,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(8),
+            ],
+            prefixIcon: const Icon(Icons.phone_android, size: 18, color: Color(0xFF6B7280)),
+            errorText: _contactoReservasError,
+            onChanged: (_) {
+              if (_contactoReservasError != null) setState(() => _contactoReservasError = null);
+            },
+          ),
           const SizedBox(height: 20),
           _buildLabel('Dirección de referencia', isOptional: true),
           _buildTextField(_direccionController, hintText: 'Ej. Media cuadra de la plaza'),
@@ -853,6 +986,9 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
               ),
             ],
           ),
+          const SizedBox(height: 20),
+          _buildLabel('Dónde encontrarlo (restaurante)', isOptional: true),
+          _buildRestauranteSelector(),
           const SizedBox(height: 20),
         ];
       case TurismoTipo.evento:
@@ -931,6 +1067,8 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
     required String hintText,
     int maxLines = 1,
     TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+    Widget? prefixIcon,
     String? errorText,
     void Function(String)? onChanged,
   }) {
@@ -951,9 +1089,11 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
             controller: controller,
             maxLines: maxLines,
             keyboardType: keyboardType,
+            inputFormatters: inputFormatters,
             onChanged: onChanged,
             decoration: InputDecoration(
               hintText: hintText,
+              prefixIcon: prefixIcon,
               hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -1033,6 +1173,74 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
     );
   }
 
+  Widget _buildRestauranteSelector() {
+    if (_cargandoRestaurantes) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 8),
+        child: SizedBox(
+          height: 20,
+          width: 20,
+          child: CircularProgressIndicator(strokeWidth: 2, color: _kPrimary),
+        ),
+      );
+    }
+
+    if (_restaurantes.isEmpty) {
+      return Text(
+        'No hay restaurantes registrados todavía.',
+        style: TextStyle(color: Colors.grey.shade500, fontSize: 12.5),
+      );
+    }
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        ChoiceChip(
+          label: const Text('Ninguno'),
+          selected: _restauranteId == null,
+          onSelected: (selected) {
+            if (selected) setState(() => _restauranteId = null);
+          },
+          selectedColor: _kAccent,
+          backgroundColor: Colors.white,
+          labelStyle: TextStyle(
+            color: _restauranteId == null ? Colors.white : const Color(0xFF374151),
+            fontWeight: _restauranteId == null ? FontWeight.bold : FontWeight.normal,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: _restauranteId == null ? _kAccent : Colors.grey.shade200),
+          ),
+          showCheckmark: false,
+        ),
+        ..._restaurantes.map((r) {
+          final isSelected = _restauranteId == r.id;
+          return ChoiceChip(
+            label: Text(
+              r.nombre,
+              style: TextStyle(
+                color: isSelected ? Colors.white : const Color(0xFF374151),
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+            selected: isSelected,
+            onSelected: (selected) {
+              if (selected) setState(() => _restauranteId = r.id);
+            },
+            selectedColor: _kAccent,
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: BorderSide(color: isSelected ? _kAccent : Colors.grey.shade200),
+            ),
+            showCheckmark: false,
+          );
+        }),
+      ],
+    );
+  }
+
   Widget _buildDifficultySelector() {
     return Container(
       padding: const EdgeInsets.all(4),
@@ -1083,6 +1291,19 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
     );
   }
 
+  Future<void> _abrirMapaCompleto() async {
+    final actual = _ubicacion ?? const LatLng(-17.9145, -64.4818);
+    final nuevaUbicacion = await FullscreenLocationPicker.pick(
+      context: context,
+      initialLocation: actual,
+      title: 'Ubicación de ${widget.tipo.etiqueta.toLowerCase()}',
+    );
+    if (nuevaUbicacion != null && mounted) {
+      setState(() => _ubicacion = nuevaUbicacion);
+      _mapController.move(nuevaUbicacion, 14.5);
+    }
+  }
+
   Widget _buildMapSelector() {
     final center = _ubicacion ?? const LatLng(-17.9145, -64.4818);
     return ClipRRect(
@@ -1119,7 +1340,39 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
               ],
             ),
             Positioned(
+              top: 10,
               right: 10,
+              child: Material(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                elevation: 3,
+                shadowColor: Colors.black38,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: _abrirMapaCompleto,
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.fullscreen, size: 18, color: _kPrimary),
+                        SizedBox(width: 4),
+                        Text(
+                          'Ampliar',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.bold,
+                            color: _kPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              left: 10,
               bottom: 10,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

@@ -24,7 +24,6 @@ class ActivityDetailScreen extends StatefulWidget {
 class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   late final PageController _pageController;
   int _currentPage = 0;
-  bool _isFavorite = false;
 
   double _promedioResenas = 0;
   int _totalResenas = 0;
@@ -59,12 +58,12 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     if (cat != null && cat.trim().isNotEmpty) {
       return cat.toUpperCase();
     }
-    return 'AVENTURA';
+    return 'ACTIVIDAD';
   }
 
   String get _duracionTexto {
     final minutos = widget.actividad.duracionMin;
-    if (minutos == null || minutos <= 0) return '2 horas';
+    if (minutos == null || minutos <= 0) return '';
     if (minutos < 60) return '$minutos min';
     final horas = minutos / 60;
     final horasTexto =
@@ -94,42 +93,15 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     if (p != null && p > 0) {
       return 'Bs ${p.toInt()}';
     }
-    return 'Gratis';
+    if (p == 0) return 'Gratis';
+    return '';
   }
 
-  String get _capacidadTexto {
-    final cap = widget.actividad.capacidadMaxima;
-    if (cap != null && cap > 0) {
-      return 'Máx. $cap pers.';
-    }
-    return 'Grupos libres';
-  }
-
-  String get _descripcionTexto {
-    final desc = widget.actividad.descripcion;
-    if (desc.trim().isNotEmpty) {
-      return desc;
-    }
-    return 'Vive una experiencia inolvidable explorando los paisajes naturales y senderos '
-        'de Comarapa. Esta actividad te permite conectar con la biodiversidad de los valles, '
-        'disfrutar de miradores panorámicos y conocer las tradiciones locales acompañado '
-        'de guías certificados.';
-  }
-
-  void _onShare() {
-    Clipboard.setData(ClipboardData(
-      text: '${widget.actividad.nombre} - Actividades Comarapa Turismo',
-    ));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Enlace de "${widget.actividad.nombre}" copiado al portapapeles'),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
 
   void _showBookingDialog(BuildContext context) {
+    final contacto = widget.actividad.operadorContacto?.trim();
+    if (contacto == null || contacto.isEmpty) return;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -165,7 +137,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
               ),
               const SizedBox(height: 6),
               Text(
-                'Para coordinar horarios, guías y reservas para "${widget.actividad.nombre}":',
+                'Información de contacto registrada para "${widget.actividad.nombre}":',
                 style: TextStyle(fontSize: 13.5, color: Colors.grey.shade600),
               ),
               const SizedBox(height: 16),
@@ -192,23 +164,22 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            widget.actividad.operadorContacto?.isNotEmpty == true
-                                ? widget.actividad.operadorContacto!
-                                : 'Guías de Turismo Comarapa',
-                            style: const TextStyle(
+                          const Text(
+                            'OPERADOR / GUÍA',
+                            style: TextStyle(
+                              fontSize: 10,
                               fontWeight: FontWeight.bold,
-                              fontSize: 14.5,
-                              color: Color(0xFF0C3D28),
+                              color: Color(0xFF6B7280),
+                              letterSpacing: 0.5,
                             ),
                           ),
-                          const SizedBox(height: 2),
-                          const Text(
-                            '+591 3 936 1200 / +591 710 23456',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Color(0xFF26674B),
-                              fontWeight: FontWeight.w600,
+                          const SizedBox(height: 4),
+                          Text(
+                            contacto,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: Color(0xFF0C3D28),
                             ),
                           ),
                         ],
@@ -224,16 +195,17 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                 child: ElevatedButton.icon(
                   onPressed: () {
                     Navigator.pop(ctx);
+                    Clipboard.setData(ClipboardData(text: contacto));
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Número copiado. Abriendo canal de contacto...'),
+                      SnackBar(
+                        content: Text('Contacto "$contacto" copiado al portapapeles'),
                         behavior: SnackBarBehavior.floating,
                       ),
                     );
                   },
-                  icon: const Icon(Icons.chat_bubble_outline, size: 18),
+                  icon: const Icon(Icons.copy, size: 18),
                   label: const Text(
-                    'Contactar vía WhatsApp / Teléfono',
+                    'Copiar Contacto',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                   style: ElevatedButton.styleFrom(
@@ -377,49 +349,17 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
             ),
           ),
 
-          // Barra superior de navegación con botones circulares
+          // Barra superior de navegación con botón volver
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   // Botón Volver
                   _buildCircleButton(
                     icon: Icons.chevron_left,
                     iconSize: 26,
                     onTap: () => Navigator.of(context).pop(),
-                  ),
-
-                  // Acciones superiores: Favorito y Compartir
-                  Row(
-                    children: [
-                      _buildCircleButton(
-                        icon: _isFavorite ? Icons.favorite : Icons.favorite_border,
-                        iconColor: _isFavorite ? const Color(0xFFE53935) : Colors.black87,
-                        iconSize: 22,
-                        onTap: () {
-                          setState(() => _isFavorite = !_isFavorite);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                _isFavorite
-                                    ? 'Añadido a tus actividades favoritas'
-                                    : 'Eliminado de tus actividades favoritas',
-                              ),
-                              behavior: SnackBarBehavior.floating,
-                              duration: const Duration(seconds: 1),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(width: 12),
-                      _buildCircleButton(
-                        icon: Icons.share_outlined,
-                        iconSize: 20,
-                        onTap: _onShare,
-                      ),
-                    ],
                   ),
                 ],
               ),
@@ -508,6 +448,13 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   }
 
   Widget _buildContentCard() {
+    final tieneDescripcion = widget.actividad.descripcion.trim().isNotEmpty;
+    final tieneOperador = widget.actividad.operadorContacto?.trim().isNotEmpty == true;
+    final tieneUbicacion = widget.actividad.latitud != null &&
+        widget.actividad.longitud != null &&
+        widget.actividad.latitud != 0 &&
+        widget.actividad.longitud != 0;
+
     return Transform.translate(
       offset: const Offset(0, -20),
       child: Container(
@@ -577,44 +524,46 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Fila de 4 tarjetas de información rápida
+            // Fila de tarjetas de información rápida (solo campos con datos reales en BD)
             _buildQuickInfoGrid(),
             const SizedBox(height: 28),
 
-            // Sección: Descripción
-            const Text(
-              'Descripción de la actividad',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF143525),
-                fontFamily: 'serif',
+            // Sección: Descripción (solo si está guardada en la BD)
+            if (tieneDescripcion) ...[
+              const Text(
+                'Descripción de la actividad',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF143525),
+                  fontFamily: 'serif',
+                ),
               ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              _descripcionTexto,
-              style: const TextStyle(
-                fontSize: 14.5,
-                height: 1.6,
-                color: Color(0xFF4B5563),
+              const SizedBox(height: 10),
+              Text(
+                widget.actividad.descripcion.trim(),
+                style: const TextStyle(
+                  fontSize: 14.5,
+                  height: 1.6,
+                  color: Color(0xFF4B5563),
+                ),
               ),
-            ),
-            const SizedBox(height: 28),
+              const SizedBox(height: 28),
+            ],
 
-            // Sección: Operador / Guía de Contacto
-            _buildOperadorCard(),
-            const SizedBox(height: 28),
+            // Sección: Operador / Guía de Contacto (solo si está registrado en la BD)
+            if (tieneOperador) ...[
+              _buildOperadorCard(),
+              const SizedBox(height: 28),
+            ],
 
-            // Sección: Punto de Partida / Mapa
-            _buildUbicacionSection(),
-            const SizedBox(height: 28),
+            // Sección: Punto de Partida / Mapa (solo si tiene coordenadas en la BD)
+            if (tieneUbicacion) ...[
+              _buildUbicacionSection(),
+              const SizedBox(height: 28),
+            ],
 
-            // Sección: Recomendaciones
-            _buildRecomendacionesSection(),
-            const SizedBox(height: 28),
-
-            // Sección: Reseñas
+            // Sección: Reseñas (guardadas en la BD)
             if (widget.actividad.id != null)
               ResenasSection(
                 entidad: 'actividad',
@@ -633,46 +582,84 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   }
 
   Widget _buildQuickInfoGrid() {
-    return Row(
+    final items = <Widget>[];
+
+    // 1. Duración (solo si existe en la BD)
+    if (_duracionTexto.isNotEmpty) {
+      items.add(_buildInfoItem(
+        icon: Icons.access_time_outlined,
+        title: 'DURACIÓN',
+        value: _duracionTexto,
+      ));
+    }
+
+    // 2. Dificultad (siempre existe en la BD)
+    items.add(_buildInfoItem(
+      icon: Icons.fitness_center_outlined,
+      title: 'DIFICULTAD',
+      value: _dificultadTexto,
+      valueColor: _dificultadColor,
+    ));
+
+    // 3. Precio referencial (solo si está registrado en la BD)
+    if (_precioTexto.isNotEmpty) {
+      items.add(_buildInfoItem(
+        icon: Icons.payments_outlined,
+        title: 'PRECIO',
+        value: _precioTexto,
+      ));
+    }
+
+    // 4. Capacidad máxima (solo si está registrada en la BD)
+    if (widget.actividad.capacidadMaxima != null && widget.actividad.capacidadMaxima! > 0) {
+      items.add(_buildInfoItem(
+        icon: Icons.people_outline,
+        title: 'CAPACIDAD',
+        value: 'Máx. ${widget.actividad.capacidadMaxima} pers.',
+      ));
+    }
+
+    // 5. Temporada (columna real en la BD)
+    if (widget.actividad.temporada != null && widget.actividad.temporada!.trim().isNotEmpty) {
+      items.add(_buildInfoItem(
+        icon: Icons.calendar_month_outlined,
+        title: 'TEMPORADA',
+        value: widget.actividad.temporada!.trim(),
+      ));
+    }
+
+    if (items.isEmpty) return const SizedBox.shrink();
+
+    if (items.length <= 4) {
+      return Row(
+        children: [
+          for (int i = 0; i < items.length; i++) ...[
+            if (i > 0) const SizedBox(width: 8),
+            Expanded(child: items[i]),
+          ],
+        ],
+      );
+    }
+
+    return Column(
       children: [
-        // 1. Duración
-        Expanded(
-          child: _buildInfoItem(
-            icon: Icons.access_time_outlined,
-            title: 'DURACIÓN',
-            value: _duracionTexto,
-          ),
+        Row(
+          children: [
+            Expanded(child: items[0]),
+            const SizedBox(width: 8),
+            Expanded(child: items[1]),
+            const SizedBox(width: 8),
+            Expanded(child: items[2]),
+          ],
         ),
-        const SizedBox(width: 8),
-
-        // 2. Dificultad
-        Expanded(
-          child: _buildInfoItem(
-            icon: Icons.fitness_center_outlined,
-            title: 'DIFICULTAD',
-            value: _dificultadTexto,
-            valueColor: _dificultadColor,
-          ),
-        ),
-        const SizedBox(width: 8),
-
-        // 3. Precio
-        Expanded(
-          child: _buildInfoItem(
-            icon: Icons.payments_outlined,
-            title: 'PRECIO',
-            value: _precioTexto,
-          ),
-        ),
-        const SizedBox(width: 8),
-
-        // 4. Capacidad
-        Expanded(
-          child: _buildInfoItem(
-            icon: Icons.people_outline,
-            title: 'GRUPO',
-            value: _capacidadTexto,
-          ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            for (int i = 3; i < items.length; i++) ...[
+              if (i > 3) const SizedBox(width: 8),
+              Expanded(child: items[i]),
+            ],
+          ],
         ),
       ],
     );
@@ -729,9 +716,10 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   }
 
   Widget _buildOperadorCard() {
-    final operador = widget.actividad.operadorContacto?.isNotEmpty == true
-        ? widget.actividad.operadorContacto!
-        : 'Guías Turísticos Comarapa';
+    final operador = widget.actividad.operadorContacto?.trim();
+    if (operador == null || operador.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -768,7 +756,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'OPERADOR / GUÍA CERTIFICADO',
+                  'OPERADOR / GUÍA',
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
@@ -784,11 +772,6 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF1F2937),
                   ),
-                ),
-                const SizedBox(height: 2),
-                const Text(
-                  'Disponible con reserva previa',
-                  style: TextStyle(fontSize: 12, color: Color(0xFF16A34A)),
                 ),
               ],
             ),
@@ -886,66 +869,11 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     );
   }
 
-  Widget _buildRecomendacionesSection() {
-    const tips = [
-      'Llevar calzado deportivo con buena tracción o botas de trekking.',
-      'Portar al menos 1.5 litros de agua y snacks energéticos.',
-      'Usar bloqueador solar, gorra o sombrero y repelente de insectos.',
-      'Llevar abrigo ligero ya que la temperatura desciende al atardecer.',
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Recomendaciones',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF143525),
-            fontFamily: 'serif',
-          ),
-        ),
-        const SizedBox(height: 12),
-        ...tips.map((tip) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  margin: const EdgeInsets.only(top: 2),
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFE2ECE7),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.check,
-                    size: 12,
-                    color: Color(0xFF1B5A3F),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    tip,
-                    style: const TextStyle(
-                      fontSize: 13.5,
-                      color: Color(0xFF4B5563),
-                      height: 1.35,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        }),
-      ],
-    );
-  }
-
   Widget _buildBottomBar(BuildContext context) {
+    final tienePrecio = widget.actividad.precioReferencial != null &&
+        widget.actividad.precioReferencial! > 0;
+    final tieneOperador = widget.actividad.operadorContacto?.trim().isNotEmpty == true;
+
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
       decoration: BoxDecoration(
@@ -959,74 +887,89 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
           ),
         ],
       ),
-      child: Row(
-        children: [
-          // Precio referencial
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'PRECIO REFERENCIAL',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF9CA3AF),
-                  letterSpacing: 0.5,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            // Precio referencial si existe en la BD
+            if (tienePrecio) ...[
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    _precioTexto,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF143525),
+                  const Text(
+                    'PRECIO REFERENCIAL',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF9CA3AF),
+                      letterSpacing: 0.5,
                     ),
                   ),
-                  const SizedBox(width: 4),
-                  const Text(
-                    '/ persona',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF6B7280),
-                    ),
+                  const SizedBox(height: 2),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        _precioTexto,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF143525),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Text(
+                        '/ persona',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF6B7280),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
+              const SizedBox(width: 16),
             ],
-          ),
-          const SizedBox(width: 16),
 
-          // Botón principal
-          Expanded(
-            child: SizedBox(
-              height: 48,
-              child: ElevatedButton(
-                onPressed: () => _showBookingDialog(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF26674B),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+            // Botón principal: Contactar (si hay operador) o Ver en el mapa
+            Expanded(
+              child: SizedBox(
+                height: 48,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    if (tieneOperador) {
+                      _showBookingDialog(context);
+                    } else {
+                      _openFullMap(context);
+                    }
+                  },
+                  icon: Icon(
+                    tieneOperador ? Icons.contact_phone_outlined : Icons.map_outlined,
+                    size: 20,
                   ),
-                ),
-                child: const Text(
-                  'Reservar / Contactar',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
+                  label: Text(
+                    tieneOperador ? 'Contactar Guía' : 'Ver en el mapa',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF26674B),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

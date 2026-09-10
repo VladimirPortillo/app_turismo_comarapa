@@ -4,6 +4,7 @@ class GastronomiaItem {
     this.categoriaId,
     this.categoriaNombre,
     this.restauranteId,
+    this.restauranteNombre,
     required this.nombre,
     this.descripcion = '',
     this.imagenes = const <String>[],
@@ -16,6 +17,7 @@ class GastronomiaItem {
   final String? categoriaId;
   final String? categoriaNombre;
   final String? restauranteId;
+  final String? restauranteNombre;
   final String nombre;
   final String descripcion;
   final List<String> imagenes;
@@ -25,11 +27,13 @@ class GastronomiaItem {
 
   factory GastronomiaItem.fromMap(Map<String, dynamic> map) {
     final categoria = map['categorias'] as Map<String, dynamic>?;
+    final restaurante = map['restaurantes'] as Map<String, dynamic>?;
     return GastronomiaItem(
       id: map['id']?.toString(),
       categoriaId: map['categoria_id']?.toString(),
       categoriaNombre: categoria?['nombre']?.toString(),
       restauranteId: map['restaurante_id']?.toString(),
+      restauranteNombre: restaurante?['nombre']?.toString(),
       nombre: map['nombre']?.toString() ?? '',
       descripcion: map['descripcion']?.toString() ?? '',
       imagenes: (map['imagenes'] as List?)?.map((e) => e.toString()).toList() ??
@@ -58,6 +62,7 @@ class GastronomiaItem {
     String? categoriaId,
     String? categoriaNombre,
     String? restauranteId,
+    String? restauranteNombre,
     String? nombre,
     String? descripcion,
     List<String>? imagenes,
@@ -70,6 +75,7 @@ class GastronomiaItem {
       categoriaId: categoriaId ?? this.categoriaId,
       categoriaNombre: categoriaNombre ?? this.categoriaNombre,
       restauranteId: restauranteId ?? this.restauranteId,
+      restauranteNombre: restauranteNombre ?? this.restauranteNombre,
       nombre: nombre ?? this.nombre,
       descripcion: descripcion ?? this.descripcion,
       imagenes: imagenes ?? this.imagenes,
