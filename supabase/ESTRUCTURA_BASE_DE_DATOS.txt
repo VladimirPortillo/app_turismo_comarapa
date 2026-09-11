@@ -1,0 +1,207 @@
+================================================================
+ COMARAPA TURISMO · ESTRUCTURA DE BASE DE DATOS (schema "public")
+ Generado a partir de los scripts en /supabase (04 al 08)
+================================================================
+
+NOTA IMPORTANTE
+----------------
+El script 08_BORRAR_MUNICIPIO_CONTACTOS_RUTAS.sql YA FUE EJECUTADO.
+Las tablas municipio, contactos_emergencia, rutas, rutas_lugares y
+rutas_actividades (creadas originalmente en el script 04) fueron
+eliminadas de forma permanente y YA NO EXISTEN en la base de datos.
+
+Este documento muestra:
+  A) El estado FINAL y ACTUAL de la base de datos (9 tablas)
+  B) Como referencia histórica, cómo era el módulo eliminado
+
+
+================================================================
+ A) TIPOS ENUM (public)
+================================================================
+rol_usuario           -> 'administrador', 'editor'
+entidad_categoria     -> 'lugar','actividad','gastronomia','hotel','restaurante','evento'
+nivel_dificultad      -> 'facil','media','dificil'
+entidad_resenable     -> 'lugar','hotel','restaurante','actividad','evento','gastronomia'
+                          (evento y gastronomia agregados por el script 07)
+estado_moderacion     -> 'pendiente','aprobada','rechazada'
+tipo_contacto_emergencia (ELIMINADO por el script 08, junto con su tabla)
+
+
+================================================================
+ A) TABLAS ACTUALES (9 tablas en public, estado real de tu base)
+================================================================
+
+1) auth.users  (tabla propia de Supabase Auth, no se crea aquí)
+   - id (uuid) PK
+   ...
+
+2) public.usuarios
+   - id            uuid PK  --> FK a auth.users(id)  [on delete cascade]
+   - nombre        text
+   - correo        text
+   - rol           rol_usuario  (default 'editor')
+   - activo        boolean
+   - created_at / updated_at
+   Relación: 1 a 1 con auth.users (perfil del panel de administración)
+
+3) public.categorias   (tabla maestra de tipos, editable por el admin)
+   - id            uuid PK
+   - entidad       entidad_categoria  (a qué módulo pertenece)
+   - nombre        text
+   - icono         text
+   - orden         smallint
+   - activo        boolean
+   UNIQUE (entidad, nombre)
+   Relación: es referenciada por categoria_id desde lugares, hoteles,
+             restaurantes, actividades, gastronomia y eventos.
+             Un trigger valida que la categoría elegida pertenezca
+             al mismo módulo (ej. un "lugar" no puede usar una
+             categoría de "hotel").
+
+4) public.lugares
+   - id                    uuid PK
+   - categoria_id          uuid  --> FK a categorias(id)  [on delete set null]
+   - nombre, descripcion, imagenes[]
+   - latitud, longitud, direccion_referencia
+   - dificultad            nivel_dificultad
+   - tiempo_visita_min, costo_entrada
+   - mejor_epoca, activo
+   Relación: referenciado por resenas (relación lógica, sin FK).
+
+5) public.hoteles
+   - id                    uuid PK
+   - categoria_id          uuid  --> FK a categorias(id)  [on delete set null]
+   - nombre, descripcion, imagenes[]
+   - latitud, longitud, direccion_referencia
+   - precio_min, precio_max, servicios[]
+   - contacto_reservas, calificacion_promedio, activo
+   Relación: referenciado por resenas (relación lógica, sin FK).
+
+6) public.restaurantes
+   - id                    uuid PK
+   - categoria_id          uuid  --> FK a categorias(id)  [on delete set null]
+   - nombre, descripcion, imagenes[]
+   - latitud, longitud, direccion_referencia
+   - horario_atencion, precio_referencial, contacto
+   - calificacion_promedio, activo
+   Relación: referenciado por gastronomia.restaurante_id y por
+             resenas (relación lógica, sin FK).
+
+7) public.actividades
+   - id                    uuid PK
+   - categoria_id          uuid  --> FK a categorias(id)  [on delete set null]
+   - nombre, descripcion, imagenes[]
+   - latitud, longitud
+   - dificultad            nivel_dificultad
+   - duracion_min, precio_referencial
+   - operador_contacto, capacidad_maxima, temporada, activo
+   Relación: referenciado por resenas (relación lógica, sin FK).
+
+8) public.gastronomia
+   - id                    uuid PK
+   - categoria_id          uuid  --> FK a categorias(id)        [on delete set null]
+   - restaurante_id        uuid  --> FK a restaurantes(id)      [on delete set null]
+   - nombre, descripcion, imagenes[]
+   - temporada, precio_referencial, activo
+   Relación: puede indicar "dónde encontrarlo" apuntando a un
+             restaurante (opcional).
+
+9) public.eventos
+   - id                    uuid PK
+   - categoria_id          uuid  --> FK a categorias(id)  [on delete set null]
+   - nombre, descripcion, imagenes[]
+   - latitud, longitud
+   - fecha_inicio, fecha_fin, periodicidad, activo
+
+10) public.resenas
+   - id                    uuid PK
+   - entidad               entidad_resenable  ('lugar'|'hotel'|'restaurante'|'actividad'|'evento'|'gastronomia')
+   - entidad_id            uuid   (SIN FK: relación polimórfica)
+   - autor_nombre, calificacion (1-5), comentario
+   - estado_moderacion     estado_moderacion  (auto-aprobada desde script 06)
+   - created_at
+   Relación: "entidad" + "entidad_id" apuntan a una fila de lugares,
+             hoteles, restaurantes, actividades, eventos o
+             gastronomia, según el valor de "entidad". La integridad
+             se valida en la aplicación, no con una FK de base de
+             datos (porque puede apuntar a distintas tablas).
+
+
+================================================================
+ DIAGRAMA DE RELACIONES (estado actual)
+================================================================
+
+  auth.users (Supabase)
+        |
+        | 1:1
+        v
+  usuarios
+
+  categorias
+     |--(categoria_id)--> lugares
+     |--(categoria_id)--> hoteles
+     |--(categoria_id)--> restaurantes
+     |--(categoria_id)--> actividades
+     |--(categoria_id)--> gastronomia
+     |--(categoria_id)--> eventos
+
+  restaurantes --(restaurante_id, opcional)--> gastronomia
+
+  resenas --(entidad + entidad_id, polimórfica, sin FK)--> lugares
+                                                       --> hoteles
+                                                       --> restaurantes
+                                                       --> actividades
+                                                       --> eventos
+                                                       --> gastronomia
+
+
+================================================================
+ B) REFERENCIA HISTÓRICA: TABLAS ELIMINADAS (script 08 ya ejecutado)
+================================================================
+Estas tablas YA NO EXISTEN en la base de datos. Se documentan aquí
+solo como referencia de lo que hubo antes del script 08:
+
+11) public.municipio   (singleton, id smallint = 1)
+   - id, nombre, descripcion, imagenes[]
+   - latitud, longitud, poblacion, altitud_msnm, clima
+   - telefono_contacto, sitio_web, redes_sociales (jsonb)
+   Relación: ninguna (tabla independiente, una sola fila).
+
+12) public.contactos_emergencia
+   - id, nombre, tipo (tipo_contacto_emergencia), telefono
+   - latitud, longitud, activo
+   Relación: ninguna (tabla independiente).
+
+13) public.rutas
+   - id, nombre, descripcion, imagenes[]
+   - dificultad, duracion_total_min, activo
+   Relación: unida a lugares y actividades mediante las tablas
+             puente rutas_lugares y rutas_actividades.
+
+14) public.rutas_lugares   (tabla puente N:N)
+   - ruta_id      --> FK a rutas(id)    [on delete cascade]
+   - lugar_id     --> FK a lugares(id)  [on delete cascade]
+   - orden
+   PK compuesta (ruta_id, lugar_id)
+
+15) public.rutas_actividades   (tabla puente N:N)
+   - ruta_id       --> FK a rutas(id)       [on delete cascade]
+   - actividad_id  --> FK a actividades(id) [on delete cascade]
+   - orden
+   PK compuesta (ruta_id, actividad_id)
+
+Diagrama de este módulo (antes de ser eliminado):
+
+  rutas 1---N rutas_lugares      N---1 lugares
+  rutas 1---N rutas_actividades  N---1 actividades
+
+
+================================================================
+ OTROS OBJETOS RELACIONADOS
+================================================================
+- storage.buckets / storage.objects: bucket público "comarapa-imagenes"
+  usado para las imágenes de lugares, hoteles, eventos, etc. (no es
+  una tabla de negocio, es infraestructura de Supabase Storage).
+- Funciones: es_admin_o_editor(), es_administrador(),
+  fn_validar_categoria(), fn_crear_perfil_usuario(),
+  fn_bloquear_cambio_rol(), set_updated_at().
