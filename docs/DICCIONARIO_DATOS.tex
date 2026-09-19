@@ -1,0 +1,301 @@
+% ============================================================
+% Diccionario de datos - App Turismo Comarapa
+% Requiere en el preambulo del documento principal:
+%   \usepackage{longtable}  % tabla que puede continuar en varias paginas
+%   \usepackage{array}      % para el modificador >{\bfseries} en columnas p{}
+% Generado a partir de supabase/04_SCHEMA_TURISMO_COMARAPA.sql,
+% supabase/06_RESENAS_AUTOAPROBAR.sql, supabase/07_RESENAS_TIPOS_ADICIONALES.sql
+% y supabase/ESTRUCTURA_BASE_DE_DATOS.txt (estado actual, post script 08).
+% Ver tambien ENTIDAD_RELACION.tex / DIAGRAMA_ENTIDAD_RELACION.png
+% ============================================================
+
+\subsection*{Diccionario de datos}
+
+A continuación se detalla, campo por campo, la estructura de las 9
+tablas del esquema \texttt{public} de la base de datos (PostgreSQL,
+gestionada por Supabase). No se incluye \texttt{auth.users} porque es
+una tabla propia de Supabase Auth que no se crea en este esquema; solo
+es referenciada por \texttt{usuarios.id}. Las tablas
+\texttt{municipio}, \texttt{contactos\_emergencia}, \texttt{rutas},
+\texttt{rutas\_lugares} y \texttt{rutas\_actividades} fueron eliminadas
+por el script \texttt{08} y ya no existen en la base de datos, por lo
+que tampoco se documentan aquí.
+
+\bigskip
+\noindent\textbf{Tabla: usuarios} — perfiles del panel de administración (1 fila por cada usuario de Supabase Auth con acceso al panel).
+
+{\footnotesize
+\begin{longtable}{|>{\bfseries}p{3.3cm}|p{2.6cm}|p{1.2cm}|p{1.6cm}|p{2.8cm}|p{4.0cm}|}
+\hline
+Campo & Tipo & Longitud & Obligatorio & Restricción & Descripción \\ \hline
+\endfirsthead
+\hline
+Campo & Tipo & Longitud & Obligatorio & Restricción & Descripción \\ \hline
+\endhead
+\hline
+\endfoot
+\hline
+\endlastfoot
+
+id & uuid & 36 & Sí & PK; FK $\rightarrow$ auth.users(id) ON DELETE CASCADE & Identificador único del usuario; coincide con el id de Supabase Auth. \\ \hline
+nombre & text & 2 - 80 & Sí & CHECK longitud entre 2 y 80 & Nombre completo del usuario del panel. \\ \hline
+correo & text & - & Sí & CHECK formato de correo (regex) & Correo electrónico usado para iniciar sesión. \\ \hline
+rol & rol\_usuario (enum) & - & Sí & Valores: 'administrador', 'editor'; DEFAULT 'editor'; solo un administrador puede cambiarlo (trigger) & Rol que determina los permisos del usuario en el panel. \\ \hline
+activo & boolean & - & Sí & DEFAULT true & Indica si la cuenta está habilitada. \\ \hline
+created\_at & timestamptz & - & Sí & DEFAULT now() & Fecha y hora de creación del registro. \\ \hline
+updated\_at & timestamptz & - & Sí & DEFAULT now(); actualizado por trigger set\_updated\_at & Fecha y hora de la última modificación. \\ \hline
+\end{longtable}
+}
+
+\bigskip
+\noindent\textbf{Tabla: categorias} — catálogo maestro de tipos por módulo, editable desde el panel.
+
+{\footnotesize
+\begin{longtable}{|>{\bfseries}p{3.3cm}|p{2.6cm}|p{1.2cm}|p{1.6cm}|p{2.8cm}|p{4.0cm}|}
+\hline
+Campo & Tipo & Longitud & Obligatorio & Restricción & Descripción \\ \hline
+\endfirsthead
+\hline
+Campo & Tipo & Longitud & Obligatorio & Restricción & Descripción \\ \hline
+\endhead
+\hline
+\endfoot
+\hline
+\endlastfoot
+
+id & uuid & 36 & Sí & PK; DEFAULT gen\_random\_uuid() & Identificador único de la categoría. \\ \hline
+entidad & entidad\_categoria (enum) & - & Sí & Valores: 'lugar', 'actividad', 'gastronomia', 'hotel', 'restaurante', 'evento' & Módulo al que pertenece la categoría. \\ \hline
+nombre & text & 2 - 60 & Sí & CHECK longitud 2-60; UNIQUE(entidad, nombre) & Nombre de la categoría (ej. ``Mirador'', ``Hostal''). \\ \hline
+icono & text & - & No & - & Referencia o nombre del ícono asociado. \\ \hline
+orden & smallint & - & Sí & DEFAULT 0 & Orden de aparición dentro del listado. \\ \hline
+activo & boolean & - & Sí & DEFAULT true & Indica si la categoría está disponible para su uso. \\ \hline
+created\_at & timestamptz & - & Sí & DEFAULT now() & Fecha y hora de creación del registro. \\ \hline
+\end{longtable}
+}
+
+\bigskip
+\noindent\textbf{Tabla: lugares} — lugares turísticos (naturales, arqueológicos, aventura, miradores...).
+
+{\footnotesize
+\begin{longtable}{|>{\bfseries}p{3.3cm}|p{2.6cm}|p{1.2cm}|p{1.6cm}|p{2.8cm}|p{4.0cm}|}
+\hline
+Campo & Tipo & Longitud & Obligatorio & Restricción & Descripción \\ \hline
+\endfirsthead
+\hline
+Campo & Tipo & Longitud & Obligatorio & Restricción & Descripción \\ \hline
+\endhead
+\hline
+\endfoot
+\hline
+\endlastfoot
+
+id & uuid & 36 & Sí & PK; DEFAULT gen\_random\_uuid() & Identificador único del lugar. \\ \hline
+categoria\_id & uuid & 36 & No & FK $\rightarrow$ categorias(id) ON DELETE SET NULL; trigger valida módulo ``lugar'' & Categoría del lugar (ej. natural, arqueológico). \\ \hline
+nombre & text & 3 - 120 & Sí & CHECK longitud 3-120 & Nombre del lugar turístico. \\ \hline
+descripcion & text & - & Sí & DEFAULT '' & Descripción detallada del lugar. \\ \hline
+imagenes & text[] & - & Sí & DEFAULT '\{\}' & Lista de URLs de imágenes del lugar. \\ \hline
+latitud & double precision & - & No & CHECK entre -90 y 90 & Coordenada de latitud. \\ \hline
+longitud & double precision & - & No & CHECK entre -180 y 180 & Coordenada de longitud. \\ \hline
+direccion\_referencia & text & - & No & - & Referencia textual de ubicación. \\ \hline
+dificultad & nivel\_dificultad (enum) & - & Sí & Valores: 'facil', 'media', 'dificil'; DEFAULT 'facil' & Nivel de dificultad para llegar/recorrer el lugar. \\ \hline
+tiempo\_visita\_min & integer & - & No & CHECK $\geq$ 0 & Tiempo estimado de visita, en minutos. \\ \hline
+costo\_entrada & numeric & 8,2 & Sí & DEFAULT 0; CHECK $\geq$ 0 & Costo de entrada al lugar. \\ \hline
+mejor\_epoca & text & - & No & - & Época del año recomendada para visitarlo. \\ \hline
+activo & boolean & - & Sí & DEFAULT true & Borrado lógico: oculta el lugar sin eliminarlo. \\ \hline
+created\_at & timestamptz & - & Sí & DEFAULT now() & Fecha y hora de creación del registro. \\ \hline
+updated\_at & timestamptz & - & Sí & DEFAULT now(); trigger set\_updated\_at & Fecha y hora de la última modificación. \\ \hline
+\end{longtable}
+}
+
+\bigskip
+\noindent\textbf{Tabla: hoteles} — hospedaje: hoteles, hostales, cabañas, camping.
+
+{\footnotesize
+\begin{longtable}{|>{\bfseries}p{3.3cm}|p{2.6cm}|p{1.2cm}|p{1.6cm}|p{2.8cm}|p{4.0cm}|}
+\hline
+Campo & Tipo & Longitud & Obligatorio & Restricción & Descripción \\ \hline
+\endfirsthead
+\hline
+Campo & Tipo & Longitud & Obligatorio & Restricción & Descripción \\ \hline
+\endhead
+\hline
+\endfoot
+\hline
+\endlastfoot
+
+id & uuid & 36 & Sí & PK; DEFAULT gen\_random\_uuid() & Identificador único del hotel. \\ \hline
+categoria\_id & uuid & 36 & No & FK $\rightarrow$ categorias(id) ON DELETE SET NULL; trigger valida módulo ``hotel'' & Tipo de hospedaje (hotel, hostal, cabaña, camping). \\ \hline
+nombre & text & 3 - 120 & Sí & CHECK longitud 3-120 & Nombre del establecimiento. \\ \hline
+descripcion & text & - & Sí & DEFAULT '' & Descripción detallada del hotel. \\ \hline
+imagenes & text[] & - & Sí & DEFAULT '\{\}' & Lista de URLs de imágenes del hotel. \\ \hline
+latitud & double precision & - & No & CHECK entre -90 y 90 & Coordenada de latitud. \\ \hline
+longitud & double precision & - & No & CHECK entre -180 y 180 & Coordenada de longitud. \\ \hline
+direccion\_referencia & text & - & No & - & Referencia textual de ubicación. \\ \hline
+precio\_min & numeric & 8,2 & No & CHECK $\geq$ 0 & Precio mínimo de hospedaje. \\ \hline
+precio\_max & numeric & 8,2 & No & CHECK $\geq$ precio\_min & Precio máximo de hospedaje. \\ \hline
+servicios & text[] & - & Sí & DEFAULT '\{\}' & Lista de servicios ofrecidos (wifi, parqueo, etc.). \\ \hline
+contacto\_reservas & text & - & No & - & Teléfono o medio de contacto para reservas. \\ \hline
+calificacion\_promedio & numeric & 2,1 & Sí & DEFAULT 0; CHECK entre 0 y 5 & Promedio de calificación calculado a partir de las reseñas. \\ \hline
+activo & boolean & - & Sí & DEFAULT true & Borrado lógico: oculta el hotel sin eliminarlo. \\ \hline
+created\_at & timestamptz & - & Sí & DEFAULT now() & Fecha y hora de creación del registro. \\ \hline
+updated\_at & timestamptz & - & Sí & DEFAULT now(); trigger set\_updated\_at & Fecha y hora de la última modificación. \\ \hline
+\end{longtable}
+}
+
+\bigskip
+\noindent\textbf{Tabla: restaurantes} — restaurantes del municipio.
+
+{\footnotesize
+\begin{longtable}{|>{\bfseries}p{3.3cm}|p{2.6cm}|p{1.2cm}|p{1.6cm}|p{2.8cm}|p{4.0cm}|}
+\hline
+Campo & Tipo & Longitud & Obligatorio & Restricción & Descripción \\ \hline
+\endfirsthead
+\hline
+Campo & Tipo & Longitud & Obligatorio & Restricción & Descripción \\ \hline
+\endhead
+\hline
+\endfoot
+\hline
+\endlastfoot
+
+id & uuid & 36 & Sí & PK; DEFAULT gen\_random\_uuid() & Identificador único del restaurante. \\ \hline
+categoria\_id & uuid & 36 & No & FK $\rightarrow$ categorias(id) ON DELETE SET NULL; trigger valida módulo ``restaurante'' & Tipo de comida o cocina del restaurante. \\ \hline
+nombre & text & 3 - 120 & Sí & CHECK longitud 3-120 & Nombre del restaurante. \\ \hline
+descripcion & text & - & Sí & DEFAULT '' & Descripción detallada del restaurante. \\ \hline
+imagenes & text[] & - & Sí & DEFAULT '\{\}' & Lista de URLs de imágenes del restaurante. \\ \hline
+latitud & double precision & - & No & CHECK entre -90 y 90 & Coordenada de latitud. \\ \hline
+longitud & double precision & - & No & CHECK entre -180 y 180 & Coordenada de longitud. \\ \hline
+direccion\_referencia & text & - & No & - & Referencia textual de ubicación. \\ \hline
+horario\_atencion & text & - & No & - & Horario de atención al público. \\ \hline
+precio\_referencial & numeric & 8,2 & No & CHECK $\geq$ 0 & Precio referencial de los platos. \\ \hline
+contacto & text & - & No & - & Teléfono o medio de contacto. \\ \hline
+calificacion\_promedio & numeric & 2,1 & Sí & DEFAULT 0; CHECK entre 0 y 5 & Promedio de calificación calculado a partir de las reseñas. \\ \hline
+activo & boolean & - & Sí & DEFAULT true & Borrado lógico: oculta el restaurante sin eliminarlo. \\ \hline
+created\_at & timestamptz & - & Sí & DEFAULT now() & Fecha y hora de creación del registro. \\ \hline
+updated\_at & timestamptz & - & Sí & DEFAULT now(); trigger set\_updated\_at & Fecha y hora de la última modificación. \\ \hline
+\end{longtable}
+}
+
+\bigskip
+\noindent\textbf{Tabla: actividades} — actividades turísticas: senderismo, cabalgatas, agroturismo, etc.
+
+{\footnotesize
+\begin{longtable}{|>{\bfseries}p{3.3cm}|p{2.6cm}|p{1.2cm}|p{1.6cm}|p{2.8cm}|p{4.0cm}|}
+\hline
+Campo & Tipo & Longitud & Obligatorio & Restricción & Descripción \\ \hline
+\endfirsthead
+\hline
+Campo & Tipo & Longitud & Obligatorio & Restricción & Descripción \\ \hline
+\endhead
+\hline
+\endfoot
+\hline
+\endlastfoot
+
+id & uuid & 36 & Sí & PK; DEFAULT gen\_random\_uuid() & Identificador único de la actividad. \\ \hline
+categoria\_id & uuid & 36 & No & FK $\rightarrow$ categorias(id) ON DELETE SET NULL; trigger valida módulo ``actividad'' & Tipo de actividad. \\ \hline
+nombre & text & 3 - 120 & Sí & CHECK longitud 3-120 & Nombre de la actividad. \\ \hline
+descripcion & text & - & Sí & DEFAULT '' & Descripción detallada de la actividad. \\ \hline
+imagenes & text[] & - & Sí & DEFAULT '\{\}' & Lista de URLs de imágenes de la actividad. \\ \hline
+latitud & double precision & - & No & CHECK entre -90 y 90 & Coordenada de latitud. \\ \hline
+longitud & double precision & - & No & CHECK entre -180 y 180 & Coordenada de longitud. \\ \hline
+dificultad & nivel\_dificultad (enum) & - & Sí & Valores: 'facil', 'media', 'dificil'; DEFAULT 'facil' & Nivel de dificultad de la actividad. \\ \hline
+duracion\_min & integer & - & No & CHECK $\geq$ 0 & Duración estimada, en minutos. \\ \hline
+precio\_referencial & numeric & 8,2 & No & CHECK $\geq$ 0 & Precio referencial de la actividad. \\ \hline
+operador\_contacto & text & - & No & - & Contacto del operador que ofrece la actividad. \\ \hline
+capacidad\_maxima & smallint & - & No & CHECK $>$ 0 & Cupo máximo de participantes. \\ \hline
+temporada & text & - & No & - & Temporada recomendada para realizarla. \\ \hline
+activo & boolean & - & Sí & DEFAULT true & Borrado lógico: oculta la actividad sin eliminarla. \\ \hline
+created\_at & timestamptz & - & Sí & DEFAULT now() & Fecha y hora de creación del registro. \\ \hline
+updated\_at & timestamptz & - & Sí & DEFAULT now(); trigger set\_updated\_at & Fecha y hora de la última modificación. \\ \hline
+\end{longtable}
+}
+
+\bigskip
+\noindent\textbf{Tabla: gastronomia} — platos, bebidas y productos típicos (ej. derivados del durazno).
+
+{\footnotesize
+\begin{longtable}{|>{\bfseries}p{3.3cm}|p{2.6cm}|p{1.2cm}|p{1.6cm}|p{2.8cm}|p{4.0cm}|}
+\hline
+Campo & Tipo & Longitud & Obligatorio & Restricción & Descripción \\ \hline
+\endfirsthead
+\hline
+Campo & Tipo & Longitud & Obligatorio & Restricción & Descripción \\ \hline
+\endhead
+\hline
+\endfoot
+\hline
+\endlastfoot
+
+id & uuid & 36 & Sí & PK; DEFAULT gen\_random\_uuid() & Identificador único del plato/bebida/producto. \\ \hline
+categoria\_id & uuid & 36 & No & FK $\rightarrow$ categorias(id) ON DELETE SET NULL; trigger valida módulo ``gastronomia'' & Tipo (plato, bebida, producto). \\ \hline
+restaurante\_id & uuid & 36 & No & FK $\rightarrow$ restaurantes(id) ON DELETE SET NULL & Restaurante donde encontrarlo (opcional). \\ \hline
+nombre & text & 3 - 120 & Sí & CHECK longitud 3-120 & Nombre del plato, bebida o producto. \\ \hline
+descripcion & text & - & Sí & DEFAULT '' & Descripción detallada. \\ \hline
+imagenes & text[] & - & Sí & DEFAULT '\{\}' & Lista de URLs de imágenes. \\ \hline
+temporada & text & - & No & - & Temporada en que se consigue o se recomienda. \\ \hline
+precio\_referencial & numeric & 8,2 & No & CHECK $\geq$ 0 & Precio referencial. \\ \hline
+activo & boolean & - & Sí & DEFAULT true & Borrado lógico: lo oculta sin eliminarlo. \\ \hline
+created\_at & timestamptz & - & Sí & DEFAULT now() & Fecha y hora de creación del registro. \\ \hline
+updated\_at & timestamptz & - & Sí & DEFAULT now(); trigger set\_updated\_at & Fecha y hora de la última modificación. \\ \hline
+\end{longtable}
+}
+
+\bigskip
+\noindent\textbf{Tabla: eventos} — eventos y ferias del municipio (ej. Feria del Durazno).
+
+{\footnotesize
+\begin{longtable}{|>{\bfseries}p{3.3cm}|p{2.6cm}|p{1.2cm}|p{1.6cm}|p{2.8cm}|p{4.0cm}|}
+\hline
+Campo & Tipo & Longitud & Obligatorio & Restricción & Descripción \\ \hline
+\endfirsthead
+\hline
+Campo & Tipo & Longitud & Obligatorio & Restricción & Descripción \\ \hline
+\endhead
+\hline
+\endfoot
+\hline
+\endlastfoot
+
+id & uuid & 36 & Sí & PK; DEFAULT gen\_random\_uuid() & Identificador único del evento. \\ \hline
+categoria\_id & uuid & 36 & No & FK $\rightarrow$ categorias(id) ON DELETE SET NULL; trigger valida módulo ``evento'' & Tipo de evento (feria, fiesta patronal, cultural...). \\ \hline
+nombre & text & 3 - 120 & Sí & CHECK longitud 3-120 & Nombre del evento. \\ \hline
+descripcion & text & - & Sí & DEFAULT '' & Descripción detallada del evento. \\ \hline
+imagenes & text[] & - & Sí & DEFAULT '\{\}' & Lista de URLs de imágenes del evento. \\ \hline
+latitud & double precision & - & No & CHECK entre -90 y 90 & Coordenada de latitud. \\ \hline
+longitud & double precision & - & No & CHECK entre -180 y 180 & Coordenada de longitud. \\ \hline
+fecha\_inicio & timestamptz & - & Sí & - & Fecha y hora de inicio del evento. \\ \hline
+fecha\_fin & timestamptz & - & No & CHECK $\geq$ fecha\_inicio & Fecha y hora de finalización del evento. \\ \hline
+periodicidad & text & - & No & - & Periodicidad del evento (ej. 'anual', 'único'). \\ \hline
+activo & boolean & - & Sí & DEFAULT true & Borrado lógico: oculta el evento sin eliminarlo. \\ \hline
+created\_at & timestamptz & - & Sí & DEFAULT now() & Fecha y hora de creación del registro. \\ \hline
+updated\_at & timestamptz & - & Sí & DEFAULT now(); trigger set\_updated\_at & Fecha y hora de la última modificación. \\ \hline
+\end{longtable}
+}
+
+\bigskip
+\noindent\textbf{Tabla: resenas} — reseñas y calificaciones públicas sobre lugares, hoteles, restaurantes, actividades, eventos o gastronomía (asociación polimórfica, sin cuenta de usuario).
+
+{\footnotesize
+\begin{longtable}{|>{\bfseries}p{3.3cm}|p{2.6cm}|p{1.2cm}|p{1.6cm}|p{2.8cm}|p{4.0cm}|}
+\hline
+Campo & Tipo & Longitud & Obligatorio & Restricción & Descripción \\ \hline
+\endfirsthead
+\hline
+Campo & Tipo & Longitud & Obligatorio & Restricción & Descripción \\ \hline
+\endhead
+\hline
+\endfoot
+\hline
+\endlastfoot
+
+id & uuid & 36 & Sí & PK; DEFAULT gen\_random\_uuid() & Identificador único de la reseña. \\ \hline
+entidad & entidad\_resenable (enum) & - & Sí & Valores: 'lugar', 'hotel', 'restaurante', 'actividad', 'evento', 'gastronomia' & Módulo/tabla a la que pertenece la reseña. \\ \hline
+entidad\_id & uuid & 36 & Sí & SIN FK real (asociación polimórfica); validado por la app & Identificador de la fila reseñada dentro del módulo indicado en ``entidad''. \\ \hline
+autor\_nombre & text & 2 - 80 & Sí & CHECK longitud 2-80 & Nombre del autor de la reseña. \\ \hline
+calificacion & smallint & - & Sí & CHECK entre 1 y 5 & Puntuación otorgada (1 a 5 estrellas). \\ \hline
+comentario & text & - & No & - & Comentario textual de la reseña. \\ \hline
+estado\_moderacion & estado\_moderacion (enum) & - & Sí & Valores: 'pendiente', 'aprobada', 'rechazada'; DEFAULT 'pendiente'; política RLS de inserción solo admite 'aprobada' (auto-aprobación, script 06) & Estado de moderación de la reseña. \\ \hline
+created\_at & timestamptz & - & Sí & DEFAULT now() & Fecha y hora de creación de la reseña. \\ \hline
+\end{longtable}
+}

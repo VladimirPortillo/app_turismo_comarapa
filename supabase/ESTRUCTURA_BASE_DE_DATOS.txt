@@ -131,28 +131,37 @@ tipo_contacto_emergencia (ELIMINADO por el script 08, junto con su tabla)
  DIAGRAMA DE RELACIONES (estado actual)
 ================================================================
 
+Leyenda:  ----> línea sólida = llave foránea real (constraint en la BD)
+          - - -> línea discontinua = relación lógica, SIN llave foránea
+                 (solo la usa "resenas", validada por la app)
+
   auth.users (Supabase)
         |
-        | 1:1
+        | 1:1 (FK real)
         v
   usuarios
 
   categorias
-     |--(categoria_id)--> lugares
-     |--(categoria_id)--> hoteles
-     |--(categoria_id)--> restaurantes
-     |--(categoria_id)--> actividades
-     |--(categoria_id)--> gastronomia
-     |--(categoria_id)--> eventos
+     |----(categoria_id)----> lugares
+     |----(categoria_id)----> hoteles
+     |----(categoria_id)----> restaurantes
+     |----(categoria_id)----> actividades
+     |----(categoria_id)----> gastronomia
+     |----(categoria_id)----> eventos
 
-  restaurantes --(restaurante_id, opcional)--> gastronomia
+  restaurantes ----(restaurante_id, opcional)----> gastronomia
 
-  resenas --(entidad + entidad_id, polimórfica, sin FK)--> lugares
-                                                       --> hoteles
-                                                       --> restaurantes
-                                                       --> actividades
-                                                       --> eventos
-                                                       --> gastronomia
+  resenas - - (entidad + entidad_id) - -> lugares
+          - - (entidad + entidad_id) - -> hoteles
+          - - (entidad + entidad_id) - -> restaurantes
+          - - (entidad + entidad_id) - -> actividades
+          - - (entidad + entidad_id) - -> eventos
+          - - (entidad + entidad_id) - -> gastronomia
+
+  (las líneas de "resenas" son discontinuas a propósito: no existe
+   una FK real en la base de datos, porque "entidad_id" puede
+   apuntar a cualquiera de esas seis tablas según el valor de
+   "entidad"; la integridad se valida en el código de la app)
 
 
 ================================================================

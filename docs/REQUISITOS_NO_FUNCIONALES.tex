@@ -1,0 +1,51 @@
+% ============================================================
+% Requisitos no funcionales - App Turismo Comarapa
+% Requiere en el preambulo del documento principal:
+%   \usepackage{longtable}  % tabla que puede continuar en varias paginas
+%   \usepackage{array}      % para el modificador >{\bfseries} en columnas p{}
+% ============================================================
+
+\begin{longtable}{|>{\bfseries}p{1.2cm}|>{\bfseries}p{2.3cm}|p{4.8cm}|p{4.8cm}|}
+\caption{Requisitos no funcionales de la aplicación de turismo del municipio de Comarapa}
+\label{tab:rnf} \\
+\hline
+ID & Tipo & Enunciado & Métrica de verificación \\ \hline
+\endfirsthead
+
+\hline
+ID & Tipo & Enunciado & Métrica de verificación \\ \hline
+\endhead
+
+\hline
+\endfoot
+
+\hline
+\endlastfoot
+
+RNF-01 & Usabilidad & La aplicación debe presentar una interfaz en español, con navegación mediante iconos e imágenes claras, y debe adaptarse tanto a pantallas de dispositivos móviles como a pantallas más amplias (modo escritorio/tableta). & El 100\,\% de las pantallas de la aplicación se visualizan en español y sin elementos cortados o superpuestos al probarse en al menos dos tamaños de pantalla (móvil y tableta/escritorio). \\ \hline
+
+RNF-02 & Usabilidad & Los formularios de registro, inicio de sesión y gestión de contenido deben validar en tiempo real los campos obligatorios, el formato de correo electrónico, la longitud mínima de la contraseña y el límite de caracteres de comentarios, mostrando mensajes de error comprensibles. & El 100\,\% de los campos obligatorios, el formato de correo, la contraseña (mínimo 6 caracteres) y el límite de comentarios (500 caracteres) son validados antes de enviar el formulario, mostrando el mensaje de error correspondiente. \\ \hline
+
+RNF-03 & Rendimiento & Las pantallas de listado (lugares, actividades, eventos, hoteles, restaurantes, gastronomía) y el mapa interactivo deben mostrar la información en un tiempo de respuesta adecuado para no afectar la experiencia de navegación del usuario. & Las pantallas de listado y el mapa muestran su contenido en un tiempo menor o igual a 3 segundos, medido con conexión de red estándar (WiFi/4G) en al menos el 90\,\% de las pruebas realizadas. \\ \hline
+
+RNF-04 & Disponibilidad / Fiabilidad & Ante la ausencia de conexión a internet o fallas del servidor, la aplicación debe mostrar información de referencia (modo demo) en lugar de dejar pantallas vacías, y permitir reintentar la operación. & En el 100\,\% de las pruebas realizadas sin conexión o con una falla de servidor simulada, la aplicación muestra datos de referencia o un mensaje con opción de reintentar, sin presentar pantallas vacías. \\ \hline
+
+RNF-05 & Seguridad (autenticación) & El acceso al panel administrativo debe requerir autenticación mediante correo electrónico y contraseña, gestionada a través de un proveedor de autenticación (Supabase Auth) que administra la sesión mediante tokens. & El 100\,\% de los intentos de acceso al panel administrativo sin credenciales válidas o sin token de sesión vigente son rechazados por el sistema. \\ \hline
+
+RNF-06 & Seguridad (autorización) & El sistema debe restringir las funciones según el rol del usuario autenticado: el rol ``editor'' accede a la gestión de contenido turístico, mientras que únicamente el rol ``administrador'' puede gestionar usuarios y sus permisos. & El 100\,\% de los intentos de un usuario con rol ``editor'' de acceder a la sección de gestión de usuarios son rechazados por el sistema. \\ \hline
+
+RNF-07 & Seguridad (datos) & Las contraseñas de los usuarios no deben almacenarse ni manejarse en texto plano dentro de la aplicación; su gestión queda delegada al proveedor de autenticación. Las imágenes subidas se almacenan en un bucket de almacenamiento en la nube y se referencian mediante URL pública. & La revisión del código y de la base de datos confirma 0 ocurrencias de contraseñas en texto plano; el 100\,\% de las imágenes registradas cuentan con una URL pública del bucket de almacenamiento. \\ \hline
+
+RNF-08 & Compatibilidad / Portabilidad & La aplicación debe ejecutarse en dispositivos con sistema operativo Android, dentro del rango de versiones soportado por el SDK de Flutter utilizado en el desarrollo. & La aplicación se instala y ejecuta sin errores críticos en al menos 3 versiones de Android representativas dentro del rango mínimo y máximo definido por el SDK de Flutter del proyecto. \\ \hline
+
+RNF-09 & Mantenibilidad & El código debe organizarse en capas independientes (modelos, repositorios, servicios y pantallas) que permitan corregir errores, incorporar nuevas categorías turísticas o modificar una funcionalidad sin afectar al resto del sistema. & La estructura de carpetas del proyecto refleja la separación en capas (modelos, repositorios, servicios, pantallas) en el 100\,\% de los módulos; agregar una nueva categoría turística no requiere modificar la lógica de las categorías existentes. \\ \hline
+
+RNF-10 & Escalabilidad & El uso de una base de datos gestionada (Supabase / PostgreSQL) debe permitir incrementar el número de registros turísticos, reseñas y usuarios sin requerir cambios estructurales mayores en la aplicación móvil. & Una prueba con un incremento simulado de al menos 10 veces el volumen actual de registros, reseñas y usuarios no requiere cambios en el esquema de la base de datos ni en el código de la aplicación móvil. \\ \hline
+
+RNF-11 & Interoperabilidad & La aplicación debe integrarse con servicios externos de mapas (OpenStreetMap) y de cálculo de rutas (OSRM) que no requieran claves de API de pago, para mantener el costo operativo del proyecto reducido. & La revisión de la configuración del proyecto confirma que el 100\,\% de las integraciones de mapa y enrutamiento utilizan servicios (OpenStreetMap, OSRM) sin claves de API de pago asociadas. \\ \hline
+
+RNF-12 & Privacidad & Los permisos de cámara y de ubicación del dispositivo deben solicitarse de forma explícita al usuario y utilizarse únicamente para las funciones que los requieren (registro fotográfico de contenido, geolocalización y cálculo de rutas). & El 100\,\% de las funciones que usan cámara o ubicación solicitan el permiso explícito antes de su primer uso; ninguna función ajena a estas capacidades accede a dichos permisos. \\ \hline
+
+RNF-13 & Portabilidad de datos & La estructura de la base de datos debe estar documentada de manera independiente a la aplicación móvil, de forma que permita realizar respaldos, migraciones o auditorías sin depender del código fuente de la app. & Existe documentación (diccionario de datos y diagrama entidad-relación) que describe el 100\,\% de las tablas y relaciones de la base de datos, verificable sin necesidad de consultar el código fuente de la aplicación. \\ \hline
+
+\end{longtable}

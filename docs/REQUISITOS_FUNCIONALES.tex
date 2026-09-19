@@ -1,0 +1,59 @@
+% ============================================================
+% Requisitos funcionales - App Turismo Comarapa
+% Requiere en el preambulo del documento principal:
+%   \usepackage{longtable}  % tabla que puede continuar en varias paginas
+%   \usepackage{array}      % para el modificador >{\bfseries} en columnas p{}
+% ============================================================
+
+\begin{longtable}{|>{\bfseries}p{1.3cm}|p{2.6cm}|p{4.4cm}|p{4.4cm}|>{\centering\arraybackslash}p{1.2cm}|}
+\caption{Requisitos funcionales de la aplicación de turismo del municipio de Comarapa}
+\label{tab:rf} \\
+\hline
+\textbf{ID} & \textbf{Requisito} & \textbf{Descripción} & \textbf{Criterio de aceptación} & \textbf{MoSCoW} \\ \hline
+\endfirsthead
+
+\hline
+\textbf{ID} & \textbf{Requisito} & \textbf{Descripción} & \textbf{Criterio de aceptación} & \textbf{MoSCoW} \\ \hline
+\endhead
+
+\hline
+\endfoot
+
+\hline
+\endlastfoot
+
+RF-01 & Consultar contenido turístico por categoría & El sistema debe permitir al visitante listar los registros activos de lugares, actividades, eventos, hoteles, restaurantes y gastronomía. & Al seleccionar una categoría se muestra el listado de registros activos correspondiente; si no existen registros se muestra un mensaje de ``sin resultados''. & M \\ \hline
+
+RF-02 & Ver detalle de un elemento turístico & El sistema debe mostrar la información completa de un elemento seleccionado (descripción, imágenes, ubicación y calificación promedio, según corresponda). & Al seleccionar un elemento del listado se despliega su pantalla de detalle con todos sus datos e imágenes disponibles. & M \\ \hline
+
+RF-03 & Buscar contenido turístico & El sistema debe permitir buscar por texto de forma simultánea entre todas las categorías turísticas y combinar los resultados en un solo listado. & Al ingresar un texto de búsqueda se muestran los resultados coincidentes de todas las categorías; si no hay coincidencias se indica ``sin resultados''. & S \\ \hline
+
+RF-04 & Visualizar mapa interactivo & El sistema debe mostrar un mapa (OpenStreetMap) centrado en el municipio, con marcadores diferenciados por categoría y filtrables mediante chips. & El mapa se despliega con los marcadores correspondientes y permite filtrarlos por categoría; al tocar un marcador se muestra una tarjeta de previsualización. & M \\ \hline
+
+RF-05 & Ubicar posición actual (GPS) & El sistema debe obtener y mostrar la ubicación actual del usuario dentro del mapa, previa autorización de permisos. & Al presionar el botón de ubicación, el mapa se centra en las coordenadas actuales del dispositivo y coloca un marcador de usuario. & S \\ \hline
+
+RF-06 & Calcular ruta hacia un destino & El sistema debe calcular y dibujar sobre el mapa la ruta entre la ubicación del usuario y un destino turístico, usando un servicio de enrutamiento (OSRM). & Al seleccionar ``Cómo llegar'' se traza la ruta en el mapa junto con distancia y tiempo estimado; si el servicio falla, se muestra un mensaje de error. & S \\ \hline
+
+RF-07 & Consultar el clima del municipio & El sistema debe mostrar en la pantalla principal la temperatura y condición climática actual del municipio, obtenidas de un servicio meteorológico externo. & La pantalla principal muestra el resumen del clima al cargar; si el servicio no responde, el bloque se oculta sin afectar el resto de la pantalla. & C \\ \hline
+
+RF-08 & Registrar reseña y calificación & El sistema debe permitir a cualquier visitante registrar una reseña (nombre, calificación de 1 a 5 estrellas y comentario opcional) sobre una entidad turística, sin necesidad de cuenta. & Al enviar el formulario válido, la reseña se guarda y el promedio de calificación de la entidad se actualiza; los comentarios que excedan el límite de caracteres son rechazados. & M \\ \hline
+
+RF-09 & Consultar reseñas y promedio de calificación & El sistema debe mostrar en el detalle de cada entidad turística el listado de reseñas y el promedio de calificación calculado. & El detalle muestra el promedio y el total de reseñas; si no existen reseñas se indica ``Aún no hay reseñas'' con promedio 0. & M \\ \hline
+
+RF-10 & Iniciar y cerrar sesión en el panel administrativo & El sistema debe autenticar a editores y administradores mediante correo y contraseña, y permitir cerrar la sesión activa. & Con credenciales válidas se otorga acceso al panel según el rol; con credenciales inválidas se muestra un mensaje de error; al cerrar sesión se redirige al inicio de sesión. & M \\ \hline
+
+RF-11 & Registrarse como editor & El sistema debe permitir que un nuevo usuario cree una cuenta con correo y contraseña, asignándole automáticamente el rol ``editor''. & Al completar el registro con datos válidos se crea la cuenta con rol editor; si el correo ya existe o la contraseña es débil, se muestra el error correspondiente. & S \\ \hline
+
+RF-12 & Gestionar contenido turístico (CRUD por categoría) & El sistema debe permitir a editores y administradores crear, editar, eliminar y activar/desactivar registros de lugares, actividades, eventos, hoteles, restaurantes y gastronomía. & Los cambios guardados desde el panel administrativo se reflejan en el listado administrativo y en el módulo público según el estado del registro. & M \\ \hline
+
+RF-13 & Seleccionar ubicación en el mapa para un registro & El sistema debe permitir elegir o ajustar la coordenada geográfica de un registro turístico mediante un mapa interactivo dentro del formulario. & Al confirmar un punto en el mapa, las coordenadas seleccionadas quedan asociadas al registro en edición. & S \\ \hline
+
+RF-14 & Subir imágenes a un registro turístico & El sistema debe permitir capturar o seleccionar imágenes desde la cámara o galería y subirlas al almacenamiento en la nube, asociándolas al registro. & La imagen subida se agrega a la lista del registro y queda disponible mediante URL pública; la primera imagen se usa como portada. & S \\ \hline
+
+RF-15 & Gestionar usuarios y roles & El sistema debe permitir únicamente al administrador listar usuarios, filtrarlos por rol y modificar su rol o estado (activo/inactivo). & Solo el rol administrador accede a esta sección; al modificar un usuario, su rol o estado queda actualizado en la base de datos. & M \\ \hline
+
+\end{longtable}
+
+\bigskip
+\noindent
+\textbf{Total de requisitos:} 15 \quad\textbf{Must have:} 8 \quad\textbf{Porcentaje Must have:} 53{,}3\,\% (debe ser $\leq$ 60\,\%)

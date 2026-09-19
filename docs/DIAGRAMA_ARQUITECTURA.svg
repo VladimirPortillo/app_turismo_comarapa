@@ -1,0 +1,179 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1060" viewBox="0 0 1500 1060" font-family="Segoe UI, Arial, sans-serif">
+<defs>
+  <marker id="arrowEnd" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+    <path d="M0,0 L10,5 L0,10 Z" fill="#0C3D28"/>
+  </marker>
+  <marker id="arrowStart" markerWidth="10" markerHeight="10" refX="2" refY="5" orient="auto">
+    <path d="M10,0 L0,5 L10,10 Z" fill="#0C3D28"/>
+  </marker>
+</defs>
+
+<rect x="0" y="0" width="1500" height="1060" fill="#FFFFFF"/>
+<text x="750" y="38" text-anchor="middle" font-size="24" font-weight="bold" fill="#0C3D28">Diagrama de arquitectura - Aplicacion de Turismo del Municipio de Comarapa</text>
+<text x="750" y="62" text-anchor="middle" font-size="13.5" font-style="italic" fill="#444444">Arquitectura cliente-servidor con Backend-as-a-Service (Supabase); comunicacion mediante HTTPS / API REST con datos en formato JSON</text>
+
+<!-- ===================== FRONTEND ===================== -->
+<rect x="50" y="100" width="420" height="440" rx="8" fill="#EAF3EC" stroke="#1B5A3F" stroke-width="2.2"/>
+<rect x="50" y="100" width="420" height="40" rx="8" fill="#1B5A3F"/>
+<rect x="50" y="122" width="420" height="18" fill="#1B5A3F"/>
+<text x="260" y="126" text-anchor="middle" font-size="16.5" font-weight="bold" fill="#FFFFFF">FRONTEND (Presentacion)</text>
+<text x="270" y="158" text-anchor="middle" font-size="13" font-weight="bold" fill="#0C3D28">App movil Flutter (Android / Web)</text>
+
+<text x="70" y="186" font-size="12.3" fill="#0C3D28" font-weight="bold">Responsabilidad:</text>
+<text x="70" y="204" font-size="12" fill="#333333">Renderizar la interfaz, capturar la interaccion</text>
+<text x="70" y="220" font-size="12" fill="#333333">del turista y del administrador, y gestionar el</text>
+<text x="70" y="236" font-size="12" fill="#333333">estado local de la aplicacion.</text>
+
+<line x1="70" y1="250" x2="450" y2="250" stroke="#1B5A3F" stroke-width="1" stroke-dasharray="4,3"/>
+
+<text x="70" y="272" font-size="12.3" font-weight="bold" fill="#0C3D28">Componentes:</text>
+<text x="80" y="292" font-size="12" fill="#333333">• Screens: Home, Listados, Detalle, Mapa,</text>
+<text x="90" y="308" font-size="12" fill="#333333">  Login, CRUD administrativo</text>
+<text x="80" y="326" font-size="12" fill="#333333">• Controllers (Provider): estado reactivo</text>
+<text x="90" y="342" font-size="12" fill="#333333">  (ContextController, PreferencesController)</text>
+<text x="80" y="360" font-size="12" fill="#333333">• Repositories / Services: acceso a Supabase,</text>
+<text x="90" y="376" font-size="12" fill="#333333">  GPS y API de clima</text>
+<text x="80" y="394" font-size="12" fill="#333333">• Almacenamiento local (shared_preferences):</text>
+<text x="90" y="410" font-size="12" fill="#333333">  preferencias y cache "Plan B Offline"</text>
+<text x="80" y="428" font-size="12" fill="#333333">• Permisos nativos: camara (image_picker) y</text>
+<text x="90" y="444" font-size="12" fill="#333333">  ubicacion (geolocator)</text>
+
+<line x1="70" y1="460" x2="450" y2="460" stroke="#1B5A3F" stroke-width="1" stroke-dasharray="4,3"/>
+<text x="70" y="480" font-size="12" fill="#333333">Usuarios: Visitante / Turista y Administrador</text>
+<text x="70" y="497" font-size="12" fill="#333333">(rol editor / administrador)</text>
+<text x="70" y="518" font-size="11.2" fill="#5B6B63" font-style="italic">Interfaz en espanol, adaptable a movil/tablet</text>
+
+<!-- ===================== BACKEND ===================== -->
+<rect x="530" y="100" width="420" height="440" rx="8" fill="#FCEFDA" stroke="#8A5A12" stroke-width="2.2"/>
+<rect x="530" y="100" width="420" height="40" rx="8" fill="#8A5A12"/>
+<rect x="530" y="122" width="420" height="18" fill="#8A5A12"/>
+<text x="740" y="126" text-anchor="middle" font-size="16.5" font-weight="bold" fill="#FFFFFF">BACKEND (Supabase - BaaS)</text>
+<text x="740" y="158" text-anchor="middle" font-size="13" font-weight="bold" fill="#0C3D28">Backend-as-a-Service en la nube</text>
+
+<text x="550" y="186" font-size="12.3" font-weight="bold" fill="#0C3D28">Responsabilidad:</text>
+<text x="550" y="204" font-size="12" fill="#333333">Gestionar la autenticacion, aplicar las reglas</text>
+<text x="550" y="220" font-size="12" fill="#333333">de autorizacion por rol y exponer los datos</text>
+<text x="550" y="236" font-size="12" fill="#333333">turisticos mediante una API REST.</text>
+
+<line x1="550" y1="250" x2="930" y2="250" stroke="#8A5A12" stroke-width="1" stroke-dasharray="4,3"/>
+
+<text x="550" y="272" font-size="12.3" font-weight="bold" fill="#0C3D28">Componentes:</text>
+<text x="560" y="292" font-size="12" fill="#333333">• Supabase Auth: login por correo/contrasena,</text>
+<text x="570" y="308" font-size="12" fill="#333333">  emite y valida tokens de sesion (JWT)</text>
+<text x="560" y="326" font-size="12" fill="#333333">• API REST autogenerada (PostgREST) sobre</text>
+<text x="570" y="342" font-size="12" fill="#333333">  las tablas de la base de datos</text>
+<text x="560" y="360" font-size="12" fill="#333333">• Row Level Security (RLS): restringe cada</text>
+<text x="570" y="376" font-size="12" fill="#333333">  operacion segun el rol (editor / administrador)</text>
+<text x="560" y="394" font-size="12" fill="#333333">• Supabase Storage: bucket de imagenes de</text>
+<text x="570" y="410" font-size="12" fill="#333333">  lugares, hoteles y eventos (URL publica)</text>
+
+<line x1="550" y1="426" x2="930" y2="426" stroke="#8A5A12" stroke-width="1" stroke-dasharray="4,3"/>
+<text x="550" y="446" font-size="12" fill="#333333">Las contrasenas nunca se manejan en texto</text>
+<text x="550" y="463" font-size="12" fill="#333333">plano; su gestion queda delegada a Supabase</text>
+<text x="550" y="480" font-size="12" fill="#333333">Auth (RNF de seguridad).</text>
+
+<!-- ===================== DATABASE ===================== -->
+<rect x="1010" y="100" width="420" height="440" rx="8" fill="#E7EEF7" stroke="#1F4E79" stroke-width="2.2"/>
+<rect x="1010" y="100" width="420" height="40" rx="8" fill="#1F4E79"/>
+<rect x="1010" y="122" width="420" height="18" fill="#1F4E79"/>
+<text x="1220" y="126" text-anchor="middle" font-size="16.5" font-weight="bold" fill="#FFFFFF">BASE DE DATOS</text>
+<text x="1220" y="158" text-anchor="middle" font-size="13" font-weight="bold" fill="#0C3D28">PostgreSQL gestionado (Supabase)</text>
+
+<text x="1030" y="186" font-size="12.3" font-weight="bold" fill="#0C3D28">Responsabilidad:</text>
+<text x="1030" y="204" font-size="12" fill="#333333">Almacenar de forma persistente y estructurada</text>
+<text x="1030" y="220" font-size="12" fill="#333333">la informacion turistica, los perfiles de usuario</text>
+<text x="1030" y="236" font-size="12" fill="#333333">y las reseñas del sistema.</text>
+
+<line x1="1030" y1="250" x2="1410" y2="250" stroke="#1F4E79" stroke-width="1" stroke-dasharray="4,3"/>
+
+<text x="1030" y="272" font-size="12.3" font-weight="bold" fill="#0C3D28">Datos almacenados (esquema public):</text>
+<text x="1040" y="292" font-size="12" fill="#333333">• usuarios (perfil, rol, estado)</text>
+<text x="1040" y="310" font-size="12" fill="#333333">• categorias (clasificacion por modulo)</text>
+<text x="1040" y="328" font-size="12" fill="#333333">• lugares, hoteles, restaurantes</text>
+<text x="1040" y="346" font-size="12" fill="#333333">• actividades, gastronomia, eventos</text>
+<text x="1040" y="364" font-size="12" fill="#333333">• resenas y calificaciones (con moderacion:</text>
+<text x="1050" y="380" font-size="12" fill="#333333">  pendiente / aprobada / rechazada)</text>
+
+<line x1="1030" y1="396" x2="1410" y2="396" stroke="#1F4E79" stroke-width="1" stroke-dasharray="4,3"/>
+<text x="1030" y="416" font-size="12" fill="#333333">Reglas de integridad (ENUM, FK, triggers) y</text>
+<text x="1030" y="433" font-size="12" fill="#333333">politicas RLS aplicadas a nivel de tabla.</text>
+<text x="1030" y="454" font-size="11.2" fill="#5B6B63" font-style="italic">Escalable: nuevos registros/categorias sin</text>
+<text x="1030" y="470" font-size="11.2" fill="#5B6B63" font-style="italic">cambios estructurales en la app movil</text>
+
+<!-- ===================== ARROW FRONTEND <-> BACKEND ===================== -->
+<line x1="474" y1="320" x2="526" y2="320" stroke="#0C3D28" stroke-width="2" marker-end="url(#arrowEnd)" marker-start="url(#arrowStart)"/>
+<text x="500" y="292" text-anchor="middle" font-size="11" font-weight="bold" fill="#0C3D28">HTTPS / REST</text>
+<text x="500" y="306" text-anchor="middle" font-size="10.3" fill="#444444">(JSON)</text>
+<text x="500" y="340" text-anchor="middle" font-size="10.3" fill="#444444">SDK supabase_flutter</text>
+<text x="500" y="353" text-anchor="middle" font-size="10.3" fill="#444444">+ token JWT</text>
+
+<!-- ===================== ARROW BACKEND <-> DATABASE ===================== -->
+<line x1="954" y1="320" x2="1006" y2="320" stroke="#0C3D28" stroke-width="2" marker-end="url(#arrowEnd)" marker-start="url(#arrowStart)"/>
+<text x="980" y="292" text-anchor="middle" font-size="11" font-weight="bold" fill="#0C3D28">SQL</text>
+<text x="980" y="306" text-anchor="middle" font-size="10.3" fill="#444444">(interno)</text>
+<text x="980" y="340" text-anchor="middle" font-size="10.3" fill="#444444">PostgREST sobre</text>
+<text x="980" y="353" text-anchor="middle" font-size="10.3" fill="#444444">conexion gestionada</text>
+
+<!-- ===================== EXTERNAL SERVICES ===================== -->
+<rect x="50" y="610" width="1380" height="380" rx="8" fill="#F3EDF7" stroke="#5B3A82" stroke-width="2.2" stroke-dasharray="9,5"/>
+<rect x="50" y="610" width="1380" height="40" rx="8" fill="#5B3A82"/>
+<rect x="50" y="632" width="1380" height="18" fill="#5B3A82"/>
+<text x="740" y="636" text-anchor="middle" font-size="16.5" font-weight="bold" fill="#FFFFFF">SERVICIOS EXTERNOS</text>
+<text x="740" y="668" text-anchor="middle" font-size="13" font-weight="bold" fill="#0C3D28">Consumidos directamente por el Frontend via HTTP</text>
+
+<!-- 4 external service cards -->
+<rect x="80" y="690" width="300" height="270" rx="6" fill="#FFFFFF" stroke="#5B3A82" stroke-width="1.4"/>
+<text x="230" y="716" text-anchor="middle" font-size="13" font-weight="bold" fill="#5B3A82">Open-Meteo API</text>
+<text x="100" y="740" font-size="11.5" fill="#333333">Clima en tiempo real</text>
+<text x="100" y="758" font-size="11.5" fill="#333333">(temperatura, estado del</text>
+<text x="100" y="776" font-size="11.5" fill="#333333">tiempo)</text>
+<text x="100" y="800" font-size="11" fill="#5B6B63" font-style="italic">Protocolo: REST / JSON</text>
+<text x="100" y="818" font-size="11" fill="#5B6B63" font-style="italic">via paquete http</text>
+<text x="100" y="842" font-size="11" fill="#5B6B63" font-style="italic">No requiere API key</text>
+<text x="100" y="866" font-size="11" fill="#5B6B63" font-style="italic">de pago</text>
+<text x="100" y="900" font-size="11" fill="#333333">Usado por: weather_service</text>
+<text x="100" y="918" font-size="11" fill="#333333">.dart</text>
+
+<rect x="400" y="690" width="300" height="270" rx="6" fill="#FFFFFF" stroke="#5B3A82" stroke-width="1.4"/>
+<text x="550" y="716" text-anchor="middle" font-size="13" font-weight="bold" fill="#5B3A82">OpenStreetMap</text>
+<text x="420" y="740" font-size="11.5" fill="#333333">Teselas (tiles) del mapa</text>
+<text x="420" y="758" font-size="11.5" fill="#333333">interactivo mostrado con</text>
+<text x="420" y="776" font-size="11.5" fill="#333333">flutter_map</text>
+<text x="420" y="800" font-size="11" fill="#5B6B63" font-style="italic">Protocolo: HTTP (tiles</text>
+<text x="420" y="818" font-size="11" fill="#5B6B63" font-style="italic">raster/vectoriales)</text>
+<text x="420" y="842" font-size="11" fill="#5B6B63" font-style="italic">No requiere API key</text>
+<text x="420" y="866" font-size="11" fill="#5B6B63" font-style="italic">de pago</text>
+<text x="420" y="900" font-size="11" fill="#333333">Usado por: map_screen.dart,</text>
+<text x="420" y="918" font-size="11" fill="#333333">full_map_sheet.dart</text>
+
+<rect x="720" y="690" width="300" height="270" rx="6" fill="#FFFFFF" stroke="#5B3A82" stroke-width="1.4"/>
+<text x="870" y="716" text-anchor="middle" font-size="13" font-weight="bold" fill="#5B3A82">OSRM</text>
+<text x="740" y="740" font-size="11.5" fill="#333333">Calculo de rutas y</text>
+<text x="740" y="758" font-size="11.5" fill="#333333">distancias entre el usuario</text>
+<text x="740" y="776" font-size="11.5" fill="#333333">y un atractivo turistico</text>
+<text x="740" y="800" font-size="11" fill="#5B6B63" font-style="italic">Protocolo: REST / JSON</text>
+<text x="740" y="818" font-size="11" fill="#5B6B63" font-style="italic">via paquete http</text>
+<text x="740" y="842" font-size="11" fill="#5B6B63" font-style="italic">No requiere API key</text>
+<text x="740" y="866" font-size="11" fill="#5B6B63" font-style="italic">de pago</text>
+<text x="740" y="900" font-size="11" fill="#333333">Usado por: routing_service</text>
+<text x="740" y="918" font-size="11" fill="#333333">.dart</text>
+
+<rect x="1040" y="690" width="300" height="270" rx="6" fill="#FFFFFF" stroke="#5B3A82" stroke-width="1.4"/>
+<text x="1190" y="716" text-anchor="middle" font-size="13" font-weight="bold" fill="#5B3A82">GPS nativo del dispositivo</text>
+<text x="1060" y="740" font-size="11.5" fill="#333333">Geolocalizacion en tiempo</text>
+<text x="1060" y="758" font-size="11.5" fill="#333333">real del usuario (paquete</text>
+<text x="1060" y="776" font-size="11.5" fill="#333333">geolocator)</text>
+<text x="1060" y="800" font-size="11" fill="#5B6B63" font-style="italic">Protocolo: sensor nativo</text>
+<text x="1060" y="818" font-size="11" fill="#5B6B63" font-style="italic">del SO (no HTTP)</text>
+<text x="1060" y="842" font-size="11" fill="#5B6B63" font-style="italic">Requiere permiso explicito</text>
+<text x="1060" y="860" font-size="11" fill="#5B6B63" font-style="italic">de ubicacion</text>
+<text x="1060" y="900" font-size="11" fill="#333333">Usado por: ContextController,</text>
+<text x="1060" y="918" font-size="11" fill="#333333">ContextLabScreen</text>
+
+<!-- ===================== ARROW FRONTEND <-> EXTERNAL SERVICES ===================== -->
+<line x1="260" y1="544" x2="260" y2="606" stroke="#0C3D28" stroke-width="2" marker-end="url(#arrowEnd)" marker-start="url(#arrowStart)"/>
+<text x="285" y="568" font-size="11" font-weight="bold" fill="#0C3D28">HTTPS / REST (JSON)</text>
+<text x="285" y="582" font-size="10.3" fill="#444444">y acceso a sensor GPS nativo</text>
+
+<text x="60" y="1015" font-size="10.8" fill="#5B6B63" font-style="italic">Fuente: pubspec.yaml, lib/services, lib/repositories y supabase/ESTRUCTURA_BASE_DE_DATOS.txt del proyecto Turismo Comarapa</text>
+</svg>

@@ -1,0 +1,42 @@
+% ============================================================
+% Actores del sistema - App Turismo Comarapa
+% Requiere en el preambulo del documento principal:
+%   \usepackage{longtable}  % tabla que puede continuar en varias paginas
+%   \usepackage{array}      % para el modificador >{\bfseries} en columnas p{}
+% Basado en los roles reales del esquema (rol_usuario: 'administrador',
+% 'editor') y en las politicas RLS de supabase/04_SCHEMA_TURISMO_COMARAPA.sql;
+% ver también docs/CASOS_DE_USO.tex (CU-01 a CU-24).
+% ============================================================
+
+\subsection*{Actores del sistema}
+
+{\footnotesize
+\begin{longtable}{|>{\bfseries}p{1.0cm}|>{\bfseries}p{2.1cm}|p{3.2cm}|p{4.3cm}|p{4.1cm}|}
+\hline
+ID & Actor & Descripción & Qué puede hacer & Qué no puede hacer \\ \hline
+\endfirsthead
+\hline
+ID & Actor & Descripción & Qué puede hacer & Qué no puede hacer \\ \hline
+\endhead
+\hline
+\endfoot
+\hline
+\endlastfoot
+
+A-01 & Usuario / Turista &
+Visitante de la aplicación móvil que no requiere cuenta registrada; consulta el contenido turístico público del municipio. &
+Consultar lugares, hoteles, restaurantes, actividades, eventos y gastronomía; buscar y filtrar por categoría; ver el mapa interactivo, calcular rutas y consultar el clima; dejar reseñas y calificaciones (1 a 5) sin iniciar sesión; consultar las reseñas aprobadas de otros usuarios. &
+Iniciar sesión en el panel administrativo; crear, editar, desactivar o eliminar contenido turístico ni categorías; gestionar usuarios; moderar, editar o eliminar reseñas (ni siquiera las propias, una vez enviadas). \\ \hline
+
+A-02 & Administrador &
+Usuario con acceso completo al panel administrativo; responsable de la gestión del contenido turístico y de los demás usuarios del sistema. &
+Todo lo que puede hacer un editor (gestionar lugares, hoteles, restaurantes, actividades, eventos, gastronomía y categorías; subir imágenes; seleccionar ubicaciones en el mapa); además, gestionar usuarios: ver el listado completo, cambiar el rol (editor/administrador) y el estado (activo/inactivo) de cualquier cuenta, y registrar nuevas cuentas. &
+Eliminar físicamente registros turísticos de la base de datos (solo puede desactivarlos: borrado lógico); autoasignarse el rol de administrador desde la app si aún no lo tiene (ese primer ascenso se hace una sola vez, directamente en el SQL Editor de Supabase). \\ \hline
+
+A-03 & Editor &
+Usuario con acceso al panel administrativo encargado de mantener actualizado el contenido turístico; es el rol asignado automáticamente a toda cuenta nueva que se registra. &
+Crear, editar y activar/desactivar lugares, hoteles, restaurantes, actividades, eventos y gastronomía; gestionar categorías; subir imágenes y seleccionar ubicaciones en el mapa. &
+Gestionar usuarios (ver el listado, crear cuentas, o cambiar el rol o el estado de cualquier cuenta, incluida la propia); eliminar físicamente registros de la base de datos (solo puede desactivarlos: borrado lógico). \\ \hline
+
+\end{longtable}
+}

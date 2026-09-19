@@ -1,0 +1,219 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2150" height="1400" viewBox="0 0 2150 1400">
+<rect x="0" y="0" width="2150" height="1400" fill="#FFFFFF"/>
+<text x="1075" y="40" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="24" font-weight="bold" fill="#0C3D28">Diagrama de casos de uso - Aplicacion de Turismo del Municipio de Comarapa</text>
+<rect x="260" y="70" width="1540" height="1280" fill="none" stroke="#0C3D28" stroke-width="2.5" rx="6"/>
+<text x="1030" y="96" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="bold" fill="#0C3D28">Sistema: App Turismo Comarapa</text>
+<rect x="290" y="100" width="1160" height="560" fill="none" stroke="#1B5A3F" stroke-width="1.5" stroke-dasharray="8,5" rx="6"/>
+<text x="306" y="124" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="bold" fill="#1B5A3F">Modulo publico - Consulta y participacion</text>
+<rect x="290" y="690" width="1460" height="640" fill="none" stroke="#8A5A12" stroke-width="1.5" stroke-dasharray="8,5" rx="6"/>
+<text x="306" y="714" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="bold" fill="#8A5A12">Modulo administrativo - Gestion de contenido</text>
+<line x1="90" y1="380" x2="328.9471946521243" y2="194.62117033050725" stroke="#5B6B63" stroke-width="1.4"/>
+<line x1="90" y1="380" x2="539.1912916697078" y2="188.0629515419639" stroke="#5B6B63" stroke-width="1.4"/>
+<line x1="90" y1="380" x2="755.8757340435371" y2="184.65914854194747" stroke="#5B6B63" stroke-width="1.4"/>
+<line x1="90" y1="380" x2="974.4039649490602" y2="182.6312975681934" stroke="#5B6B63" stroke-width="1.4"/>
+<line x1="90" y1="380" x2="315.136774136638" y2="308.7034946815708" stroke="#5B6B63" stroke-width="1.4"/>
+<line x1="90" y1="380" x2="533.1859597479823" y2="305.3740115370178" stroke="#5B6B63" stroke-width="1.4"/>
+<line x1="90" y1="380" x2="752.6157902438958" y2="303.87709688894563" stroke="#5B6B63" stroke-width="1.4"/>
+<line x1="90" y1="380" x2="972.3757971327373" y2="303.03031844674985" stroke="#5B6B63" stroke-width="1.4"/>
+<line x1="90" y1="380" x2="537.6606297683388" y2="548.3716511443014" stroke="#5B6B63" stroke-width="1.4"/>
+<line x1="90" y1="380" x2="774.8780487804878" y2="551.6585365853658" stroke="#5B6B63" stroke-width="1.4"/>
+<line x1="1850" y1="850" x2="577.7534275686029" y2="762.4552903443764" stroke="#5B6B63" stroke-width="1.4"/>
+<line x1="1850" y1="850" x2="577.9877872075848" y2="869.4532939990381" stroke="#5B6B63" stroke-width="1.4"/>
+<line x1="1850" y1="850" x2="577.4872904493801" y2="976.4614850943791" stroke="#5B6B63" stroke-width="1.4"/>
+<line x1="1850" y1="850" x2="857.6140276775318" y2="763.07100301311" stroke="#5B6B63" stroke-width="1.4"/>
+<line x1="1850" y1="850" x2="857.9808503731293" y2="869.3154264293512" stroke="#5B6B63" stroke-width="1.4"/>
+<line x1="1850" y1="850" x2="857.198962441815" y2="975.5797612271907" stroke="#5B6B63" stroke-width="1.4"/>
+<line x1="1850" y1="850" x2="1376.6506226769288" y2="765.7303236075136" stroke="#5B6B63" stroke-width="1.4"/>
+<line x1="1850" y1="850" x2="1377.9322617625005" y2="868.7126038647012" stroke="#5B6B63" stroke-width="1.4"/>
+<line x1="1850" y1="850" x2="1375.2358439289937" y2="971.8232538206086" stroke="#5B6B63" stroke-width="1.4"/>
+<line x1="1850" y1="850" x2="1094.9131520829094" y2="816.382576422798" stroke="#5B6B63" stroke-width="1.4"/>
+<line x1="1850" y1="850" x2="1094.226040142552" y2="950.8794356222712" stroke="#5B6B63" stroke-width="1.4"/>
+<line x1="1850" y1="1100" x2="1661.8546982816395" y2="894.8557884400818" stroke="#5B6B63" stroke-width="1.4"/>
+<g>
+  <line x1="1850" y1="1045" x2="1850" y2="923" stroke="#0C3D28" stroke-width="1.6"/>
+  <path d="M 1850 905 L 1859 923 L 1841 923 Z" fill="white" stroke="#0C3D28" stroke-width="1.6"/>
+  </g>
+<g>
+  <ellipse cx="430" cy="175" rx="118" ry="38" fill="#EAF3EC" stroke="#1B5A3F" stroke-width="2"/>
+  <text x="430" y="170.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">Consultar lugares</text>
+<text x="430" y="189.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">turisticos</text>
+  </g>
+<g>
+  <ellipse cx="650" cy="175" rx="118" ry="38" fill="#EAF3EC" stroke="#1B5A3F" stroke-width="2"/>
+  <text x="650" y="170.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">Consultar actividades</text>
+<text x="650" y="189.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">turisticas</text>
+  </g>
+<g>
+  <ellipse cx="870" cy="175" rx="118" ry="38" fill="#EAF3EC" stroke="#1B5A3F" stroke-width="2"/>
+  <text x="870" y="170.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">Consultar eventos</text>
+<text x="870" y="189.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">y ferias</text>
+  </g>
+<g>
+  <ellipse cx="1090" cy="175" rx="118" ry="38" fill="#EAF3EC" stroke="#1B5A3F" stroke-width="2"/>
+  <text x="1090" y="170.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">Consultar</text>
+<text x="1090" y="189.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">hospedaje</text>
+  </g>
+<g>
+  <ellipse cx="430" cy="300" rx="118" ry="38" fill="#EAF3EC" stroke="#1B5A3F" stroke-width="2"/>
+  <text x="430" y="295.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">Consultar restaurantes</text>
+<text x="430" y="314.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">y gastronomia</text>
+  </g>
+<g>
+  <ellipse cx="650" cy="300" rx="118" ry="38" fill="#EAF3EC" stroke="#1B5A3F" stroke-width="2"/>
+  <text x="650" y="295.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">Buscar contenido</text>
+<text x="650" y="314.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">turistico</text>
+  </g>
+<g>
+  <ellipse cx="870" cy="300" rx="118" ry="38" fill="#EAF3EC" stroke="#1B5A3F" stroke-width="2"/>
+  <text x="870" y="295.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">Visualizar mapa</text>
+<text x="870" y="314.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">interactivo</text>
+  </g>
+<g>
+  <ellipse cx="1090" cy="300" rx="118" ry="38" fill="#EAF3EC" stroke="#1B5A3F" stroke-width="2"/>
+  <text x="1090" y="295.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">Consultar el</text>
+<text x="1090" y="314.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">clima</text>
+  </g>
+<g>
+  <ellipse cx="750" cy="430" rx="100" ry="32" fill="#EAF3EC" stroke="#1B5A3F" stroke-width="2"/>
+  <text x="750" y="425.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">Ubicar posicion</text>
+<text x="750" y="444.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">actual (GPS)</text>
+  </g>
+<g>
+  <ellipse cx="990" cy="430" rx="100" ry="32" fill="#EAF3EC" stroke="#1B5A3F" stroke-width="2"/>
+  <text x="990" y="425.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">Calcular ruta</text>
+<text x="990" y="444.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">hacia destino</text>
+  </g>
+<g>
+  <ellipse cx="650" cy="560" rx="118" ry="38" fill="#EAF3EC" stroke="#1B5A3F" stroke-width="2"/>
+  <text x="650" y="555.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">Registrar resena y</text>
+<text x="650" y="574.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">calificacion</text>
+  </g>
+<g>
+  <ellipse cx="890" cy="560" rx="118" ry="38" fill="#EAF3EC" stroke="#1B5A3F" stroke-width="2"/>
+  <text x="890" y="555.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">Consultar resenas</text>
+<text x="890" y="574.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">y promedio</text>
+  </g>
+<g>
+  <ellipse cx="460" cy="760" rx="118" ry="38" fill="#FBF1DE" stroke="#8A5A12" stroke-width="2"/>
+  <text x="460" y="765" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">Iniciar sesion</text>
+  </g>
+<g>
+  <ellipse cx="460" cy="870" rx="118" ry="38" fill="#FBF1DE" stroke="#8A5A12" stroke-width="2"/>
+  <text x="460" y="865.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">Registrarse como</text>
+<text x="460" y="884.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">editor</text>
+  </g>
+<g>
+  <ellipse cx="460" cy="980" rx="118" ry="38" fill="#FBF1DE" stroke="#8A5A12" stroke-width="2"/>
+  <text x="460" y="985" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">Cerrar sesion</text>
+  </g>
+<g>
+  <ellipse cx="740" cy="760" rx="118" ry="38" fill="#FBF1DE" stroke="#8A5A12" stroke-width="2"/>
+  <text x="740" y="755.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">Gestionar lugares</text>
+<text x="740" y="774.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">turisticos</text>
+  </g>
+<g>
+  <ellipse cx="740" cy="870" rx="118" ry="38" fill="#FBF1DE" stroke="#8A5A12" stroke-width="2"/>
+  <text x="740" y="865.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">Gestionar</text>
+<text x="740" y="884.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">hoteles</text>
+  </g>
+<g>
+  <ellipse cx="740" cy="980" rx="118" ry="38" fill="#FBF1DE" stroke="#8A5A12" stroke-width="2"/>
+  <text x="740" y="975.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">Gestionar</text>
+<text x="740" y="994.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">restaurantes</text>
+  </g>
+<g>
+  <ellipse cx="990" cy="815" rx="105" ry="34" fill="#FBF1DE" stroke="#8A5A12" stroke-width="2"/>
+  <text x="990" y="810.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">Seleccionar ubicacion</text>
+<text x="990" y="829.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">en el mapa</text>
+  </g>
+<g>
+  <ellipse cx="990" cy="955" rx="105" ry="34" fill="#FBF1DE" stroke="#8A5A12" stroke-width="2"/>
+  <text x="990" y="960" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">Subir imagenes</text>
+  </g>
+<g>
+  <ellipse cx="1260" cy="760" rx="118" ry="38" fill="#FBF1DE" stroke="#8A5A12" stroke-width="2"/>
+  <text x="1260" y="755.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">Gestionar eventos</text>
+<text x="1260" y="774.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">y ferias</text>
+  </g>
+<g>
+  <ellipse cx="1260" cy="870" rx="118" ry="38" fill="#FBF1DE" stroke="#8A5A12" stroke-width="2"/>
+  <text x="1260" y="865.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">Gestionar</text>
+<text x="1260" y="884.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">actividades</text>
+  </g>
+<g>
+  <ellipse cx="1260" cy="980" rx="118" ry="38" fill="#FBF1DE" stroke="#8A5A12" stroke-width="2"/>
+  <text x="1260" y="975.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">Gestionar</text>
+<text x="1260" y="994.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">gastronomia</text>
+  </g>
+<g>
+  <ellipse cx="1560" cy="870" rx="130" ry="40" fill="#FBF1DE" stroke="#8A5A12" stroke-width="2"/>
+  <text x="1560" y="865.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">Gestionar usuarios</text>
+<text x="1560" y="884.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#0C3D28">(solo administrador)</text>
+  </g>
+<g>
+  <line x1="817.8280102733066" y1="406.4862897719204" x2="789.9629478774982" y2="327.92253089584455" stroke="#7A5B00" stroke-width="1.4" stroke-dasharray="6,4"/>
+  <path d="M 789.9629478774982 327.92253089584455 L 796.3347863520255 335.6296493232812 L 789.8713367447889 337.9221112570579 Z" fill="#7A5B00"/>
+  <rect x="761.8954790754024" y="345.2044103338825" width="84" height="16" fill="#FBF6E8"/>
+  <text x="803.8954790754024" y="357.2044103338825" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-style="italic" font-size="12" fill="#7A5B00">&lt;&lt;extend&gt;&gt;</text>
+  </g>
+<g>
+  <line x1="922.1719897266934" y1="406.4862897719204" x2="950.0370521225018" y2="327.92253089584455" stroke="#7A5B00" stroke-width="1.4" stroke-dasharray="6,4"/>
+  <path d="M 950.0370521225018 327.92253089584455 L 950.1286632552112 337.9221112570579 L 943.6652136479745 335.6296493232812 Z" fill="#7A5B00"/>
+  <rect x="894.1045209245976" y="345.2044103338825" width="84" height="16" fill="#FBF6E8"/>
+  <text x="936.1045209245976" y="357.2044103338825" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-style="italic" font-size="12" fill="#7A5B00">&lt;&lt;extend&gt;&gt;</text>
+  </g>
+<g>
+  <line x1="622" y1="760" x2="578" y2="760" stroke="#7A5B00" stroke-width="1.4" stroke-dasharray="6,4"/>
+  <path d="M 578 760 L 587.3937271284738 756.5710219254455 L 587.3937271284738 763.4289780745545 Z" fill="#7A5B00"/>
+  <rect x="558" y="738" width="84" height="16" fill="#FBF6E8"/>
+  <text x="600" y="750" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-style="italic" font-size="12" fill="#7A5B00">&lt;&lt;include&gt;&gt;</text>
+  </g>
+<g>
+  <line x1="855.2440470712006" y1="768.1647477416545" x2="887.4523309959656" y2="807.6946993890459" stroke="#7A5B00" stroke-width="1.4" stroke-dasharray="6,4"/>
+  <path d="M 887.4523309959656 807.6946993890459 L 878.8604055059238 802.5781755326008 L 884.1770190766723 798.2462957232759 Z" fill="#7A5B00"/>
+  <rect x="829.3481890335831" y="765.9297235653503" width="84" height="16" fill="#FBF6E8"/>
+  <text x="871.3481890335831" y="777.9297235653503" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-style="italic" font-size="12" fill="#7A5B00">&lt;&lt;include&gt;&gt;</text>
+  </g>
+<g>
+  <line x1="833.0432721100993" y1="783.3712083503673" x2="907.2072578681319" y2="934.0889188444082" stroke="#7A5B00" stroke-width="1.4" stroke-dasharray="6,4"/>
+  <path d="M 907.2072578681319 934.0889188444082 L 899.983131105493 927.1742971976856 L 906.1364625191501 924.1464142645451 Z" fill="#7A5B00"/>
+  <rect x="828.1252649891156" y="836.7300635973877" width="84" height="16" fill="#FBF6E8"/>
+  <text x="870.1252649891156" y="848.7300635973877" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-style="italic" font-size="12" fill="#7A5B00">&lt;&lt;include&gt;&gt;</text>
+  </g>
+<text x="990" y="1010" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#6B7280" font-style="italic">(estas relaciones aplican a las 6</text>
+<text x="990" y="1026" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#6B7280" font-style="italic">entidades gestionables)</text>
+<g>
+  <circle cx="90" cy="334" r="12" fill="none" stroke="#0C3D28" stroke-width="2.5"/>
+  <line x1="90" y1="346" x2="90" y2="390" stroke="#0C3D28" stroke-width="2.5"/>
+  <line x1="68" y1="366" x2="112" y2="366" stroke="#0C3D28" stroke-width="2.5"/>
+  <line x1="90" y1="390" x2="72" y2="420" stroke="#0C3D28" stroke-width="2.5"/>
+  <line x1="90" y1="390" x2="108" y2="420" stroke="#0C3D28" stroke-width="2.5"/>
+  <text x="90" y="442" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="bold" fill="#0C3D28">Visitante / Turista</text>
+  </g>
+<g>
+  <circle cx="1850" cy="804" r="12" fill="none" stroke="#0C3D28" stroke-width="2.5"/>
+  <line x1="1850" y1="816" x2="1850" y2="860" stroke="#0C3D28" stroke-width="2.5"/>
+  <line x1="1828" y1="836" x2="1872" y2="836" stroke="#0C3D28" stroke-width="2.5"/>
+  <line x1="1850" y1="860" x2="1832" y2="890" stroke="#0C3D28" stroke-width="2.5"/>
+  <line x1="1850" y1="860" x2="1868" y2="890" stroke="#0C3D28" stroke-width="2.5"/>
+  <text x="1850" y="912" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="bold" fill="#0C3D28">Editor</text>
+  </g>
+<g>
+  <circle cx="1850" cy="1054" r="12" fill="none" stroke="#0C3D28" stroke-width="2.5"/>
+  <line x1="1850" y1="1066" x2="1850" y2="1110" stroke="#0C3D28" stroke-width="2.5"/>
+  <line x1="1828" y1="1086" x2="1872" y2="1086" stroke="#0C3D28" stroke-width="2.5"/>
+  <line x1="1850" y1="1110" x2="1832" y2="1140" stroke="#0C3D28" stroke-width="2.5"/>
+  <line x1="1850" y1="1110" x2="1868" y2="1140" stroke="#0C3D28" stroke-width="2.5"/>
+  <text x="1850" y="1162" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="bold" fill="#0C3D28">Administrador</text>
+  </g>
+<rect x="10" y="60" width="200" height="150" fill="#FAFAFA" stroke="#D1D5DB"/>
+<text x="20" y="80" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="bold" fill="#111827">Leyenda</text>
+<line x1="20" y1="100" x2="60" y2="100" stroke="#5B6B63" stroke-width="1.4"/>
+<text x="68" y="104" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#111827">Asociacion</text>
+<line x1="20" y1="125" x2="60" y2="125" stroke="#7A5B00" stroke-width="1.4" stroke-dasharray="6,4"/>
+<text x="68" y="129" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#111827">Include / Extend</text>
+<path d="M 40 148 L 28 162 L 52 162 Z" fill="white" stroke="#0C3D28" stroke-width="1.6"/>
+<text x="68" y="158" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#111827">Generalizacion</text>
+<ellipse cx="38" cy="185" rx="16" ry="10" fill="#EAF3EC" stroke="#1B5A3F" stroke-width="2"/>
+<text x="68" y="189" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#111827">Caso publico</text>
+</svg>

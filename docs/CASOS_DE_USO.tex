@@ -1,0 +1,544 @@
+% ============================================================
+% Descripcion textual de los casos de uso - App Turismo Comarapa
+% Requiere en el preambulo del documento principal:
+%   \usepackage{array}   % para columnas p{} y el modificador >{\bfseries}
+%   \usepackage{float}   % para el especificador de posicion [H]
+% ============================================================
+
+% ------------------------------------------------------------
+% MODULO PUBLICO (Actor: Visitante / Turista)
+% ------------------------------------------------------------
+
+\begin{table}[H]
+\centering
+\caption{Caso de uso CU-01 -- Consultar lugares turísticos}
+\label{tab:cu01}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|>{\bfseries}p{3.2cm}|p{10.3cm}|}
+\hline
+Actor & Visitante / Turista \\ \hline
+Precondición & La aplicación está instalada y, preferentemente, el dispositivo cuenta con conexión a internet para obtener la información actualizada. \\ \hline
+Flujo principal &
+1. El usuario abre la aplicación y accede a la pantalla principal.\\
+2. El usuario selecciona la categoría ``Lugares turísticos''.\\
+3. El sistema consulta y muestra el listado de lugares activos registrados.\\
+4. El usuario selecciona un lugar de la lista.\\
+5. El sistema muestra el detalle del lugar (descripción, imágenes, ubicación y calificación promedio). \\ \hline
+Flujos alternativos &
+\textbullet\ Si no hay conexión a internet, el sistema muestra información de referencia (modo demo) o un mensaje de error con opción de reintentar.\\
+\textbullet\ Si no existen lugares registrados, el sistema muestra un mensaje indicando que no hay resultados disponibles. \\ \hline
+Postcondición & El usuario visualiza la información completa del lugar turístico seleccionado. \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Caso de uso CU-02 -- Consultar actividades turísticas}
+\label{tab:cu02}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|>{\bfseries}p{3.2cm}|p{10.3cm}|}
+\hline
+Actor & Visitante / Turista \\ \hline
+Precondición & La aplicación está instalada y, preferentemente, el dispositivo cuenta con conexión a internet. \\ \hline
+Flujo principal &
+1. El usuario accede a la pantalla principal.\\
+2. El usuario selecciona la categoría ``Actividades''.\\
+3. El sistema consulta y muestra el listado de actividades activas registradas.\\
+4. El usuario selecciona una actividad de la lista.\\
+5. El sistema muestra el detalle de la actividad (descripción, imágenes y ubicación). \\ \hline
+Flujos alternativos &
+\textbullet\ Si no hay conexión, el sistema muestra un mensaje de error con opción de reintentar.\\
+\textbullet\ Si no existen actividades registradas, se muestra un mensaje de ``sin resultados''. \\ \hline
+Postcondición & El usuario visualiza la información completa de la actividad seleccionada. \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Caso de uso CU-03 -- Consultar eventos y ferias}
+\label{tab:cu03}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|>{\bfseries}p{3.2cm}|p{10.3cm}|}
+\hline
+Actor & Visitante / Turista \\ \hline
+Precondición & La aplicación está instalada y, preferentemente, el dispositivo cuenta con conexión a internet. \\ \hline
+Flujo principal &
+1. El usuario accede a la pantalla principal.\\
+2. El usuario selecciona la categoría ``Eventos'' (ferias, fiestas patronales, actividades culturales).\\
+3. El sistema consulta y muestra el listado de eventos activos, incluyendo fecha y periodicidad (anual o único).\\
+4. El usuario selecciona un evento de la lista.\\
+5. El sistema muestra el detalle del evento. \\ \hline
+Flujos alternativos &
+\textbullet\ Si un evento fue marcado como inactivo por el administrador, no se muestra en el listado público.\\
+\textbullet\ Si no existen eventos próximos, se muestra un mensaje de ``sin resultados''. \\ \hline
+Postcondición & El usuario visualiza la información completa del evento o feria seleccionado. \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Caso de uso CU-04 -- Consultar hospedaje}
+\label{tab:cu04}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|>{\bfseries}p{3.2cm}|p{10.3cm}|}
+\hline
+Actor & Visitante / Turista \\ \hline
+Precondición & La aplicación está instalada y, preferentemente, el dispositivo cuenta con conexión a internet. \\ \hline
+Flujo principal &
+1. El usuario accede a la pantalla principal.\\
+2. El usuario selecciona la categoría ``Hoteles''.\\
+3. El sistema consulta y muestra el listado de establecimientos de hospedaje activos.\\
+4. El usuario selecciona un hotel de la lista.\\
+5. El sistema muestra el detalle del hotel (descripción, precio referencial, imágenes y ubicación). \\ \hline
+Flujos alternativos &
+\textbullet\ Si no hay conexión, se muestra un mensaje de error con opción de reintentar.\\
+\textbullet\ Si no existen hoteles registrados, se muestra un mensaje de ``sin resultados''. \\ \hline
+Postcondición & El usuario visualiza la información completa del establecimiento de hospedaje seleccionado. \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Caso de uso CU-05 -- Consultar restaurantes y gastronomía}
+\label{tab:cu05}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|>{\bfseries}p{3.2cm}|p{10.3cm}|}
+\hline
+Actor & Visitante / Turista \\ \hline
+Precondición & La aplicación está instalada y, preferentemente, el dispositivo cuenta con conexión a internet. \\ \hline
+Flujo principal &
+1. El usuario accede a la pantalla principal.\\
+2. El usuario selecciona la categoría ``Restaurantes'' o ``Gastronomía''.\\
+3. El sistema consulta y muestra el listado de restaurantes o platillos típicos activos.\\
+4. El usuario selecciona un restaurante o platillo de la lista.\\
+5. El sistema muestra el detalle correspondiente; en el caso de un restaurante, incluye los platillos típicos asociados a él. \\ \hline
+Flujos alternativos &
+\textbullet\ Si no hay conexión, se muestra un mensaje de error con opción de reintentar.\\
+\textbullet\ Si un restaurante no tiene platillos registrados, la sección de gastronomía asociada se muestra vacía. \\ \hline
+Postcondición & El usuario visualiza la información completa del restaurante o platillo seleccionado. \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Caso de uso CU-06 -- Buscar contenido turístico}
+\label{tab:cu06}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|>{\bfseries}p{3.2cm}|p{10.3cm}|}
+\hline
+Actor & Visitante / Turista \\ \hline
+Precondición & Existen registros activos en al menos una de las seis categorías turísticas. \\ \hline
+Flujo principal &
+1. El usuario accede a la pantalla de búsqueda.\\
+2. El usuario ingresa un texto en el campo de búsqueda.\\
+3. El sistema consulta simultáneamente lugares, actividades, eventos, hoteles, restaurantes y gastronomía filtrando por coincidencia de texto.\\
+4. El sistema normaliza y combina los resultados en una sola lista.\\
+5. El usuario selecciona un resultado.\\
+6. El sistema navega al detalle correspondiente según la categoría del resultado. \\ \hline
+Flujos alternativos &
+\textbullet\ Si no existen coincidencias, el sistema muestra el mensaje ``sin resultados''.\\
+\textbullet\ Si el campo de búsqueda está vacío, el sistema no ejecuta la búsqueda y mantiene el estado inicial. \\ \hline
+Postcondición & El usuario visualiza el detalle del elemento turístico encontrado. \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Caso de uso CU-07 -- Visualizar mapa interactivo}
+\label{tab:cu07}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|>{\bfseries}p{3.2cm}|p{10.3cm}|}
+\hline
+Actor & Visitante / Turista \\ \hline
+Precondición & El dispositivo cuenta con conexión a internet para descargar las teselas del mapa. \\ \hline
+Flujo principal &
+1. El usuario abre la sección de mapa.\\
+2. El sistema descarga y muestra el mapa (OpenStreetMap) centrado en el municipio de Comarapa.\\
+3. El sistema coloca marcadores diferenciados por categoría (lugares, hoteles, restaurantes, eventos).\\
+4. El usuario filtra los marcadores visibles mediante chips de categoría.\\
+5. El usuario toca un marcador y el sistema muestra una tarjeta de previsualización con los datos básicos del punto. \\ \hline
+Flujos alternativos &
+\textbullet\ Si falla la descarga de las teselas por falta de conexión, se muestra un indicador de carga o un estado de error.\\
+\textbullet\ El usuario puede, desde esta pantalla, extender el caso de uso hacia CU-08 (ubicar posición actual) o CU-09 (calcular ruta hacia destino). \\ \hline
+Postcondición & El usuario visualiza en el mapa la ubicación geográfica de los puntos turísticos del municipio. \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Caso de uso CU-08 -- Ubicar posición actual (GPS) \textit{(extiende a CU-07)}}
+\label{tab:cu08}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|>{\bfseries}p{3.2cm}|p{10.3cm}|}
+\hline
+Actor & Visitante / Turista \\ \hline
+Precondición & El usuario otorgó permiso de ubicación a la aplicación y el GPS del dispositivo está activo. \\ \hline
+Flujo principal &
+1. El usuario presiona el botón flotante ``Mi ubicación'' dentro del mapa.\\
+2. El sistema verifica el permiso de ubicación concedido.\\
+3. El sistema obtiene las coordenadas actuales del dispositivo mediante el servicio de geolocalización.\\
+4. El sistema centra el mapa en la posición obtenida y coloca un marcador de usuario. \\ \hline
+Flujos alternativos &
+\textbullet\ Si el permiso de ubicación es denegado, el sistema muestra un mensaje solicitando habilitarlo desde la configuración del dispositivo.\\
+\textbullet\ Si el GPS está desactivado, el sistema solicita al usuario activarlo. \\ \hline
+Postcondición & El mapa queda centrado en la ubicación actual del usuario. \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Caso de uso CU-09 -- Calcular ruta hacia destino \textit{(extiende a CU-07)}}
+\label{tab:cu09}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|>{\bfseries}p{3.2cm}|p{10.3cm}|}
+\hline
+Actor & Visitante / Turista \\ \hline
+Precondición & Se cuenta con la ubicación actual del usuario (CU-08) y existe conexión a internet para consultar el servicio de enrutamiento. \\ \hline
+Flujo principal &
+1. El usuario selecciona la opción ``Cómo llegar'' desde el detalle de un lugar o desde el mapa.\\
+2. El sistema toma la ubicación actual del usuario y las coordenadas del destino.\\
+3. El sistema envía la solicitud al servicio de enrutamiento (OSRM).\\
+4. El sistema recibe y dibuja la ruta sobre el mapa, junto con la distancia y el tiempo estimado. \\ \hline
+Flujos alternativos &
+\textbullet\ Si el servicio de enrutamiento no responde o no hay conexión a internet, el sistema muestra un mensaje indicando que no fue posible calcular la ruta. \\ \hline
+Postcondición & El usuario visualiza la ruta trazada entre su ubicación y el destino turístico seleccionado. \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Caso de uso CU-10 -- Consultar el clima}
+\label{tab:cu10}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|>{\bfseries}p{3.2cm}|p{10.3cm}|}
+\hline
+Actor & Visitante / Turista \\ \hline
+Precondición & El dispositivo cuenta con conexión a internet para consultar el servicio meteorológico. \\ \hline
+Flujo principal &
+1. El sistema, al cargar la pantalla principal, solicita el clima actual del municipio de Comarapa al servicio meteorológico.\\
+2. El sistema recibe la información (temperatura y condición climática).\\
+3. El sistema muestra el resumen del clima en la pantalla principal. \\ \hline
+Flujos alternativos &
+\textbullet\ Si el servicio meteorológico no responde, el sistema oculta o muestra vacío el bloque de clima sin interrumpir el resto de la pantalla, permitiendo reintentar. \\ \hline
+Postcondición & El usuario visualiza la condición climática actual del municipio. \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Caso de uso CU-11 -- Registrar reseña y calificación}
+\label{tab:cu11}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|>{\bfseries}p{3.2cm}|p{10.3cm}|}
+\hline
+Actor & Visitante / Turista \\ \hline
+Precondición & El usuario se encuentra en la pantalla de detalle de un lugar, hotel, restaurante, actividad, gastronomía o evento. No requiere una cuenta registrada. \\ \hline
+Flujo principal &
+1. El usuario presiona la opción ``Escribir reseña'' dentro de la sección de reseñas.\\
+2. El usuario ingresa su nombre, selecciona una calificación de 1 a 5 estrellas y, opcionalmente, escribe un comentario.\\
+3. El sistema valida los datos ingresados (nombre y comentario no exceden la longitud permitida).\\
+4. El sistema registra la reseña asociada a la entidad turística correspondiente.\\
+5. El sistema actualiza el promedio de calificación y el listado de reseñas visibles. \\ \hline
+Flujos alternativos &
+\textbullet\ Si el comentario supera los 500 caracteres, el sistema muestra un mensaje de validación y no permite guardar.\\
+\textbullet\ Si el usuario cancela el formulario, la reseña no se registra. \\ \hline
+Postcondición & La reseña queda registrada y visible junto con el promedio actualizado de calificación de la entidad. \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Caso de uso CU-12 -- Consultar reseñas y promedio}
+\label{tab:cu12}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|>{\bfseries}p{3.2cm}|p{10.3cm}|}
+\hline
+Actor & Visitante / Turista \\ \hline
+Precondición & La entidad turística consultada existe en el sistema. \\ \hline
+Flujo principal &
+1. El usuario abre la pantalla de detalle de una entidad turística.\\
+2. El sistema consulta las reseñas asociadas a dicha entidad.\\
+3. El sistema calcula el promedio de calificación y el total de reseñas.\\
+4. El sistema muestra el listado de reseñas (autor, calificación, comentario y fecha) junto con el promedio. \\ \hline
+Flujos alternativos &
+\textbullet\ Si la entidad aún no tiene reseñas, el sistema muestra el mensaje ``Aún no hay reseñas'' y un promedio de 0. \\ \hline
+Postcondición & El usuario visualiza la opinión y calificación de otros visitantes sobre la entidad turística. \\ \hline
+\end{tabular}
+\end{table}
+
+% ------------------------------------------------------------
+% MODULO ADMINISTRATIVO (Actores: Editor y Administrador)
+% ------------------------------------------------------------
+
+\begin{table}[H]
+\centering
+\caption{Caso de uso CU-13 -- Iniciar sesión}
+\label{tab:cu13}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|>{\bfseries}p{3.2cm}|p{10.3cm}|}
+\hline
+Actor & Editor, Administrador \\ \hline
+Precondición & El usuario cuenta con una cuenta registrada en el sistema de autenticación y no tiene una sesión activa. \\ \hline
+Flujo principal &
+1. El usuario accede a la pantalla de inicio de sesión del panel administrativo.\\
+2. El usuario ingresa su correo electrónico y contraseña.\\
+3. El sistema valida el formato de los campos ingresados.\\
+4. El sistema envía las credenciales al servicio de autenticación.\\
+5. El sistema verifica las credenciales y, de ser correctas, crea la sesión y da acceso al panel administrativo según el rol del usuario. \\ \hline
+Flujos alternativos &
+\textbullet\ Si las credenciales son incorrectas, el sistema muestra el mensaje ``Correo o contraseña incorrectos''.\\
+\textbullet\ Si el correo no ha sido confirmado, ocurre un error de red, o se excede el número de intentos, el sistema muestra el mensaje específico correspondiente y permite reintentar. \\ \hline
+Postcondición & El usuario queda autenticado y accede al panel de administración correspondiente a su rol. \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Caso de uso CU-14 -- Registrarse como editor}
+\label{tab:cu14}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|>{\bfseries}p{3.2cm}|p{10.3cm}|}
+\hline
+Actor & Visitante (usuario que solicita una cuenta) \\ \hline
+Precondición & El usuario cuenta con un correo electrónico válido no registrado previamente en el sistema. \\ \hline
+Flujo principal &
+1. El usuario selecciona la opción de registro desde la pantalla de inicio de sesión.\\
+2. El usuario ingresa correo electrónico y contraseña (mínimo 6 caracteres).\\
+3. El sistema valida el formulario.\\
+4. El sistema envía la solicitud de registro al servicio de autenticación.\\
+5. El sistema crea la cuenta y, mediante un disparador de la base de datos, le asigna automáticamente el rol ``editor''. \\ \hline
+Flujos alternativos &
+\textbullet\ Si el correo ya se encuentra registrado, la contraseña es débil, o el registro está deshabilitado, el sistema muestra el mensaje de error correspondiente. \\ \hline
+Postcondición & Se crea una nueva cuenta de usuario con rol ``editor'', pendiente de iniciar sesión (CU-13). \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Caso de uso CU-15 -- Cerrar sesión}
+\label{tab:cu15}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|>{\bfseries}p{3.2cm}|p{10.3cm}|}
+\hline
+Actor & Editor, Administrador \\ \hline
+Precondición & El usuario tiene una sesión activa en el panel administrativo. \\ \hline
+Flujo principal &
+1. El usuario selecciona la opción ``Cerrar sesión'' dentro del panel administrativo.\\
+2. El sistema finaliza la sesión activa en el servicio de autenticación.\\
+3. El sistema redirige al usuario a la pantalla de inicio de sesión. \\ \hline
+Flujos alternativos &
+\textbullet\ No se identifican flujos alternativos relevantes para esta operación. \\ \hline
+Postcondición & La sesión del usuario queda cerrada; se requiere volver a autenticarse para acceder nuevamente al panel administrativo. \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Caso de uso CU-16 -- Gestionar lugares turísticos}
+\label{tab:cu16}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|>{\bfseries}p{3.2cm}|p{10.3cm}|}
+\hline
+Actor & Editor, Administrador \\ \hline
+Precondición & El usuario inició sesión (CU-13) con rol editor o administrador. \\ \hline
+Flujo principal &
+1. El usuario accede a la sección ``Lugares'' del panel administrativo.\\
+2. El sistema muestra el listado de lugares registrados, con opciones de búsqueda y filtrado por estado.\\
+3. El usuario elige crear un nuevo lugar, o editar/eliminar uno existente.\\
+4. El usuario completa el formulario (nombre, categoría, descripción, imágenes y ubicación en el mapa).\\
+5. El sistema valida los datos ingresados y los guarda en la base de datos.\\
+6. El sistema actualiza el listado administrativo y refleja los cambios en el módulo público. \\ \hline
+Flujos alternativos &
+\textbullet\ Si el usuario cancela la operación, no se guardan los cambios.\\
+\textbullet\ Si un campo obligatorio es inválido, el sistema muestra el error de validación correspondiente.\\
+\textbullet\ El usuario puede activar o desactivar la visibilidad pública del lugar sin eliminarlo definitivamente. \\ \hline
+Postcondición & El lugar turístico queda creado, actualizado o eliminado, reflejándose en el módulo público según su estado. \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Caso de uso CU-17 -- Gestionar hoteles}
+\label{tab:cu17}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|>{\bfseries}p{3.2cm}|p{10.3cm}|}
+\hline
+Actor & Editor, Administrador \\ \hline
+Precondición & El usuario inició sesión (CU-13) con rol editor o administrador. \\ \hline
+Flujo principal &
+1. El usuario accede a la sección ``Hoteles'' del panel administrativo.\\
+2. El sistema muestra el listado de establecimientos de hospedaje registrados.\\
+3. El usuario elige crear un nuevo hotel, o editar/eliminar uno existente.\\
+4. El usuario completa el formulario (nombre, descripción, precio referencial, imágenes y ubicación).\\
+5. El sistema valida los datos ingresados y los guarda en la base de datos.\\
+6. El sistema actualiza el listado administrativo y refleja los cambios en el módulo público. \\ \hline
+Flujos alternativos &
+\textbullet\ Si el usuario cancela la operación, no se guardan los cambios.\\
+\textbullet\ Si un campo obligatorio es inválido, el sistema muestra el error de validación correspondiente.\\
+\textbullet\ El usuario puede activar o desactivar la visibilidad pública del hotel sin eliminarlo definitivamente. \\ \hline
+Postcondición & El hotel queda creado, actualizado o eliminado, reflejándose en el módulo público según su estado. \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Caso de uso CU-18 -- Gestionar restaurantes}
+\label{tab:cu18}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|>{\bfseries}p{3.2cm}|p{10.3cm}|}
+\hline
+Actor & Editor, Administrador \\ \hline
+Precondición & El usuario inició sesión (CU-13) con rol editor o administrador. \\ \hline
+Flujo principal &
+1. El usuario accede a la sección ``Restaurantes'' del panel administrativo.\\
+2. El sistema muestra el listado de restaurantes registrados.\\
+3. El usuario elige crear un nuevo restaurante, o editar/eliminar uno existente.\\
+4. El usuario completa el formulario (nombre, descripción, imágenes y ubicación).\\
+5. El sistema valida los datos ingresados y los guarda en la base de datos.\\
+6. El sistema actualiza el listado administrativo y refleja los cambios en el módulo público. \\ \hline
+Flujos alternativos &
+\textbullet\ Si el usuario cancela la operación, no se guardan los cambios.\\
+\textbullet\ Si un campo obligatorio es inválido, el sistema muestra el error de validación correspondiente.\\
+\textbullet\ El usuario puede activar o desactivar la visibilidad pública del restaurante sin eliminarlo definitivamente. \\ \hline
+Postcondición & El restaurante queda creado, actualizado o eliminado, reflejándose en el módulo público según su estado. \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Caso de uso CU-19 -- Gestionar eventos y ferias}
+\label{tab:cu19}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|>{\bfseries}p{3.2cm}|p{10.3cm}|}
+\hline
+Actor & Editor, Administrador \\ \hline
+Precondición & El usuario inició sesión (CU-13) con rol editor o administrador. \\ \hline
+Flujo principal &
+1. El usuario accede a la sección ``Eventos'' del panel administrativo.\\
+2. El sistema muestra el listado de eventos y ferias registrados.\\
+3. El usuario elige crear un nuevo evento, o editar/eliminar uno existente.\\
+4. El usuario completa el formulario (nombre, categoría, fecha de inicio, periodicidad, descripción e imágenes).\\
+5. El sistema valida los datos ingresados y los guarda en la base de datos.\\
+6. El sistema actualiza el listado administrativo y refleja los cambios en el módulo público. \\ \hline
+Flujos alternativos &
+\textbullet\ Si el usuario cancela la operación, no se guardan los cambios.\\
+\textbullet\ Si un campo obligatorio es inválido, el sistema muestra el error de validación correspondiente.\\
+\textbullet\ El usuario puede activar o desactivar la visibilidad pública del evento sin eliminarlo definitivamente. \\ \hline
+Postcondición & El evento o feria queda creado, actualizado o eliminado, reflejándose en el módulo público según su estado. \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Caso de uso CU-20 -- Gestionar actividades}
+\label{tab:cu20}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|>{\bfseries}p{3.2cm}|p{10.3cm}|}
+\hline
+Actor & Editor, Administrador \\ \hline
+Precondición & El usuario inició sesión (CU-13) con rol editor o administrador. \\ \hline
+Flujo principal &
+1. El usuario accede a la sección ``Actividades'' del panel administrativo.\\
+2. El sistema muestra el listado de actividades turísticas registradas.\\
+3. El usuario elige crear una nueva actividad, o editar/eliminar una existente.\\
+4. El usuario completa el formulario (nombre, descripción, imágenes y ubicación).\\
+5. El sistema valida los datos ingresados y los guarda en la base de datos.\\
+6. El sistema actualiza el listado administrativo y refleja los cambios en el módulo público. \\ \hline
+Flujos alternativos &
+\textbullet\ Si el usuario cancela la operación, no se guardan los cambios.\\
+\textbullet\ Si un campo obligatorio es inválido, el sistema muestra el error de validación correspondiente.\\
+\textbullet\ El usuario puede activar o desactivar la visibilidad pública de la actividad sin eliminarla definitivamente. \\ \hline
+Postcondición & La actividad turística queda creada, actualizada o eliminada, reflejándose en el módulo público según su estado. \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Caso de uso CU-21 -- Gestionar gastronomía}
+\label{tab:cu21}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|>{\bfseries}p{3.2cm}|p{10.3cm}|}
+\hline
+Actor & Editor, Administrador \\ \hline
+Precondición & El usuario inició sesión (CU-13) con rol editor o administrador. \\ \hline
+Flujo principal &
+1. El usuario accede a la sección ``Gastronomía'' del panel administrativo.\\
+2. El sistema muestra el listado de platillos típicos registrados, opcionalmente asociados a un restaurante.\\
+3. El usuario elige crear un nuevo platillo, o editar/eliminar uno existente.\\
+4. El usuario completa el formulario (nombre, descripción, restaurante asociado e imágenes).\\
+5. El sistema valida los datos ingresados y los guarda en la base de datos.\\
+6. El sistema actualiza el listado administrativo y refleja los cambios en el módulo público. \\ \hline
+Flujos alternativos &
+\textbullet\ Si el usuario cancela la operación, no se guardan los cambios.\\
+\textbullet\ Si un campo obligatorio es inválido, el sistema muestra el error de validación correspondiente.\\
+\textbullet\ El usuario puede activar o desactivar la visibilidad pública del platillo sin eliminarlo definitivamente. \\ \hline
+Postcondición & El registro de gastronomía queda creado, actualizado o eliminado, reflejándose en el módulo público según su estado. \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Caso de uso CU-22 -- Seleccionar ubicación en el mapa \textit{(incluido en CU-16 a CU-21)}}
+\label{tab:cu22}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|>{\bfseries}p{3.2cm}|p{10.3cm}|}
+\hline
+Actor & Editor, Administrador \\ \hline
+Precondición & El usuario se encuentra creando o editando un registro turístico que requiere coordenadas geográficas. \\ \hline
+Flujo principal &
+1. El usuario presiona el campo de ubicación dentro del formulario.\\
+2. El sistema abre un mapa interactivo a pantalla completa, centrado en el municipio o en la ubicación previamente registrada.\\
+3. El usuario desplaza el mapa o toca un punto para mover el marcador.\\
+4. El usuario puede centrar el mapa en su posición GPS actual como referencia.\\
+5. El usuario confirma la ubicación seleccionada.\\
+6. El sistema retorna las coordenadas (latitud y longitud) al formulario de origen. \\ \hline
+Flujos alternativos &
+\textbullet\ Si el usuario cancela la selección, se conserva la ubicación previa o el campo queda vacío. \\ \hline
+Postcondición & El registro turístico queda asociado a una coordenada geográfica válida. \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Caso de uso CU-23 -- Subir imágenes \textit{(incluido en CU-16 a CU-21)}}
+\label{tab:cu23}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|>{\bfseries}p{3.2cm}|p{10.3cm}|}
+\hline
+Actor & Editor, Administrador \\ \hline
+Precondición & El usuario se encuentra creando o editando un registro turístico y ha concedido permisos de cámara o galería. \\ \hline
+Flujo principal &
+1. El usuario presiona el campo de imágenes dentro del formulario.\\
+2. El sistema muestra las opciones ``Cámara'' o ``Galería''.\\
+3. El usuario captura o selecciona una fotografía.\\
+4. El sistema sube el archivo al almacenamiento en la nube (bucket de imágenes).\\
+5. El sistema obtiene la URL pública de la imagen y la agrega a la lista de imágenes del registro.\\
+6. El sistema muestra la imagen agregada; la primera imagen de la lista se utiliza como portada en las pantallas públicas. \\ \hline
+Flujos alternativos &
+\textbullet\ Si el usuario cancela la selección, no se sube ninguna imagen.\\
+\textbullet\ Si la subida falla por falta de conexión, el sistema muestra un mensaje de error y permite reintentar. \\ \hline
+Postcondición & El registro turístico queda con una o más imágenes asociadas y disponibles públicamente. \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Caso de uso CU-24 -- Gestionar usuarios (solo administrador)}
+\label{tab:cu24}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|>{\bfseries}p{3.2cm}|p{10.3cm}|}
+\hline
+Actor & Administrador \\ \hline
+Precondición & El usuario inició sesión (CU-13) con rol ``administrador''. \\ \hline
+Flujo principal &
+1. El administrador accede a la sección ``Usuarios'' del panel administrativo.\\
+2. El sistema muestra el listado de usuarios registrados con su rol y estado (activo/inactivo).\\
+3. El administrador filtra el listado por rol (todos, administradores o editores).\\
+4. El administrador selecciona un usuario y modifica su rol (editor/administrador) o su estado (activo/inactivo).\\
+5. El sistema actualiza el registro del usuario en la base de datos. \\ \hline
+Flujos alternativos &
+\textbullet\ Si la conexión falla, el sistema muestra un listado de datos de referencia (demo) para mantener la fidelidad visual.\\
+\textbullet\ El administrador puede, adicionalmente, registrar una nueva cuenta de usuario desde este mismo panel. \\ \hline
+Postcondición & El rol o el estado del usuario queda actualizado en el sistema. \\ \hline
+\end{tabular}
+\end{table}
