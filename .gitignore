@@ -3,7 +3,6 @@
 .pub/
 build/
 coverage/
-config/local.json
 config/aula.json
 android/local.properties
 android/key.properties
