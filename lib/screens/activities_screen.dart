@@ -435,21 +435,58 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Badge de categoría
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE2ECE7),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        actividad.categoriaNombre ?? 'Actividad',
-                        style: const TextStyle(
-                          color: Color(0xFF1B5A3F),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 11,
+                    // Fila con categoría y badge de temporada (fecha)
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE2ECE7),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              actividad.categoriaNombre ?? 'Actividad',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Color(0xFF1B5A3F),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
+                        if (actividad.temporada != null && actividad.temporada!.trim().isNotEmpty) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEF3C7),
+                              borderRadius: BorderRadius.circular(7),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.event, size: 12, color: Color(0xFFB45309)),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    actividad.temporada!.trim(),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Color(0xFFB45309),
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 10.5,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                     const SizedBox(height: 6),
 

@@ -1,11 +1,11 @@
 {
-    "name": "proyecto_final_360",
-    "short_name": "proyecto_final_360",
+    "name": "Comarapa Turismo",
+    "short_name": "Comarapa Turismo",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Aplicación de turismo del municipio de Comarapa.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

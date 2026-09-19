@@ -11,10 +11,7 @@ import '../widgets/resenas_section.dart';
 class GastronomyDetailScreen extends StatefulWidget {
   final GastronomiaItem item;
 
-  const GastronomyDetailScreen({
-    super.key,
-    required this.item,
-  });
+  const GastronomyDetailScreen({super.key, required this.item});
 
   @override
   State<GastronomyDetailScreen> createState() => _GastronomyDetailScreenState();
@@ -58,7 +55,9 @@ class _GastronomyDetailScreenState extends State<GastronomyDetailScreen> {
       setState(() {
         _restauranteVinculado = restaurante;
         if (restaurante != null &&
-            !_restaurantesRelacionadosNombres.contains(restaurante.nombre.trim())) {
+            !_restaurantesRelacionadosNombres.contains(
+              restaurante.nombre.trim(),
+            )) {
           _restaurantesRelacionadosNombres.add(restaurante.nombre.trim());
           _restaurantesRelacionadosNombres.sort();
         }
@@ -86,9 +85,24 @@ class _GastronomyDetailScreenState extends State<GastronomyDetailScreen> {
       final nombrePlato = widget.item.nombre.trim().toLowerCase();
 
       const stopWords = {
-        'para', 'como', 'todo', 'toda', 'este', 'esta', 'estos', 'estas',
-        'comarapa', 'comarapeño', 'comarapeña', 'estilo', 'sabor',
-        'tradicional', 'tipico', 'tipica', 'plato', 'platos'
+        'para',
+        'como',
+        'todo',
+        'toda',
+        'este',
+        'esta',
+        'estos',
+        'estas',
+        'comarapa',
+        'comarapeño',
+        'comarapeña',
+        'estilo',
+        'sabor',
+        'tradicional',
+        'tipico',
+        'tipica',
+        'plato',
+        'platos',
       };
       final palabrasClave = nombrePlato
           .split(RegExp(r'\s+'))
@@ -97,7 +111,8 @@ class _GastronomyDetailScreenState extends State<GastronomyDetailScreen> {
           .toList();
 
       for (final r in restaurantes) {
-        if (widget.item.restauranteId != null && r.id == widget.item.restauranteId) {
+        if (widget.item.restauranteId != null &&
+            r.id == widget.item.restauranteId) {
           nombresEncontrados.add(r.nombre.trim());
           continue;
         }
@@ -126,15 +141,19 @@ class _GastronomyDetailScreenState extends State<GastronomyDetailScreen> {
 
       for (final p in otrosPlatos) {
         final pNom = p.nombre.trim().toLowerCase();
-        final esMismoPlato = pNom == nombrePlato ||
+        final esMismoPlato =
+            pNom == nombrePlato ||
             pNom.contains(nombrePlato) ||
             nombrePlato.contains(pNom);
 
         if (esMismoPlato) {
-          if (p.restauranteNombre != null && p.restauranteNombre!.trim().isNotEmpty) {
+          if (p.restauranteNombre != null &&
+              p.restauranteNombre!.trim().isNotEmpty) {
             nombresEncontrados.add(p.restauranteNombre!.trim());
           } else if (p.restauranteId != null) {
-            final match = restaurantes.where((r) => r.id == p.restauranteId).firstOrNull;
+            final match = restaurantes
+                .where((r) => r.id == p.restauranteId)
+                .firstOrNull;
             if (match != null) {
               nombresEncontrados.add(match.nombre.trim());
             }
@@ -282,7 +301,9 @@ class _GastronomyDetailScreenState extends State<GastronomyDetailScreen> {
                   width: isActive ? 24 : 6,
                   height: 5,
                   decoration: BoxDecoration(
-                    color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.5),
+                    color: isActive
+                        ? Colors.white
+                        : Colors.white.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(4),
                   ),
                 );
@@ -316,11 +337,7 @@ class _GastronomyDetailScreenState extends State<GastronomyDetailScreen> {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            Color(0xFF8C4717),
-            Color(0xFFB45309),
-            Color(0xFFD97706),
-          ],
+          colors: [Color(0xFF8C4717), Color(0xFFB45309), Color(0xFFD97706)],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
@@ -380,11 +397,7 @@ class _GastronomyDetailScreenState extends State<GastronomyDetailScreen> {
             ),
           ],
         ),
-        child: Icon(
-          icon,
-          color: iconColor,
-          size: iconSize,
-        ),
+        child: Icon(icon, color: iconColor, size: iconSize),
       ),
     );
   }
@@ -517,40 +530,49 @@ class _GastronomyDetailScreenState extends State<GastronomyDetailScreen> {
     final items = <Widget>[];
 
     // 1. Categoría (registrada en la BD)
-    if (widget.item.categoriaNombre != null && widget.item.categoriaNombre!.trim().isNotEmpty) {
-      items.add(_buildInfoItem(
-        icon: Icons.category_outlined,
-        title: 'CATEGORÍA',
-        value: widget.item.categoriaNombre!.trim(),
-      ));
+    if (widget.item.categoriaNombre != null &&
+        widget.item.categoriaNombre!.trim().isNotEmpty) {
+      items.add(
+        _buildInfoItem(
+          icon: Icons.category_outlined,
+          title: 'CATEGORÍA',
+          value: widget.item.categoriaNombre!.trim(),
+        ),
+      );
     }
 
     // 2. Precio referencial (solo si está registrado en la BD)
     if (_precioTexto.isNotEmpty) {
-      items.add(_buildInfoItem(
-        icon: Icons.payments_outlined,
-        title: 'PRECIO REF.',
-        value: _precioTexto,
-        valueColor: const Color(0xFFB45309),
-      ));
+      items.add(
+        _buildInfoItem(
+          icon: Icons.payments_outlined,
+          title: 'PRECIO REF.',
+          value: _precioTexto,
+          valueColor: const Color(0xFFB45309),
+        ),
+      );
     }
 
     // 3. Temporada (columna real en la BD)
     if (_temporadaTexto.isNotEmpty) {
-      items.add(_buildInfoItem(
-        icon: Icons.calendar_today_outlined,
-        title: 'TEMPORADA',
-        value: _temporadaTexto,
-      ));
+      items.add(
+        _buildInfoItem(
+          icon: Icons.calendar_today_outlined,
+          title: 'TEMPORADA',
+          value: _temporadaTexto,
+        ),
+      );
     }
 
     // 4. Restaurante asignado en la BD
     if (_restauranteVinculado != null) {
-      items.add(_buildInfoItem(
-        icon: Icons.restaurant_outlined,
-        title: 'RESTAURANTE',
-        value: _restauranteVinculado!.nombre,
-      ));
+      items.add(
+        _buildInfoItem(
+          icon: Icons.restaurant_outlined,
+          title: 'RESTAURANTE',
+          value: _restauranteVinculado!.nombre,
+        ),
+      );
     }
 
     if (items.isEmpty) return const SizedBox.shrink();
@@ -672,11 +694,17 @@ class _GastronomyDetailScreenState extends State<GastronomyDetailScreen> {
                     color: Color(0xFF1F2937),
                   ),
                 ),
-                if (_restauranteVinculado!.direccionReferencia?.trim().isNotEmpty == true) ...[
+                if (_restauranteVinculado!.direccionReferencia
+                        ?.trim()
+                        .isNotEmpty ==
+                    true) ...[
                   const SizedBox(height: 2),
                   Text(
                     _restauranteVinculado!.direccionReferencia!,
-                    style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF6B7280),
+                    ),
                   ),
                 ],
               ],
@@ -755,9 +783,7 @@ class _GastronomyDetailScreenState extends State<GastronomyDetailScreen> {
               if (_cargandoRestaurantesRelacionados)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 30),
-                  child: Center(
-                    child: CircularProgressIndicator(),
-                  ),
+                  child: Center(child: CircularProgressIndicator()),
                 )
               else if (_restaurantesRelacionadosNombres.isEmpty)
                 Padding(
@@ -765,7 +791,11 @@ class _GastronomyDetailScreenState extends State<GastronomyDetailScreen> {
                   child: Center(
                     child: Column(
                       children: [
-                        Icon(Icons.restaurant_outlined, size: 40, color: Colors.grey.shade400),
+                        Icon(
+                          Icons.restaurant_outlined,
+                          size: 40,
+                          color: Colors.grey.shade400,
+                        ),
                         const SizedBox(height: 12),
                         Text(
                           'No hay restaurantes registrados que ofrezcan este plato actualmente.',
@@ -787,7 +817,8 @@ class _GastronomyDetailScreenState extends State<GastronomyDetailScreen> {
                   child: ListView.separated(
                     shrinkWrap: true,
                     itemCount: _restaurantesRelacionadosNombres.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1, indent: 48),
+                    separatorBuilder: (_, __) =>
+                        const Divider(height: 1, indent: 48),
                     itemBuilder: (context, index) {
                       final nombre = _restaurantesRelacionadosNombres[index];
                       return Padding(
@@ -832,7 +863,8 @@ class _GastronomyDetailScreenState extends State<GastronomyDetailScreen> {
   }
 
   Widget _buildBottomBar(BuildContext context) {
-    final tienePrecio = widget.item.precioReferencial != null &&
+    final tienePrecio =
+        widget.item.precioReferencial != null &&
         widget.item.precioReferencial! > 0;
     final esComida = _esCategoriaComida;
 
@@ -887,7 +919,7 @@ class _GastronomyDetailScreenState extends State<GastronomyDetailScreen> {
                       ),
                       const SizedBox(width: 4),
                       const Text(
-                        '/ porción',
+                        '',
                         style: TextStyle(
                           fontSize: 12,
                           color: Color(0xFF6B7280),
