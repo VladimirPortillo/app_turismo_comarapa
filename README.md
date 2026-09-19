@@ -8,7 +8,7 @@ pantallas + navegacion + preferencias + Auth + CRUD + Supabase.
 Sesion 2:
 Future + async/await + loading + API REST + JSON + modelo + error/reintento + GPS + mapa + contexto + persistencia.
 
-NO es otro proyecto. Es el mismo sistema creciendo.
+NO es otro proyecto. Es el mismo sistema creciendo rapido.
 
 ## Windows
 
