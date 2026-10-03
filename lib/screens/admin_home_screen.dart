@@ -27,6 +27,7 @@ import 'edit_event_screen.dart';
 import 'new_event_screen.dart';
 import 'edit_restaurant_screen.dart';
 import 'new_restaurant_screen.dart';
+import '../widgets/paginador.dart';
 
 class _CardData {
   const _CardData({
@@ -113,6 +114,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
 
   TurismoTipo _selectedTipo = TurismoTipo.lugar;
   String _selectedStatusFilter = 'Todos';
+  int _pagina = 0;
   String _searchQuery = '';
   bool _isSearching = false;
   bool _loading = true;
@@ -131,7 +133,10 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     super.initState();
     _selectedTipo = widget.initialTipo;
     _searchController.addListener(() {
-      setState(() => _searchQuery = _searchController.text);
+      setState(() {
+        _searchQuery = _searchController.text;
+        _pagina = 0;
+      });
     });
     _loadAll();
     _loadPerfil();
@@ -604,10 +609,18 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
       onRefresh: _loadAll,
       child: filteredList.isEmpty
           ? _buildEmptyState()
-          : ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              itemCount: filteredList.length,
-              itemBuilder: (context, index) => _buildPlaceCard(filteredList[index]),
+          : ListView(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 80),
+              children: [
+                ...paginar(filteredList, _pagina).map(_buildPlaceCard),
+                Paginador(
+                  pagina: _pagina,
+                  total: filteredList.length,
+                  compacto: true,
+                  color: const Color(0xFF26674B),
+                  onCambiar: (p) => setState(() => _pagina = p),
+                ),
+              ],
             ),
     );
   }
@@ -686,7 +699,10 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
               return Padding(
                 padding: const EdgeInsets.only(right: 12),
                 child: GestureDetector(
-                  onTap: () => setState(() => _selectedTipo = tipo),
+                  onTap: () => setState(() {
+                    _selectedTipo = tipo;
+                    _pagina = 0;
+                  }),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
                     decoration: BoxDecoration(
@@ -784,7 +800,10 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
               return Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: GestureDetector(
-                  onTap: () => setState(() => _selectedStatusFilter = filter),
+                  onTap: () => setState(() {
+                    _selectedStatusFilter = filter;
+                    _pagina = 0;
+                  }),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(

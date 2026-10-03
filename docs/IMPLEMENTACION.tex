@@ -1,0 +1,283 @@
+% ============================================================
+% 2.6 Implementacion - App Turismo Comarapa
+% Requiere en el preambulo del documento principal:
+%   \usepackage{float}    % para el especificador de posicion [H]
+%   \usepackage{listings} % para los fragmentos de codigo
+%   \usepackage{xcolor}   % colores de los fragmentos
+% Nota: los fragmentos se dejaron sin tildes ni enies dentro del
+% codigo porque listings no maneja UTF-8 multibyte sin configuracion
+% extra. Cada fragmento tiene 20 lineas o menos.
+% ============================================================
+
+\lstdefinestyle{codigo}{
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{blue!70!black}\bfseries,
+  commentstyle=\color{green!40!black}\itshape,
+  stringstyle=\color{red!60!black},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  frame=single,
+  breaklines=true,
+  showstringspaces=false,
+  tabsize=2,
+  captionpos=b
+}
+\lstdefinelanguage{Dart}{
+  morekeywords={class,final,const,return,if,else,await,async,try,catch,
+    finally,null,true,false,new,extends,import,Future,void,String,bool,
+    required,throw,switch,var},
+  sensitive=true,
+  morecomment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]',
+  morestring=[b]"
+}
+
+\subsection*{2.6 Implementación}
+
+En esta sección se describen las funcionalidades críticas que
+efectivamente se construyeron en la aplicación de turismo del municipio
+de Comarapa, las decisiones técnicas que las sostienen y las
+dificultades encontradas durante el desarrollo junto con la forma en que
+se resolvieron. Los fragmentos de código incluidos son únicamente
+ilustrativos; el código completo se encuentra en el repositorio del
+proyecto.
+
+\subsubsection*{Funcionalidades críticas construidas}
+
+\begin{enumerate}
+  \item \textbf{Autenticación y control de acceso por rol.} Inicio de
+  sesión con correo y contraseña mediante Supabase Auth, con dos roles
+  (\texttt{administrador} y \texttt{editor}) cuya autorización se aplica
+  en la propia base de datos mediante políticas RLS.
+  \item \textbf{Gestión de contenido turístico (CRUD).} Alta, edición y
+  desactivación de lugares, hoteles, restaurantes, eventos, actividades
+  y gastronomía desde el panel de administración, incluida la selección
+  de la ubicación en el mapa y la subida de imágenes a Supabase Storage.
+  \item \textbf{Gestión de usuarios (solo administrador).} Creación de
+  cuentas, cambio de rol y activación/desactivación de usuarios.
+  \item \textbf{Mapa interactivo, geolocalización y rutas.} Mapa basado
+  en OpenStreetMap (\texttt{flutter\_map}), posición actual del turista
+  mediante el GPS del dispositivo (\texttt{geolocator}) y cálculo de la
+  ruta por carretera hacia un destino con el servicio OSRM.
+  \item \textbf{Clima en tiempo real.} Consulta de temperatura y estado
+  del tiempo desde la API pública de Open-Meteo.
+  \item \textbf{Reseñas y calificaciones.} Registro de reseñas con
+  calificación por parte de los visitantes y visualización de las
+  reseñas aprobadas de cada lugar, hotel, restaurante, etc.
+  \item \textbf{Búsqueda y filtros.} Búsqueda general de contenido y
+  filtro por categoría en cada módulo.
+  \item \textbf{Versión web y móvil desde un mismo código.} La misma
+  base de código Flutter genera la app Android y una versión web con
+  diseño propio, desplegada en Netlify.
+\end{enumerate}
+
+\subsubsection*{Autenticación y sesión}
+
+La aplicación no implementa un backend propio para la autenticación: se
+apoya en Supabase Auth. Al iniciar sesión, el método
+\texttt{signInWithPassword} devuelve una sesión compuesta por un
+\emph{access token} (JWT, válido una hora con la configuración por
+defecto de Supabase) y un \emph{refresh token}. El SDK
+\texttt{supabase\_flutter} guarda la sesión en el dispositivo
+(\texttt{SharedPreferences} en el móvil y \texttt{localStorage} en la
+web) y renueva el JWT automáticamente antes de que venza, de modo que
+el usuario permanece conectado hasta que cierra sesión.
+
+La decisión de qué pantalla mostrar se centralizó en el widget
+\texttt{AuthGate}, que escucha el flujo de cambios de estado de la
+autenticación. Así, después de iniciar o cerrar sesión no es necesario
+navegar manualmente: la interfaz reacciona sola al cambio
+(Figura~\ref{fig:impl-authgate}).
+
+\begin{figure}[H]
+\begin{lstlisting}[style=codigo,language=Dart]
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final client = Supabase.instance.client;
+
+    return StreamBuilder<AuthState>(
+      stream: client.auth.onAuthStateChange,
+      builder: (context, snapshot) {
+        if (client.auth.currentSession == null) {
+          return const LoginScreen();
+        }
+        return const AdminHomeScreen();
+      },
+    );
+  }
+}
+\end{lstlisting}
+\caption{Selección de la pantalla según el estado de la sesión.
+Fuente: \texttt{lib/screens/auth\_gate.dart}.}
+\label{fig:impl-authgate}
+\end{figure}
+
+\subsubsection*{Autorización por rol en la base de datos}
+
+Una decisión técnica central fue \textbf{no confiar la seguridad a la
+interfaz}. Ocultar un botón en la app no impide que alguien llame
+directamente a la API REST con la clave pública. Por eso los permisos
+se definieron en PostgreSQL con \emph{Row Level Security} (RLS): cada
+tabla tiene políticas que consultan las funciones
+\texttt{es\_admin\_o\_editor()} y \texttt{es\_administrador()}, las
+cuales identifican al usuario a partir de \texttt{auth.uid()} (el
+\texttt{id} contenido en el JWT) y verifican además que la cuenta esté
+activa (Figura~\ref{fig:impl-rls}). Los visitantes anónimos solo pueden
+leer contenido activo; insertar o modificar requiere sesión con rol
+válido.
+
+\begin{figure}[H]
+\begin{lstlisting}[style=codigo,language=SQL]
+create or replace function public.es_admin_o_editor()
+returns boolean
+language sql stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.usuarios u
+    where u.id = auth.uid()
+      and u.rol in ('administrador','editor') and u.activo
+  );
+$$;
+
+create policy "lugares_insert_admin"
+on public.lugares for insert
+to authenticated
+with check (public.es_admin_o_editor());
+\end{lstlisting}
+\caption{Función de rol y política RLS que restringe la inserción de
+lugares turísticos. Fuente: \texttt{supabase/04\_SCHEMA\_TURISMO\_COMARAPA.sql}.}
+\label{fig:impl-rls}
+\end{figure}
+
+Complementariamente, un \emph{trigger} sobre \texttt{auth.users}
+(\texttt{on\_auth\_user\_created}) crea automáticamente el perfil en la
+tabla \texttt{usuarios} con rol \texttt{editor} cada vez que se registra
+una cuenta, y otro \emph{trigger} (\texttt{trg\_usuarios\_bloquear\_rol})
+impide que un usuario que no es administrador cambie su propio rol desde
+la aplicación.
+
+\subsubsection*{Servicios externos: rutas y clima}
+
+Para el cálculo de rutas se eligió el servidor público de OSRM, que no
+requiere clave de API. El servicio \texttt{RoutingService} construye la
+petición con las coordenadas de origen (GPS del turista) y destino, y
+convierte la geometría GeoJSON de la respuesta en una lista de puntos
+que se dibuja como polilínea sobre el mapa, junto con la distancia y el
+tiempo estimado (Figura~\ref{fig:impl-osrm}). El clima se obtiene de
+forma análoga desde Open-Meteo. En ambos casos se fijó un tiempo máximo
+de espera (15 y 12 segundos) para que una red lenta no deje la pantalla
+bloqueada.
+
+\begin{figure}[H]
+\begin{lstlisting}[style=codigo,language=Dart]
+final uri = Uri.parse(
+  'https://router.project-osrm.org/route/v1/driving/'
+  '${origen.longitude},${origen.latitude};'
+  '${destino.longitude},${destino.latitude}'
+  '?overview=full&geometries=geojson',
+);
+
+final response = await http.get(uri).timeout(const Duration(seconds: 15));
+if (response.statusCode != 200) {
+  throw Exception('HTTP ${response.statusCode}');
+}
+
+final route = (jsonDecode(response.body)['routes'] as List).first;
+final puntos = (route['geometry']['coordinates'] as List).map((c) {
+  final par = c as List;
+  return LatLng((par[1] as num).toDouble(), (par[0] as num).toDouble());
+}).toList();
+\end{lstlisting}
+\caption{Cálculo de la ruta por carretera hacia un destino con OSRM
+(fragmento simplificado). Fuente: \texttt{lib/services/routing\_service.dart}.}
+\label{fig:impl-osrm}
+\end{figure}
+
+\subsubsection*{Dificultades encontradas y su resolución}
+
+\begin{enumerate}
+  \item \textbf{Crear un usuario cerraba la sesión del administrador.}
+  Al llamar a \texttt{signUp} con el cliente principal de Supabase, la
+  sesión del nuevo usuario reemplazaba a la del administrador que lo
+  estaba creando. Se resolvió usando un cliente de Supabase
+  \emph{temporal}, sin persistencia de sesión y con flujo
+  \texttt{implicit}, que se descarta inmediatamente después del alta
+  (Figura~\ref{fig:impl-tempclient}). Si el rol elegido es
+  administrador, el ascenso se hace después con el cliente principal.
+
+\begin{figure}[H]
+\begin{lstlisting}[style=codigo,language=Dart]
+final tempClient = SupabaseClient(
+  config.supabaseUrl,
+  config.supabasePublishableKey,
+  authOptions: const AuthClientOptions(
+    authFlowType: AuthFlowType.implicit,
+  ),
+);
+
+try {
+  final response = await tempClient.auth.signUp(
+    email: correoCtrl.text.trim(),
+    password: passwordCtrl.text,
+    data: {'nombre': nombreCtrl.text.trim()},
+  );
+  newUserId = response.user?.id;
+} finally {
+  await tempClient.dispose();
+}
+\end{lstlisting}
+\caption{Alta de un usuario con un cliente aislado para no reemplazar la
+sesión del administrador (fragmento simplificado). Fuente:
+\texttt{lib/screens/admin\_users\_screen.dart}.}
+\label{fig:impl-tempclient}
+\end{figure}
+
+  \item \textbf{Error ``new row violates row-level security policy''
+  al guardar contenido.} Las cuentas creadas antes de instalar el
+  \emph{trigger} no tenían fila en \texttt{usuarios}, por lo que
+  \texttt{es\_admin\_o\_editor()} devolvía falso y la base de datos
+  rechazaba el guardado. Se preparó un script de diagnóstico que detecta
+  las cuentas sin perfil y las completa
+  (\texttt{supabase/05\_DIAGNOSTICO\_Y\_FIX\_USUARIOS.sql}).
+
+  \item \textbf{Recursividad en las políticas de \texttt{usuarios}.} Una
+  política de la tabla \texttt{usuarios} que consulta la misma tabla
+  \texttt{usuarios} provoca una evaluación recursiva. Se evitó declarando
+  las funciones de rol como \texttt{security definer} con
+  \texttt{search\_path} fijo, de modo que se ejecutan sin volver a
+  aplicar las políticas.
+
+  \item \textbf{Las reseñas no se veían después de enviarlas.} El
+  esquema inicial guardaba toda reseña como \texttt{pendiente} y la app
+  solo muestra las \texttt{aprobada}, de modo que el visitante no veía
+  su propia reseña. Se optó por la auto-aprobación: la política de
+  inserción solo acepta filas marcadas como \texttt{aprobada}
+  (\texttt{supabase/06\_RESENAS\_AUTOAPROBAR.sql}), sin abrir la puerta
+  a otros estados.
+
+  \item \textbf{Una sola base de código para móvil y web.} Las pantallas
+  móviles no se veían bien en pantallas anchas, pero reescribir toda la
+  navegación era costoso. Se creó una capa web propia
+  (\texttt{lib/web}) que se elige con \texttt{kIsWeb} al iniciar la app,
+  y un \texttt{NavigatorObserver} (\texttt{WebAuthRedirectObserver}) que,
+  cuando una pantalla compartida abre el login o el panel móvil, los
+  reemplaza por su versión web sin modificar esas pantallas.
+
+  \item \textbf{Rutas de la versión web devolvían 404 en Netlify.} Al
+  recargar una página distinta de la raíz, Netlify buscaba un archivo
+  que no existe. Se agregó el archivo \texttt{web/\_redirects} con la
+  regla \texttt{/* /index.html 200}, que entrega siempre la aplicación y
+  deja que Flutter resuelva la ruta.
+
+  \item \textbf{Falta de conexión o tablas vacías.} En la demostración
+  no siempre había conexión ni datos cargados. Las pantallas de eventos,
+  actividades y gastronomía cargan datos representativos de Comarapa
+  cuando la consulta a Supabase falla o no devuelve registros, para que
+  la interfaz nunca quede vacía.
+\end{enumerate}

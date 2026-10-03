@@ -9,6 +9,7 @@ import '../repositories/usuario_repository.dart';
 import 'admin_home_screen.dart';
 import 'auth_gate.dart';
 import 'edit_user_screen.dart';
+import '../widgets/paginador.dart';
 
 class AdminUsersScreen extends StatefulWidget {
   const AdminUsersScreen({super.key});
@@ -24,6 +25,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
   String _selectedRoleFilter =
       'Todos'; // 'Todos', 'Administradores', 'Editores'
   String _searchQuery = '';
+  int _pagina = 0;
   bool _isSearching = false;
   bool _loading = true;
   UsuarioPerfil? _perfilActual;
@@ -73,7 +75,10 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
   void initState() {
     super.initState();
     _searchController.addListener(() {
-      setState(() => _searchQuery = _searchController.text);
+      setState(() {
+        _searchQuery = _searchController.text;
+        _pagina = 0;
+      });
     });
     _loadUsuarios();
     _loadPerfilActual();
@@ -770,7 +775,10 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
               return Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: GestureDetector(
-                  onTap: () => setState(() => _selectedRoleFilter = filter),
+                  onTap: () => setState(() {
+                    _selectedRoleFilter = filter;
+                    _pagina = 0;
+                  }),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 14,
@@ -891,7 +899,16 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 80),
-      children: filteredList.map((user) => _buildUserCard(user)).toList(),
+      children: [
+        ...paginar(filteredList, _pagina).map(_buildUserCard),
+        Paginador(
+          pagina: _pagina,
+          total: filteredList.length,
+          compacto: true,
+          color: const Color(0xFF26674B),
+          onCambiar: (p) => setState(() => _pagina = p),
+        ),
+      ],
     );
   }
 

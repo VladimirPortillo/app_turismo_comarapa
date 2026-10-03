@@ -3,17 +3,24 @@
 % Requiere en el preambulo del documento principal:
 %   \usepackage{longtable}  % tabla que puede continuar en varias paginas
 %   \usepackage{array}      % para el modificador >{\bfseries} en columnas p{}
+%
+% Cada RF tiene DOS criterios de aceptacion en formato
+% Dado / Cuando / Entonces:
+%   CA-xx.1 = camino feliz
+%   CA-xx.2 = camino de error
 % ============================================================
 
-\begin{longtable}{|>{\bfseries}p{1.3cm}|p{2.6cm}|p{4.4cm}|p{4.4cm}|>{\centering\arraybackslash}p{1.2cm}|}
+\begingroup
+\small
+\begin{longtable}{|>{\bfseries}p{1.2cm}|p{2.3cm}|p{3.4cm}|p{5.9cm}|>{\centering\arraybackslash}p{1.1cm}|}
 \caption{Requisitos funcionales de la aplicación de turismo del municipio de Comarapa}
 \label{tab:rf} \\
 \hline
-\textbf{ID} & \textbf{Requisito} & \textbf{Descripción} & \textbf{Criterio de aceptación} & \textbf{MoSCoW} \\ \hline
+\textbf{ID} & \textbf{Requisito} & \textbf{Descripción} & \textbf{Criterios de aceptación (Dado / Cuando / Entonces)} & \textbf{MoSCoW} \\ \hline
 \endfirsthead
 
 \hline
-\textbf{ID} & \textbf{Requisito} & \textbf{Descripción} & \textbf{Criterio de aceptación} & \textbf{MoSCoW} \\ \hline
+\textbf{ID} & \textbf{Requisito} & \textbf{Descripción} & \textbf{Criterios de aceptación (Dado / Cuando / Entonces)} & \textbf{MoSCoW} \\ \hline
 \endhead
 
 \hline
@@ -22,38 +29,84 @@
 \hline
 \endlastfoot
 
-RF-01 & Consultar contenido turístico por categoría & El sistema debe permitir al visitante listar los registros activos de lugares, actividades, eventos, hoteles, restaurantes y gastronomía. & Al seleccionar una categoría se muestra el listado de registros activos correspondiente; si no existen registros se muestra un mensaje de ``sin resultados''. & M \\ \hline
+RF-01 & Consultar contenido turístico por categoría & El sistema debe permitir al visitante listar los registros activos de lugares, actividades, eventos, hoteles, restaurantes y gastronomía. &
+\textbf{CA-01.1 (feliz):} Dado que existen registros activos en una categoría, cuando el visitante selecciona esa categoría, entonces el sistema muestra el listado de registros activos correspondiente.
+\newline
+\textbf{CA-01.2 (error):} Dado que una categoría no tiene registros activos, cuando el visitante la selecciona, entonces el sistema muestra el mensaje ``sin resultados''. & M \\ \hline
 
-RF-02 & Ver detalle de un elemento turístico & El sistema debe mostrar la información completa de un elemento seleccionado (descripción, imágenes, ubicación y calificación promedio, según corresponda). & Al seleccionar un elemento del listado se despliega su pantalla de detalle con todos sus datos e imágenes disponibles. & M \\ \hline
+RF-02 & Ver detalle de un elemento turístico & El sistema debe mostrar la información completa de un elemento seleccionado (descripción, imágenes, ubicación y calificación promedio, según corresponda). &
+\textbf{CA-02.1 (feliz):} Dado que el visitante está en un listado con elementos, cuando selecciona un elemento, entonces el sistema despliega su pantalla de detalle con todos sus datos e imágenes disponibles.
+\newline
+\textbf{CA-02.2 (error):} Dado que el elemento fue desactivado o eliminado, o no hay conexión con el servidor, cuando el visitante intenta abrir su detalle, entonces el sistema muestra un mensaje de error y no despliega datos incompletos. & M \\ \hline
 
-RF-03 & Buscar contenido turístico & El sistema debe permitir buscar por texto de forma simultánea entre todas las categorías turísticas y combinar los resultados en un solo listado. & Al ingresar un texto de búsqueda se muestran los resultados coincidentes de todas las categorías; si no hay coincidencias se indica ``sin resultados''. & S \\ \hline
+RF-03 & Buscar contenido turístico & El sistema debe permitir buscar por texto de forma simultánea entre todas las categorías turísticas y combinar los resultados en un solo listado. &
+\textbf{CA-03.1 (feliz):} Dado que existen registros que coinciden con el texto, cuando el visitante ingresa un texto de búsqueda, entonces el sistema muestra en un solo listado los resultados coincidentes de todas las categorías.
+\newline
+\textbf{CA-03.2 (error):} Dado que ningún registro coincide con el texto, cuando el visitante ejecuta la búsqueda, entonces el sistema indica ``sin resultados''. & S \\ \hline
 
-RF-04 & Visualizar mapa interactivo & El sistema debe mostrar un mapa (OpenStreetMap) centrado en el municipio, con marcadores diferenciados por categoría y filtrables mediante chips. & El mapa se despliega con los marcadores correspondientes y permite filtrarlos por categoría; al tocar un marcador se muestra una tarjeta de previsualización. & M \\ \hline
+RF-04 & Visualizar mapa interactivo & El sistema debe mostrar un mapa (OpenStreetMap) centrado en el municipio, con marcadores diferenciados por categoría y filtrables mediante chips. &
+\textbf{CA-04.1 (feliz):} Dado que existen registros con coordenadas, cuando el visitante abre el mapa, entonces el sistema muestra los marcadores por categoría, permite filtrarlos con chips y, al tocar un marcador, muestra una tarjeta de previsualización.
+\newline
+\textbf{CA-04.2 (error):} Dado que los mosaicos del mapa no pueden cargarse o no hay registros con coordenadas, cuando el visitante abre el mapa, entonces el sistema muestra un mensaje informativo y el resto de la aplicación sigue funcionando. & M \\ \hline
 
-RF-05 & Ubicar posición actual (GPS) & El sistema debe obtener y mostrar la ubicación actual del usuario dentro del mapa, previa autorización de permisos. & Al presionar el botón de ubicación, el mapa se centra en las coordenadas actuales del dispositivo y coloca un marcador de usuario. & S \\ \hline
+RF-05 & Ubicar posición actual (GPS) & El sistema debe obtener y mostrar la ubicación actual del usuario dentro del mapa, previa autorización de permisos. &
+\textbf{CA-05.1 (feliz):} Dado que el usuario concedió el permiso de ubicación, cuando presiona el botón de ubicación, entonces el mapa se centra en las coordenadas actuales del dispositivo y coloca un marcador de usuario.
+\newline
+\textbf{CA-05.2 (error):} Dado que el usuario denegó el permiso o el GPS está desactivado, cuando presiona el botón de ubicación, entonces el sistema muestra un mensaje explicando que no se puede obtener la ubicación y el mapa no cambia. & S \\ \hline
 
-RF-06 & Calcular ruta hacia un destino & El sistema debe calcular y dibujar sobre el mapa la ruta entre la ubicación del usuario y un destino turístico, usando un servicio de enrutamiento (OSRM). & Al seleccionar ``Cómo llegar'' se traza la ruta en el mapa junto con distancia y tiempo estimado; si el servicio falla, se muestra un mensaje de error. & S \\ \hline
+RF-06 & Calcular ruta hacia un destino & El sistema debe calcular y dibujar sobre el mapa la ruta entre la ubicación del usuario y un destino turístico, usando un servicio de enrutamiento (OSRM). &
+\textbf{CA-06.1 (feliz):} Dado que se conoce la ubicación del usuario y el servicio de enrutamiento responde, cuando el usuario selecciona ``Cómo llegar'' en un destino, entonces el sistema traza la ruta en el mapa junto con la distancia y el tiempo estimado.
+\newline
+\textbf{CA-06.2 (error):} Dado que el servicio de enrutamiento falla o no hay ruta posible, cuando el usuario selecciona ``Cómo llegar'', entonces el sistema muestra un mensaje de error y no dibuja ninguna ruta. & S \\ \hline
 
-RF-07 & Consultar el clima del municipio & El sistema debe mostrar en la pantalla principal la temperatura y condición climática actual del municipio, obtenidas de un servicio meteorológico externo. & La pantalla principal muestra el resumen del clima al cargar; si el servicio no responde, el bloque se oculta sin afectar el resto de la pantalla. & C \\ \hline
+RF-07 & Consultar el clima del municipio & El sistema debe mostrar en la pantalla principal la temperatura y condición climática actual del municipio, obtenidas de un servicio meteorológico externo. &
+\textbf{CA-07.1 (feliz):} Dado que el servicio meteorológico está disponible, cuando se carga la pantalla principal, entonces el sistema muestra la temperatura y la condición climática actual del municipio.
+\newline
+\textbf{CA-07.2 (error):} Dado que el servicio meteorológico no responde, cuando se carga la pantalla principal, entonces el bloque del clima se oculta sin afectar el resto de la pantalla. & C \\ \hline
 
-RF-08 & Registrar reseña y calificación & El sistema debe permitir a cualquier visitante registrar una reseña (nombre, calificación de 1 a 5 estrellas y comentario opcional) sobre una entidad turística, sin necesidad de cuenta. & Al enviar el formulario válido, la reseña se guarda y el promedio de calificación de la entidad se actualiza; los comentarios que excedan el límite de caracteres son rechazados. & M \\ \hline
+RF-08 & Registrar reseña y calificación & El sistema debe permitir a cualquier visitante registrar una reseña (nombre, calificación de 1 a 5 estrellas y comentario opcional) sobre una entidad turística, sin necesidad de cuenta. &
+\textbf{CA-08.1 (feliz):} Dado que el visitante completó nombre y calificación de 1 a 5 estrellas (y opcionalmente un comentario dentro del límite), cuando envía el formulario, entonces el sistema guarda la reseña y actualiza el promedio de calificación de la entidad.
+\newline
+\textbf{CA-08.2 (error):} Dado que el formulario no tiene nombre o calificación, o el comentario excede el límite de caracteres, cuando el visitante intenta enviarlo, entonces el sistema rechaza el envío, muestra el error correspondiente y no guarda la reseña. & M \\ \hline
 
-RF-09 & Consultar reseñas y promedio de calificación & El sistema debe mostrar en el detalle de cada entidad turística el listado de reseñas y el promedio de calificación calculado. & El detalle muestra el promedio y el total de reseñas; si no existen reseñas se indica ``Aún no hay reseñas'' con promedio 0. & M \\ \hline
+RF-09 & Consultar reseñas y promedio de calificación & El sistema debe mostrar en el detalle de cada entidad turística el listado de reseñas y el promedio de calificación calculado. &
+\textbf{CA-09.1 (feliz):} Dado que la entidad tiene reseñas registradas, cuando el visitante abre su detalle, entonces el sistema muestra el listado de reseñas, el promedio de calificación y el total de reseñas.
+\newline
+\textbf{CA-09.2 (error):} Dado que la entidad no tiene reseñas, cuando el visitante abre su detalle, entonces el sistema indica ``Aún no hay reseñas'' con promedio 0. & M \\ \hline
 
-RF-10 & Iniciar y cerrar sesión en el panel administrativo & El sistema debe autenticar a editores y administradores mediante correo y contraseña, y permitir cerrar la sesión activa. & Con credenciales válidas se otorga acceso al panel según el rol; con credenciales inválidas se muestra un mensaje de error; al cerrar sesión se redirige al inicio de sesión. & M \\ \hline
+RF-10 & Iniciar y cerrar sesión en el panel administrativo & El sistema debe autenticar a editores y administradores mediante correo y contraseña, y permitir cerrar la sesión activa. &
+\textbf{CA-10.1 (feliz):} Dado que el usuario posee una cuenta activa, cuando ingresa credenciales válidas, entonces el sistema le otorga acceso al panel según su rol y, al cerrar sesión, lo redirige al inicio de sesión.
+\newline
+\textbf{CA-10.2 (error):} Dado que el usuario ingresa un correo o contraseña incorrectos, cuando envía el formulario de acceso, entonces el sistema muestra un mensaje de error y no concede acceso al panel. & M \\ \hline
 
-RF-11 & Registrarse como editor & El sistema debe permitir que un nuevo usuario cree una cuenta con correo y contraseña, asignándole automáticamente el rol ``editor''. & Al completar el registro con datos válidos se crea la cuenta con rol editor; si el correo ya existe o la contraseña es débil, se muestra el error correspondiente. & S \\ \hline
+RF-11 & Registrarse como editor & El sistema debe permitir que un nuevo usuario cree una cuenta con correo y contraseña, asignándole automáticamente el rol ``editor''. &
+\textbf{CA-11.1 (feliz):} Dado que el correo no está registrado y la contraseña cumple los requisitos, cuando el usuario completa el registro, entonces el sistema crea la cuenta con el rol ``editor''.
+\newline
+\textbf{CA-11.2 (error):} Dado que el correo ya existe o la contraseña es débil, cuando el usuario intenta registrarse, entonces el sistema muestra el error correspondiente y no crea la cuenta. & S \\ \hline
 
-RF-12 & Gestionar contenido turístico (CRUD por categoría) & El sistema debe permitir a editores y administradores crear, editar, eliminar y activar/desactivar registros de lugares, actividades, eventos, hoteles, restaurantes y gastronomía. & Los cambios guardados desde el panel administrativo se reflejan en el listado administrativo y en el módulo público según el estado del registro. & M \\ \hline
+RF-12 & Gestionar contenido turístico (CRUD por categoría) & El sistema debe permitir a editores y administradores crear, editar, eliminar y activar/desactivar registros de lugares, actividades, eventos, hoteles, restaurantes y gastronomía. &
+\textbf{CA-12.1 (feliz):} Dado que el usuario ha iniciado sesión como editor o administrador, cuando guarda cambios válidos sobre un registro, entonces el cambio se refleja en el listado administrativo y en el módulo público según el estado del registro.
+\newline
+\textbf{CA-12.2 (error):} Dado que el formulario tiene campos obligatorios vacíos o la operación falla en el servidor, cuando el usuario intenta guardar, entonces el sistema muestra el error, no persiste el cambio y conserva los datos ingresados. & M \\ \hline
 
-RF-13 & Seleccionar ubicación en el mapa para un registro & El sistema debe permitir elegir o ajustar la coordenada geográfica de un registro turístico mediante un mapa interactivo dentro del formulario. & Al confirmar un punto en el mapa, las coordenadas seleccionadas quedan asociadas al registro en edición. & S \\ \hline
+RF-13 & Seleccionar ubicación en el mapa para un registro & El sistema debe permitir elegir o ajustar la coordenada geográfica de un registro turístico mediante un mapa interactivo dentro del formulario. &
+\textbf{CA-13.1 (feliz):} Dado que el usuario edita un registro y abre el selector de mapa, cuando confirma un punto en el mapa, entonces las coordenadas seleccionadas quedan asociadas al registro en edición.
+\newline
+\textbf{CA-13.2 (error):} Dado que el usuario abre el selector de mapa, cuando intenta confirmar sin haber elegido un punto o el mapa no puede cargarse, entonces el sistema muestra un mensaje de aviso y el registro conserva su coordenada anterior. & S \\ \hline
 
-RF-14 & Subir imágenes a un registro turístico & El sistema debe permitir capturar o seleccionar imágenes desde la cámara o galería y subirlas al almacenamiento en la nube, asociándolas al registro. & La imagen subida se agrega a la lista del registro y queda disponible mediante URL pública; la primera imagen se usa como portada. & S \\ \hline
+RF-14 & Subir imágenes a un registro turístico & El sistema debe permitir capturar o seleccionar imágenes desde la cámara o galería y subirlas al almacenamiento en la nube, asociándolas al registro. &
+\textbf{CA-14.1 (feliz):} Dado que el usuario seleccionó o capturó una imagen válida, cuando la sube, entonces la imagen se agrega a la lista del registro y queda disponible mediante URL pública; la primera imagen se usa como portada.
+\newline
+\textbf{CA-14.2 (error):} Dado que la imagen tiene un formato no permitido o excede el tamaño máximo, o falla la conexión con el almacenamiento, cuando el usuario intenta subirla, entonces el sistema muestra un mensaje de error y la imagen no se asocia al registro. & S \\ \hline
 
-RF-15 & Gestionar usuarios y roles & El sistema debe permitir únicamente al administrador listar usuarios, filtrarlos por rol y modificar su rol o estado (activo/inactivo). & Solo el rol administrador accede a esta sección; al modificar un usuario, su rol o estado queda actualizado en la base de datos. & M \\ \hline
+RF-15 & Gestionar usuarios y roles & El sistema debe permitir únicamente al administrador listar usuarios, filtrarlos por rol y modificar su rol o estado (activo/inactivo). &
+\textbf{CA-15.1 (feliz):} Dado que el usuario autenticado tiene rol administrador, cuando modifica el rol o el estado de un usuario, entonces el cambio queda actualizado en la base de datos y se refleja en el listado.
+\newline
+\textbf{CA-15.2 (error):} Dado que el usuario autenticado tiene rol editor, cuando intenta acceder a la sección de gestión de usuarios, entonces el sistema deniega el acceso y no muestra ni permite modificar datos de usuarios. & M \\ \hline
 
 \end{longtable}
+\endgroup
 
 \bigskip
 \noindent
-\textbf{Total de requisitos:} 15 \quad\textbf{Must have:} 8 \quad\textbf{Porcentaje Must have:} 53{,}3\,\% (debe ser $\leq$ 60\,\%)
+\textbf{Total de requisitos:} 15 \quad\textbf{Criterios de aceptación por requisito:} 2 (feliz y error) \quad\textbf{Must have:} 8 \quad\textbf{Porcentaje Must have:} 53{,}3\,\% (debe ser $\leq$ 60\,\%)

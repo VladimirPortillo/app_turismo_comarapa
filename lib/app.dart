@@ -1,9 +1,12 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'controllers/preferences_controller.dart';
 import 'screens/home_screen.dart';
+import 'web/web_login_screen.dart';
+import 'web/web_shell.dart';
 
 /// Permite arrastrar con el mouse (además de touch/stylus) para que los
 /// `PageView` y listas horizontales/verticales respondan al swipe en web/escritorio.
@@ -33,7 +36,9 @@ class ProyectoFinalApp extends StatelessWidget {
         colorSchemeSeed: Colors.indigo,
         brightness: Brightness.dark,
       ),
-      home: const HomeScreen(),
+      // En web se usa un diseño propio (lib/web); en móvil, las pantallas originales.
+      home: kIsWeb ? const WebEntry() : const HomeScreen(),
+      navigatorObservers: [if (kIsWeb) WebAuthRedirectObserver()],
     );
   }
 }

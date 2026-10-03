@@ -3,21 +3,25 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 import 'package:provider/provider.dart';
 
+import '../models/actividad.dart';
 import '../models/evento.dart';
 import '../models/hotel.dart';
 import '../models/lugar.dart';
 import '../models/restaurante.dart';
+import '../models/turismo_tipo.dart';
+import '../repositories/actividad_repository.dart';
 import '../repositories/evento_repository.dart';
 import '../repositories/hotel_repository.dart';
 import '../repositories/lugar_repository.dart';
 import '../repositories/restaurante_repository.dart';
+import 'activity_detail_screen.dart';
 import 'event_detail_screen.dart';
 import 'hotel_detail_screen.dart';
 import 'place_detail_screen.dart';
 import 'restaurant_detail_screen.dart';
 
 /// Tipo de entidad turística en el mapa
-enum MapCategoryType { lugares, hoteles, restaurantes, eventos }
+enum MapCategoryType { lugares, actividades, hoteles, restaurantes, eventos }
 
 /// Abstracción uniforme para dibujar marcadores y la tarjeta inferior
 class MapEntityItem {
@@ -45,7 +49,13 @@ class MapEntityItem {
 }
 
 class MapScreen extends StatefulWidget {
-  const MapScreen({super.key});
+  const MapScreen({super.key, this.detalleBuilder});
+
+  /// Opcional: pantalla de detalle a abrir para un elemento del mapa
+  /// (recibe el Lugar, Actividad, Hotel, Restaurante o Evento). La versión
+  /// web lo usa para abrir sus propios detalles; si es null (app móvil)
+  /// se abren los detalles de la app.
+  final Widget Function(Object item)? detalleBuilder;
 
   @override
   State<MapScreen> createState() => _MapScreenState();
@@ -63,6 +73,7 @@ class _MapScreenState extends State<MapScreen> {
 
   // Listas de datos cargados
   List<Lugar> _lugares = [];
+  List<Actividad> _actividades = [];
   List<Hotel> _hoteles = [];
   List<Restaurante> _restaurantes = [];
   List<Evento> _eventos = [];
@@ -132,6 +143,74 @@ class _MapScreenState extends State<MapScreen> {
       tiempoVisitaMin: 60,
       activo: true,
       imagenes: const [],
+    ),
+  ];
+
+  static final List<Actividad> _demoActividades = [
+    const Actividad(
+      id: 'demo-act-1',
+      nombre: 'Trekking Cañón de la Pajcha',
+      categoriaNombre: 'Trekking & Senderismo',
+      descripcion:
+          'Recorrido a pie entre formaciones rocosas, caídas de agua y senderos de vegetación virgen.',
+      dificultad: 'moderada',
+      duracionMin: 180,
+      precioReferencial: 50,
+      latitud: -18.0250,
+      longitud: -64.5120,
+      activo: true,
+    ),
+    const Actividad(
+      id: 'demo-act-2',
+      nombre: 'Cabalgata por los Valles',
+      categoriaNombre: 'Cabalgata',
+      descripcion:
+          'Paseo guiado a caballo por huertos de durazno y miradores naturales del valle.',
+      dificultad: 'facil',
+      duracionMin: 120,
+      precioReferencial: 80,
+      latitud: -18.0480,
+      longitud: -64.5380,
+      activo: true,
+    ),
+    const Actividad(
+      id: 'demo-act-3',
+      nombre: 'Avistamiento de Aves en Amboró',
+      categoriaNombre: 'Ecoturismo',
+      descripcion:
+          'Excursión matutina al bosque nublado, hogar de la paraba frente roja y aves endémicas.',
+      dificultad: 'facil',
+      duracionMin: 240,
+      precioReferencial: 70,
+      latitud: -17.9100,
+      longitud: -64.5300,
+      activo: true,
+    ),
+    const Actividad(
+      id: 'demo-act-4',
+      nombre: 'Ruta Cactáceas en Bicicleta',
+      categoriaNombre: 'Aventura',
+      descripcion:
+          'Circuito cicloturístico por el valle seco interandino entre cactus gigantes.',
+      dificultad: 'moderada',
+      duracionMin: 150,
+      precioReferencial: 45,
+      latitud: -18.0620,
+      longitud: -64.5190,
+      activo: true,
+    ),
+    const Actividad(
+      id: 'demo-act-5',
+      nombre: 'Circuito de Moliendas y Tradición',
+      categoriaNombre: 'Cultural',
+      descripcion:
+          'Visita a fincas tradicionales de chancaca, derivados del durazno y licores artesanales.',
+      dificultad: 'facil',
+      duracionMin: 90,
+      precioReferencial: 30,
+      latitud: -18.0370,
+      longitud: -64.5260,
+      activo: true,
     ),
   ];
 
@@ -377,6 +456,7 @@ class _MapScreenState extends State<MapScreen> {
 
     try {
       final lugares = await context.read<LugarRepository>().fetchActivos();
+      final actividades = await context.read<ActividadRepository>().fetchActivos();
       final hoteles = await context.read<HotelRepository>().fetchActivos();
       final restaurantes = await context.read<RestauranteRepository>().fetchActivos();
       final eventos = await context.read<EventoRepository>().fetchActivos();
@@ -384,6 +464,7 @@ class _MapScreenState extends State<MapScreen> {
       if (!mounted) return;
       setState(() {
         _lugares = lugares.isNotEmpty ? lugares : _demoLugares;
+        _actividades = actividades.isNotEmpty ? actividades : _demoActividades;
         _hoteles = hoteles.isNotEmpty ? hoteles : _demoHoteles;
         _restaurantes = restaurantes.isNotEmpty ? restaurantes : _demoRestaurantes;
         _eventos = eventos.isNotEmpty ? eventos : _demoEventos;
@@ -394,6 +475,7 @@ class _MapScreenState extends State<MapScreen> {
       if (!mounted) return;
       setState(() {
         _lugares = _demoLugares;
+        _actividades = _demoActividades;
         _hoteles = _demoHoteles;
         _restaurantes = _demoRestaurantes;
         _eventos = _demoEventos;
@@ -436,6 +518,25 @@ class _MapScreenState extends State<MapScreen> {
             imagenes: l.imagenes,
             type: MapCategoryType.lugares,
             rawData: l,
+          );
+        }).toList();
+
+      case MapCategoryType.actividades:
+        return _actividades.map((a) {
+          final lat = (a.latitud != null && a.latitud != 0) ? a.latitud! : _comarapaCenter.latitude;
+          final lng = (a.longitud != null && a.longitud != 0) ? a.longitud! : _comarapaCenter.longitude;
+          final dif = dificultadLabel(_nivelDificultad(a.dificultad));
+          final sub = '${a.categoriaNombre ?? "Actividad"} · ${_duracionTexto(a.duracionMin)} · $dif';
+          return MapEntityItem(
+            id: a.id ?? a.nombre,
+            nombre: a.nombre,
+            categoria: a.categoriaNombre ?? 'Actividad',
+            subtitulo: sub,
+            calificacion: 4.6,
+            point: LatLng(lat, lng),
+            imagenes: a.imagenes,
+            type: MapCategoryType.actividades,
+            rawData: a,
           );
         }).toList();
 
@@ -498,6 +599,25 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
+  /// "moderada", "alta"... → uno de los niveles de [kNivelesDificultad].
+  String _nivelDificultad(String dificultad) {
+    final d = dificultad.toLowerCase();
+    if (d.contains('dificil') || d.contains('alta') || d.contains('exigente')) {
+      return 'dificil';
+    }
+    if (d.contains('moderada') || d.contains('media')) return 'media';
+    return 'facil';
+  }
+
+  String _duracionTexto(int? minutos) {
+    if (minutos == null || minutos <= 0) return '2 horas';
+    if (minutos < 60) return '$minutos min';
+    final horas = minutos / 60;
+    final texto =
+        horas == horas.roundToDouble() ? horas.toInt().toString() : horas.toStringAsFixed(1);
+    return '$texto ${horas == 1 ? "hora" : "horas"}';
+  }
+
   List<MapEntityItem> get _currentCategoryItems {
     final all = _allCategoryItems;
     if (_searchQuery.isEmpty) return all;
@@ -513,6 +633,8 @@ class _MapScreenState extends State<MapScreen> {
     switch (_selectedCategory) {
       case MapCategoryType.lugares:
         return const Color(0xFF1B5A3F); // Verde bosque Comarapa
+      case MapCategoryType.actividades:
+        return const Color(0xFF0E7490); // Turquesa aventura
       case MapCategoryType.hoteles:
         return const Color(0xFF1E3A8A); // Azul añil
       case MapCategoryType.restaurantes:
@@ -546,10 +668,21 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _openDetailScreen(MapEntityItem item) {
+    final detalleBuilder = widget.detalleBuilder;
+    if (detalleBuilder != null) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => detalleBuilder(item.rawData as Object)),
+      );
+      return;
+    }
+
     Widget destination;
     switch (item.type) {
       case MapCategoryType.lugares:
         destination = PlaceDetailScreen(lugar: item.rawData as Lugar);
+        break;
+      case MapCategoryType.actividades:
+        destination = ActivityDetailScreen(actividad: item.rawData as Actividad);
         break;
       case MapCategoryType.hoteles:
         destination = HotelDetailScreen(hotel: item.rawData as Hotel);
@@ -720,6 +853,7 @@ class _MapScreenState extends State<MapScreen> {
   Widget _buildCategoryChips() {
     const categories = [
       {'type': MapCategoryType.lugares, 'label': 'Lugares'},
+      {'type': MapCategoryType.actividades, 'label': 'Actividades'},
       {'type': MapCategoryType.hoteles, 'label': 'Hoteles'},
       {'type': MapCategoryType.restaurantes, 'label': 'Restaurantes'},
       {'type': MapCategoryType.eventos, 'label': 'Eventos'},
@@ -780,6 +914,9 @@ class _MapScreenState extends State<MapScreen> {
     switch (item.type) {
       case MapCategoryType.lugares:
         pinColor = const Color(0xFF26674B);
+        break;
+      case MapCategoryType.actividades:
+        pinColor = const Color(0xFF0E7490);
         break;
       case MapCategoryType.hoteles:
         pinColor = const Color(0xFF1E3A8A);
@@ -933,6 +1070,9 @@ class _MapScreenState extends State<MapScreen> {
     switch (item.type) {
       case MapCategoryType.lugares:
         icon = Icons.landscape;
+        break;
+      case MapCategoryType.actividades:
+        icon = Icons.hiking;
         break;
       case MapCategoryType.hoteles:
         icon = Icons.hotel;

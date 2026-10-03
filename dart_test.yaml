@@ -1,0 +1,3 @@
+tags:
+  integracion:
+    # Pruebas contra el proyecto real de Supabase (requieren internet).
