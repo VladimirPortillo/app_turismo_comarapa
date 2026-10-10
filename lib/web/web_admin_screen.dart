@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -51,14 +53,17 @@ Future<T?> abrirEnVentana<T>(BuildContext context, Widget pantalla) {
       transitionDuration: const Duration(milliseconds: 180),
       pageBuilder: (context, _, _) {
         final pantallaCompleta = MediaQuery.of(context);
-        final alto = pantallaCompleta.size.height * 0.92;
-        const ancho = 760.0;
+        final size = pantallaCompleta.size;
+        // En pantallas angostas la ventana ocupa toda la pantalla.
+        final angosta = size.width < 640;
+        final alto = angosta ? size.height : size.height * 0.92;
+        final ancho = angosta ? size.width : math.min(760.0, size.width - 32);
         return Center(
           child: SizedBox(
             width: ancho,
             height: alto,
             child: Material(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(angosta ? 0 : 20),
               clipBehavior: Clip.antiAlias,
               elevation: 24,
               // Las pantallas de la app se adaptan al tamaño de la ventana.
@@ -370,7 +375,7 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           behavior: SnackBarBehavior.floating,
-          width: 460,
+          width: anchoSnackBar(context),
           content: Text(
             nuevo
                 ? '"${fila.nombre}" ahora es visible en el sitio.'
@@ -403,7 +408,7 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
       SnackBar(
         content: Text(mensaje),
         behavior: SnackBarBehavior.floating,
-        width: 460,
+        width: anchoSnackBar(context),
       ),
     );
   }
@@ -507,29 +512,46 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
 
   // --------------------------------------------------------------- UI
 
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  /// true cuando la ventana es angosta: la barra lateral pasa a un drawer.
+  bool _compacto = false;
+
   @override
   Widget build(BuildContext context) {
+    _compacto = MediaQuery.sizeOf(context).width < kAnchoPanelEscritorio;
+    final principal = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _buildTopBar(),
+        Expanded(
+          child: _usuarios
+              ? WebAdminUsersPanel(perfilActual: _perfil)
+              : _buildContenido(),
+        ),
+      ],
+    );
+
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: const Color(0xFFF3F4F1),
-      body: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildSidebar(),
-          Expanded(
-            child: Column(
+      drawer: _compacto
+          ? Drawer(
+              width: 280,
+              backgroundColor: WebTheme.verdeOscuro,
+              shape: const RoundedRectangleBorder(),
+              child: SafeArea(child: _buildSidebar()),
+            )
+          : null,
+      body: _compacto
+          ? principal
+          : Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _buildTopBar(),
-                Expanded(
-                  child: _usuarios
-                      ? WebAdminUsersPanel(perfilActual: _perfil)
-                      : _buildContenido(),
-                ),
+                _buildSidebar(),
+                Expanded(child: principal),
               ],
             ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -546,7 +568,7 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
 
   Widget _buildSidebar() {
     return Container(
-      width: 260,
+      width: _compacto ? null : 260,
       color: WebTheme.verdeOscuro,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -624,12 +646,6 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
             child: Column(
               children: [
                 _itemSidebar(
-                  icono: Icons.public,
-                  label: 'Ver sitio público',
-                  onTap: () =>
-                      Navigator.of(context).popUntil((route) => route.isFirst),
-                ),
-                _itemSidebar(
                   icono: Icons.logout,
                   label: 'Cerrar sesión',
                   color: const Color(0xFFFCA5A5),
@@ -676,7 +692,11 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
         borderRadius: BorderRadius.circular(10),
         child: InkWell(
           borderRadius: BorderRadius.circular(10),
-          onTap: onTap,
+          onTap: () {
+            // En modo compacto, cierra el menú desplegable al elegir.
+            _scaffoldKey.currentState?.closeDrawer();
+            onTap();
+          },
           hoverColor: Colors.white.withValues(alpha: 0.06),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
@@ -736,16 +756,28 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
     return Container(
       height: 72,
       color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 32),
+      padding: EdgeInsets.symmetric(horizontal: _compacto ? 8 : 32),
       child: Row(
         children: [
-          Text('Panel', style: TextStyle(color: Colors.grey.shade500)),
-          Text('  /  ', style: TextStyle(color: Colors.grey.shade400)),
-          Text(
-            _usuarios ? 'Usuarios' : _tipo.etiqueta,
-            style: const TextStyle(
-              color: WebTheme.verdeOscuro,
-              fontWeight: FontWeight.w600,
+          if (_compacto)
+            IconButton(
+              tooltip: 'Menú',
+              onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+              icon: const Icon(Icons.menu, color: WebTheme.verdeOscuro),
+            ),
+          if (!_compacto) ...[
+            Text('Panel', style: TextStyle(color: Colors.grey.shade500)),
+            Text('  /  ', style: TextStyle(color: Colors.grey.shade400)),
+          ],
+          Flexible(
+            child: Text(
+              _usuarios ? 'Usuarios' : _tipo.etiqueta,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: WebTheme.verdeOscuro,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
           const Spacer(),
@@ -765,37 +797,42 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
               icon: const Icon(Icons.refresh),
             ),
           ],
-          const SizedBox(width: 16),
-          CircleAvatar(
-            radius: 19,
-            backgroundColor: WebTheme.verdeClaro,
-            child: Text(
-              iniciales,
-              style: const TextStyle(
-                color: WebTheme.verde,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
+          SizedBox(width: _compacto ? 4 : 16),
+          Tooltip(
+            message: '$nombre\n${_perfil?.correo ?? rol}',
+            child: CircleAvatar(
+              radius: 19,
+              backgroundColor: WebTheme.verdeClaro,
+              child: Text(
+                iniciales,
+                style: const TextStyle(
+                  color: WebTheme.verde,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
               ),
             ),
           ),
-          const SizedBox(width: 10),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                nombre,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1F2937),
+          if (_compacto) const SizedBox(width: 8),
+          if (!_compacto) const SizedBox(width: 10),
+          if (!_compacto)
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  nombre,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1F2937),
+                  ),
                 ),
-              ),
-              Text(
-                _perfil?.correo ?? rol,
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-              ),
-            ],
-          ),
+                Text(
+                  _perfil?.correo ?? rol,
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                ),
+              ],
+            ),
         ],
       ),
     );
@@ -831,14 +868,14 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
     final sinFotos = todas.where((f) => f.imagenes.isEmpty).length;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(32),
+      padding: EdgeInsets.all(_compacto ? 16 : 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
             _tipo.etiqueta,
-            style: const TextStyle(
-              fontSize: 32,
+            style: TextStyle(
+              fontSize: _compacto ? 26 : 32,
               fontWeight: FontWeight.bold,
               color: WebTheme.verdeOscuro,
               fontFamily: 'serif',
@@ -850,7 +887,8 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
             style: TextStyle(color: Colors.grey.shade600),
           ),
           const SizedBox(height: 24),
-          Row(
+          WebStatsGrid(
+            espacio: _compacto ? 12 : 16,
             children: [
               _stat(
                 'Total',
@@ -858,21 +896,18 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
                 Icons.layers_outlined,
                 WebTheme.verdeOscuro,
               ),
-              const SizedBox(width: 16),
               _stat(
                 'Publicados',
                 '$activos',
                 Icons.visibility_outlined,
                 const Color(0xFF16A34A),
               ),
-              const SizedBox(width: 16),
               _stat(
                 'Ocultos',
                 '${todas.length - activos}',
                 Icons.visibility_off_outlined,
                 Colors.grey.shade600,
               ),
-              const SizedBox(width: 16),
               _stat(
                 'Sin fotos',
                 '$sinFotos',
@@ -897,27 +932,27 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
   }
 
   Widget _stat(String titulo, String valor, IconData icono, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icono, color: color),
+    return Container(
+      padding: EdgeInsets.all(_compacto ? 14 : 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
             ),
-            const SizedBox(width: 14),
-            Column(
+            child: Icon(icono, color: color),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
@@ -928,11 +963,16 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
                     color: Color(0xFF1F2937),
                   ),
                 ),
-                Text(titulo, style: TextStyle(color: Colors.grey.shade600)),
+                Text(
+                  titulo,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: Colors.grey.shade600),
+                ),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -948,67 +988,97 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
       borderSide: BorderSide(color: Colors.grey.shade300),
     );
 
-    return Row(
-      children: [
-        SegmentedButton<_Estado>(
-          showSelectedIcon: false,
-          style: SegmentedButton.styleFrom(
-            selectedBackgroundColor: WebTheme.verdeClaro,
-            selectedForegroundColor: WebTheme.verde,
-          ),
-          segments: [
-            for (final e in _Estado.values)
-              ButtonSegment(value: e, label: Text('${e.label} · ${conteo[e]}')),
-          ],
-          selected: {_estado},
-          onSelectionChanged: (s) => setState(() {
-            _estado = s.first;
-            _pagina = 0;
-          }),
-        ),
-        const SizedBox(width: 16),
-        SizedBox(
-          width: 300,
-          child: TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              isDense: true,
-              hintText: 'Buscar por nombre o categoría...',
-              prefixIcon: const Icon(Icons.search, size: 20),
-              suffixIcon: _query.isEmpty
-                  ? null
-                  : IconButton(
-                      icon: const Icon(Icons.close, size: 18),
-                      onPressed: _searchController.clear,
-                    ),
-              filled: true,
-              fillColor: Colors.white,
-              border: borde,
-              enabledBorder: borde,
-            ),
-          ),
-        ),
-        const Spacer(),
-        FilledButton.icon(
-          onPressed: () => _abrirEditor(),
-          style: FilledButton.styleFrom(
-            backgroundColor: const Color(0xFF26674B),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          icon: const Icon(Icons.add),
-          label: Text(switch (_tipo) {
-            TurismoTipo.hotel => 'Nuevo hotel',
-            TurismoTipo.evento => 'Nuevo evento',
-            TurismoTipo.restaurante => 'Nuevo restaurante',
-            TurismoTipo.actividad => 'Nueva actividad',
-            TurismoTipo.gastronomia => 'Nuevo plato',
-            TurismoTipo.lugar => 'Nuevo lugar',
-          }, style: const TextStyle(fontWeight: FontWeight.bold)),
-        ),
+    final filtros = SegmentedButton<_Estado>(
+      showSelectedIcon: false,
+      style: SegmentedButton.styleFrom(
+        selectedBackgroundColor: WebTheme.verdeClaro,
+        selectedForegroundColor: WebTheme.verde,
+      ),
+      segments: [
+        for (final e in _Estado.values)
+          ButtonSegment(value: e, label: Text('${e.label} · ${conteo[e]}')),
       ],
+      selected: {_estado},
+      onSelectionChanged: (s) => setState(() {
+        _estado = s.first;
+        _pagina = 0;
+      }),
+    );
+    final buscador = TextField(
+      controller: _searchController,
+      decoration: InputDecoration(
+        isDense: true,
+        hintText: 'Buscar por nombre o categoría...',
+        prefixIcon: const Icon(Icons.search, size: 20),
+        suffixIcon: _query.isEmpty
+            ? null
+            : IconButton(
+                icon: const Icon(Icons.close, size: 18),
+                onPressed: _searchController.clear,
+              ),
+        filled: true,
+        fillColor: Colors.white,
+        border: borde,
+        enabledBorder: borde,
+      ),
+    );
+    final botonNuevo = FilledButton.icon(
+      onPressed: () => _abrirEditor(),
+      style: FilledButton.styleFrom(
+        backgroundColor: const Color(0xFF26674B),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      icon: const Icon(Icons.add),
+      label: Text(switch (_tipo) {
+        TurismoTipo.hotel => 'Nuevo hotel',
+        TurismoTipo.evento => 'Nuevo evento',
+        TurismoTipo.restaurante => 'Nuevo restaurante',
+        TurismoTipo.actividad => 'Nueva actividad',
+        TurismoTipo.gastronomia => 'Nuevo plato',
+        TurismoTipo.lugar => 'Nuevo lugar',
+      }, style: const TextStyle(fontWeight: FontWeight.bold)),
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final ancho = constraints.maxWidth;
+        if (ancho >= kAnchoPanelEscritorio) {
+          return Row(
+            children: [
+              filtros,
+              const SizedBox(width: 16),
+              SizedBox(width: 300, child: buscador),
+              const Spacer(),
+              botonNuevo,
+            ],
+          );
+        }
+        // Pantallas angostas: filtros, buscador y botón se apilan.
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: filtros,
+            ),
+            const SizedBox(height: 12),
+            if (ancho >= 520)
+              Row(
+                children: [
+                  Expanded(child: buscador),
+                  const SizedBox(width: 12),
+                  botonNuevo,
+                ],
+              )
+            else ...[
+              buscador,
+              const SizedBox(height: 12),
+              botonNuevo,
+            ],
+          ],
+        );
+      },
     );
   }
 
@@ -1018,6 +1088,15 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
   static const double _anchoEstado = 170;
 
   Widget _buildTabla(List<_Fila> filas) {
+    return LayoutBuilder(
+      builder: (context, constraints) => _buildTablaCon(
+        filas,
+        compacta: constraints.maxWidth < kAnchoTablaCompleta,
+      ),
+    );
+  }
+
+  Widget _buildTablaCon(List<_Fila> filas, {required bool compacta}) {
     final estiloCabecera = TextStyle(
       fontSize: 12,
       fontWeight: FontWeight.bold,
@@ -1035,51 +1114,54 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            color: WebTheme.fondo,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 4,
-                  child: InkWell(
-                    onTap: () => setState(() => _ordenAsc = !_ordenAsc),
-                    child: Row(
-                      children: [
-                        Text('NOMBRE', style: estiloCabecera),
-                        const SizedBox(width: 4),
-                        Icon(
-                          _ordenAsc ? Icons.arrow_upward : Icons.arrow_downward,
-                          size: 14,
-                          color: Colors.grey.shade600,
-                        ),
-                      ],
+          if (!compacta)
+            Container(
+              color: WebTheme.fondo,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 4,
+                    child: InkWell(
+                      onTap: () => setState(() => _ordenAsc = !_ordenAsc),
+                      child: Row(
+                        children: [
+                          Text('NOMBRE', style: estiloCabecera),
+                          const SizedBox(width: 4),
+                          Icon(
+                            _ordenAsc
+                                ? Icons.arrow_upward
+                                : Icons.arrow_downward,
+                            size: 14,
+                            color: Colors.grey.shade600,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text('CATEGORÍA', style: estiloCabecera),
-                ),
-                Expanded(
-                  flex: 3,
-                  child: Text('DETALLE', style: estiloCabecera),
-                ),
-                SizedBox(
-                  width: _anchoEstado,
-                  child: Text('PUBLICADO', style: estiloCabecera),
-                ),
-                SizedBox(
-                  width: _anchoAcciones,
-                  child: Text(
-                    'ACCIONES',
-                    textAlign: TextAlign.right,
-                    style: estiloCabecera,
+                  Expanded(
+                    flex: 2,
+                    child: Text('CATEGORÍA', style: estiloCabecera),
                   ),
-                ),
-              ],
+                  Expanded(
+                    flex: 3,
+                    child: Text('DETALLE', style: estiloCabecera),
+                  ),
+                  SizedBox(
+                    width: _anchoEstado,
+                    child: Text('PUBLICADO', style: estiloCabecera),
+                  ),
+                  SizedBox(
+                    width: _anchoAcciones,
+                    child: Text(
+                      'ACCIONES',
+                      textAlign: TextAlign.right,
+                      style: estiloCabecera,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
           if (filas.isEmpty)
             Padding(
               padding: const EdgeInsets.all(48),
@@ -1111,6 +1193,7 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
               if (i > 0) Divider(height: 1, color: Colors.grey.shade100),
               _FilaTabla(
                 fila: filas[i],
+                compacta: compacta,
                 anchoEstado: _anchoEstado,
                 anchoAcciones: _anchoAcciones,
                 onEditar: () => _abrirEditor(filas[i]),
@@ -1132,9 +1215,13 @@ class _FilaTabla extends StatefulWidget {
     required this.onEditar,
     required this.onVer,
     required this.onCambiarVisibilidad,
+    this.compacta = false,
   });
 
   final _Fila fila;
+
+  /// true = se muestra como tarjeta apilada (pantallas angostas).
+  final bool compacta;
   final double anchoEstado;
   final double anchoAcciones;
   final VoidCallback onEditar;
@@ -1148,8 +1235,161 @@ class _FilaTabla extends StatefulWidget {
 class _FilaTablaState extends State<_FilaTabla> {
   bool _hover = false;
 
+  Widget _miniatura(_Fila f, {double tam = 48}) {
+    return Opacity(
+      opacity: f.activo ? 1 : 0.5,
+      child: Container(
+        width: tam,
+        height: tam,
+        decoration: BoxDecoration(
+          color: WebTheme.verdeClaro,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: f.imagenes.isNotEmpty
+            ? Image.network(
+                f.imagenes.first,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) =>
+                    const Icon(Icons.image_outlined, color: WebTheme.verde),
+              )
+            : const Icon(Icons.image_outlined, color: WebTheme.verde),
+      ),
+    );
+  }
+
+  /// Versión tarjeta para pantallas angostas: misma información y acciones.
+  Widget _buildTarjeta() {
+    final f = widget.fila;
+    final apagado = !f.activo;
+    final colorTexto = apagado ? Colors.grey.shade400 : const Color(0xFF1F2937);
+
+    return InkWell(
+      onTap: widget.onEditar,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 14, 6, 6),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _miniatura(f, tam: 56),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        f.nombre,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: colorTexto,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Opacity(
+                            opacity: apagado ? 0.5 : 1,
+                            child: WebBadge(texto: f.categoria),
+                          ),
+                          if (f.calificacion != null)
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.star,
+                                  size: 13,
+                                  color: Color(0xFFE59819),
+                                ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  f.calificacion!.toStringAsFixed(1),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                        ],
+                      ),
+                      if (f.detalle != null) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          f.detalle!,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: apagado
+                                ? Colors.grey.shade400
+                                : Colors.grey.shade700,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Switch(
+                  value: f.activo,
+                  activeThumbColor: Colors.white,
+                  activeTrackColor: const Color(0xFF26674B),
+                  onChanged: (_) => widget.onCambiarVisibilidad(),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    f.activo ? 'Publicado' : 'Oculto',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: f.activo
+                          ? const Color(0xFF26674B)
+                          : Colors.grey.shade500,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Ver en el sitio',
+                  onPressed: widget.onVer,
+                  icon: Icon(
+                    Icons.open_in_new,
+                    size: 20,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Editar',
+                  onPressed: widget.onEditar,
+                  icon: const Icon(
+                    Icons.edit_outlined,
+                    size: 20,
+                    color: Color(0xFF26674B),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (widget.compacta) return _buildTarjeta();
     final f = widget.fila;
     final apagado = !f.activo;
     final colorTexto = apagado ? Colors.grey.shade400 : const Color(0xFF1F2937);
@@ -1168,31 +1408,7 @@ class _FilaTablaState extends State<_FilaTabla> {
                 flex: 4,
                 child: Row(
                   children: [
-                    Opacity(
-                      opacity: apagado ? 0.5 : 1,
-                      child: Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: WebTheme.verdeClaro,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: f.imagenes.isNotEmpty
-                            ? Image.network(
-                                f.imagenes.first,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, _, _) => const Icon(
-                                  Icons.image_outlined,
-                                  color: WebTheme.verde,
-                                ),
-                              )
-                            : const Icon(
-                                Icons.image_outlined,
-                                color: WebTheme.verde,
-                              ),
-                      ),
-                    ),
+                    _miniatura(f),
                     const SizedBox(width: 14),
                     Expanded(
                       child: Column(

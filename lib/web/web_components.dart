@@ -19,13 +19,13 @@ class WebBadge extends StatelessWidget {
 
   /// Variante en tonos durazno, usada en gastronomía y restaurantes.
   const WebBadge.calido({super.key, required this.texto, this.icono})
-      : fondo = const Color(0xFFF9EFE5),
-        color = const Color(0xFFB45309);
+    : fondo = const Color(0xFFF9EFE5),
+      color = const Color(0xFFB45309);
 
   /// Variante ámbar, usada para temporada / periodicidad.
   const WebBadge.ambar({super.key, required this.texto, this.icono})
-      : fondo = const Color(0xFFFEF3C7),
-        color = const Color(0xFFB45309);
+    : fondo = const Color(0xFFFEF3C7),
+      color = const Color(0xFFB45309);
 
   final String texto;
   final Color fondo;
@@ -576,4 +576,51 @@ String precioBs(num? precio) {
 String? textoONulo(String? valor) {
   final t = valor?.trim();
   return (t == null || t.isEmpty) ? null : t;
+}
+
+// ------------------------------------------------------- Panel responsive
+
+/// Ancho a partir del cual el panel admin muestra la barra lateral fija.
+/// Por debajo, la barra lateral pasa a un menú desplegable (drawer).
+const double kAnchoPanelEscritorio = 900;
+
+/// Ancho a partir del cual las tablas del panel se muestran como tabla;
+/// por debajo, cada fila se muestra como una tarjeta apilada.
+const double kAnchoTablaCompleta = 760;
+
+/// Ancho para los SnackBar flotantes: fijo en pantallas anchas y
+/// automático (todo el ancho con márgenes) en pantallas angostas.
+double? anchoSnackBar(BuildContext context, [double ancho = 460]) {
+  return MediaQuery.sizeOf(context).width < ancho + 48 ? null : ancho;
+}
+
+/// Coloca las tarjetas de estadísticas en 4, 2 o 1 columnas
+/// según el ancho disponible.
+class WebStatsGrid extends StatelessWidget {
+  const WebStatsGrid({super.key, required this.children, this.espacio = 16});
+
+  final List<Widget> children;
+  final double espacio;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final ancho = constraints.maxWidth;
+        final columnas = ancho >= 820
+            ? children.length
+            : ancho >= 380
+            ? 2
+            : 1;
+        final anchoItem = (ancho - espacio * (columnas - 1)) / columnas;
+        return Wrap(
+          spacing: espacio,
+          runSpacing: espacio,
+          children: [
+            for (final c in children) SizedBox(width: anchoItem, child: c),
+          ],
+        );
+      },
+    );
+  }
 }

@@ -55,7 +55,8 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
       if (!mounted) return;
       setState(() {
         _restaurantes = <Restaurante>[];
-        _error = 'No se pudieron cargar los restaurantes desde la base de datos.';
+        _error =
+            'No se pudieron cargar los restaurantes desde la base de datos.';
         _loading = false;
       });
     }
@@ -66,8 +67,7 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
       for (final r in _restaurantes)
         if (r.categoriaNombre != null && r.categoriaNombre!.trim().isNotEmpty)
           r.categoriaNombre!.trim(),
-    }.toList()
-      ..sort();
+    }.toList()..sort();
     return ['Todos', ...nombres];
   }
 
@@ -75,8 +75,10 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
     final query = _searchQuery.toLowerCase();
     return _restaurantes.where((r) {
       final matchesCategory =
-          _selectedCategoria == 'Todos' || r.categoriaNombre == _selectedCategoria;
-      final matchesSearch = r.nombre.toLowerCase().contains(query) ||
+          _selectedCategoria == 'Todos' ||
+          r.categoriaNombre == _selectedCategoria;
+      final matchesSearch =
+          r.nombre.toLowerCase().contains(query) ||
           (r.categoriaNombre ?? '').toLowerCase().contains(query) ||
           r.descripcion.toLowerCase().contains(query) ||
           (r.direccionReferencia ?? '').toLowerCase().contains(query);
@@ -87,13 +89,19 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
   CustomPainter _painterFor(String categoria, String nombre) {
     final cat = categoria.toLowerCase();
     final name = nombre.toLowerCase();
-    if (cat.contains('café') || cat.contains('repostería') || name.contains('durazno')) {
+    if (cat.contains('café') ||
+        cat.contains('repostería') ||
+        name.contains('durazno')) {
       return CoffeeBakeryPainter();
-    } else if (cat.contains('parrilla') || name.contains('asador') || name.contains('chaqueño')) {
+    } else if (cat.contains('parrilla') ||
+        name.contains('asador') ||
+        name.contains('chaqueño')) {
       return GrillBarbecuePainter();
     } else if (cat.contains('pizza') || name.contains('beto')) {
       return PizzaPastaPainter();
-    } else if (cat.contains('típica') || cat.contains('tipica') || name.contains('fogón')) {
+    } else if (cat.contains('típica') ||
+        cat.contains('tipica') ||
+        name.contains('fogón')) {
       return TraditionalEateryPainter();
     } else {
       return RestaurantDefaultPainter();
@@ -147,7 +155,7 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
           ),
           const SizedBox(width: 16),
           const Text(
-            'Restaurantes de Comarapa',
+            'Restaurantes',
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -181,11 +189,19 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
           decoration: InputDecoration(
             hintText: 'Buscar restaurantes, parrillas, cafés...',
             hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-            prefixIcon: Icon(Icons.search, color: Colors.grey.shade400, size: 22),
+            prefixIcon: Icon(
+              Icons.search,
+              color: Colors.grey.shade400,
+              size: 22,
+            ),
             suffixIcon: _searchQuery.isNotEmpty
                 ? GestureDetector(
                     onTap: () => _searchController.clear(),
-                    child: Icon(Icons.clear, color: Colors.grey.shade400, size: 20),
+                    child: Icon(
+                      Icons.clear,
+                      color: Colors.grey.shade400,
+                      size: 20,
+                    ),
                   )
                 : null,
             border: InputBorder.none,
@@ -228,7 +244,9 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
                 side: BorderSide(
-                  color: isSelected ? const Color(0xFF1B5A3F) : Colors.grey.shade200,
+                  color: isSelected
+                      ? const Color(0xFF1B5A3F)
+                      : Colors.grey.shade200,
                   width: 1,
                 ),
               ),
@@ -252,7 +270,11 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.redAccent),
+              const Icon(
+                Icons.error_outline,
+                size: 48,
+                color: Colors.redAccent,
+              ),
               const SizedBox(height: 12),
               Text(_error!, textAlign: TextAlign.center),
               const SizedBox(height: 12),
@@ -276,15 +298,22 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
           : ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               itemCount: filtered.length,
-              itemBuilder: (context, index) => _buildRestauranteCard(filtered[index]),
+              itemBuilder: (context, index) =>
+                  _buildRestauranteCard(filtered[index]),
             ),
     );
   }
 
   Widget _buildRestauranteCard(Restaurante restaurante) {
-    final tieneHorario = restaurante.horarioAtencion != null && restaurante.horarioAtencion!.trim().isNotEmpty;
-    final tienePrecio = restaurante.precioReferencial != null && restaurante.precioReferencial! > 0;
-    final tieneDireccion = restaurante.direccionReferencia != null && restaurante.direccionReferencia!.trim().isNotEmpty;
+    final tieneHorario =
+        restaurante.horarioAtencion != null &&
+        restaurante.horarioAtencion!.trim().isNotEmpty;
+    final tienePrecio =
+        restaurante.precioReferencial != null &&
+        restaurante.precioReferencial! > 0;
+    final tieneDireccion =
+        restaurante.direccionReferencia != null &&
+        restaurante.direccionReferencia!.trim().isNotEmpty;
 
     return GestureDetector(
       onTap: () {
@@ -350,7 +379,10 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 9,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFFF9EFE5),
                             borderRadius: BorderRadius.circular(7),
@@ -366,7 +398,10 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
                         ),
                         if (restaurante.calificacionPromedio > 0)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 7,
+                              vertical: 2.5,
+                            ),
                             decoration: BoxDecoration(
                               color: const Color(0xFFFEF3C7),
                               borderRadius: BorderRadius.circular(6),
@@ -374,10 +409,15 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.star, size: 12, color: Color(0xFFD97706)),
+                                const Icon(
+                                  Icons.star,
+                                  size: 12,
+                                  color: Color(0xFFD97706),
+                                ),
                                 const SizedBox(width: 3),
                                 Text(
-                                  restaurante.calificacionPromedio.toStringAsFixed(1),
+                                  restaurante.calificacionPromedio
+                                      .toStringAsFixed(1),
                                   style: const TextStyle(
                                     color: Color(0xFFB45309),
                                     fontWeight: FontWeight.bold,
@@ -426,7 +466,10 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
                           ],
                           if (tieneHorario && tienePrecio) ...[
                             const SizedBox(width: 8),
-                            const Text('·', style: TextStyle(color: Color(0xFF9CA3AF))),
+                            const Text(
+                              '·',
+                              style: TextStyle(color: Color(0xFF9CA3AF)),
+                            ),
                             const SizedBox(width: 8),
                           ],
                           if (tienePrecio) ...[
@@ -523,10 +566,7 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
                   ? 'No hay restaurantes que coincidan con "$_searchQuery".'
                   : 'No hay opciones disponibles en esta categoría.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade600,
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
             ),
             if (_searchQuery.isNotEmpty || _selectedCategoria != 'Todos') ...[
               const SizedBox(height: 16),
@@ -575,8 +615,16 @@ class TraditionalEateryPainter extends CustomPainter {
       ..color = const Color(0xFF78350F)
       ..strokeWidth = 5
       ..strokeCap = StrokeCap.round;
-    canvas.drawLine(Offset(cx - 20, cy + 24), Offset(cx + 18, cy + 28), woodPaint);
-    canvas.drawLine(Offset(cx - 18, cy + 28), Offset(cx + 20, cy + 24), woodPaint);
+    canvas.drawLine(
+      Offset(cx - 20, cy + 24),
+      Offset(cx + 18, cy + 28),
+      woodPaint,
+    );
+    canvas.drawLine(
+      Offset(cx - 18, cy + 28),
+      Offset(cx + 20, cy + 24),
+      woodPaint,
+    );
 
     // Llamas de leña
     final flamePaint = Paint()..color = const Color(0xFFEA580C);
@@ -663,8 +711,16 @@ class GrillBarbecuePainter extends CustomPainter {
         grillPaint,
       );
     }
-    canvas.drawLine(Offset(cx - 28, cy - 2), Offset(cx + 28, cy - 2), grillPaint);
-    canvas.drawLine(Offset(cx - 28, cy + 10), Offset(cx + 28, cy + 10), grillPaint);
+    canvas.drawLine(
+      Offset(cx - 28, cy - 2),
+      Offset(cx + 28, cy - 2),
+      grillPaint,
+    );
+    canvas.drawLine(
+      Offset(cx - 28, cy + 10),
+      Offset(cx + 28, cy + 10),
+      grillPaint,
+    );
 
     // Brocheta / Pacumuto o corte de carne
     final meatPaint = Paint()..color = const Color(0xFF991B1B);
@@ -672,7 +728,11 @@ class GrillBarbecuePainter extends CustomPainter {
       ..color = const Color(0xFFE2E8F0)
       ..strokeWidth = 2.5;
 
-    canvas.drawLine(Offset(cx - 26, cy + 24), Offset(cx + 26, cy - 18), skewerPaint);
+    canvas.drawLine(
+      Offset(cx - 26, cy + 24),
+      Offset(cx + 26, cy - 18),
+      skewerPaint,
+    );
     canvas.drawCircle(Offset(cx - 10, cy + 10), 6, meatPaint);
     canvas.drawCircle(Offset(cx, cy + 2), 7, meatPaint);
     canvas.drawCircle(Offset(cx + 10, cy - 6), 6, meatPaint);
@@ -842,8 +902,16 @@ class RestaurantDefaultPainter extends CustomPainter {
       ..strokeWidth = 2.5
       ..strokeCap = StrokeCap.round;
 
-    canvas.drawLine(Offset(cx - 32, cy - 14), Offset(cx - 32, cy + 14), cutleryPaint);
-    canvas.drawLine(Offset(cx + 32, cy - 14), Offset(cx + 32, cy + 14), cutleryPaint);
+    canvas.drawLine(
+      Offset(cx - 32, cy - 14),
+      Offset(cx - 32, cy + 14),
+      cutleryPaint,
+    );
+    canvas.drawLine(
+      Offset(cx + 32, cy - 14),
+      Offset(cx + 32, cy + 14),
+      cutleryPaint,
+    );
   }
 
   @override

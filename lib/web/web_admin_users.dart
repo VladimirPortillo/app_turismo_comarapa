@@ -6,6 +6,7 @@ import '../config/app_config.dart';
 import '../models/usuario_perfil.dart';
 import '../repositories/usuario_repository.dart';
 import '../widgets/paginador.dart';
+import 'web_components.dart';
 import 'web_theme.dart';
 
 const Color _verde = Color(0xFF26674B);
@@ -119,7 +120,7 @@ class _WebAdminUsersPanelState extends State<WebAdminUsersPanel> {
       SnackBar(
         content: Text(mensaje),
         behavior: SnackBarBehavior.floating,
-        width: 480,
+        width: anchoSnackBar(context, 480),
         backgroundColor: error ? Colors.red.shade700 : null,
       ),
     );
@@ -192,7 +193,7 @@ class _WebAdminUsersPanelState extends State<WebAdminUsersPanel> {
           content: Text(advertencia),
           backgroundColor: Colors.orange.shade700,
           behavior: SnackBarBehavior.floating,
-          width: 560,
+          width: anchoSnackBar(context, 560),
           duration: const Duration(seconds: 8),
         ),
       );
@@ -231,15 +232,17 @@ class _WebAdminUsersPanelState extends State<WebAdminUsersPanel> {
     final admins = _usuarios.where((u) => u.esAdministrador).length;
     final inactivos = _usuarios.where((u) => !u.activo).length;
 
+    final compacto = MediaQuery.sizeOf(context).width < kAnchoPanelEscritorio;
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(32),
+      padding: EdgeInsets.all(compacto ? 16 : 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
+          Text(
             'Usuarios',
             style: TextStyle(
-              fontSize: 32,
+              fontSize: compacto ? 26 : 32,
               fontWeight: FontWeight.bold,
               color: WebTheme.verdeOscuro,
               fontFamily: 'serif',
@@ -251,7 +254,8 @@ class _WebAdminUsersPanelState extends State<WebAdminUsersPanel> {
             style: TextStyle(color: Colors.grey.shade600),
           ),
           const SizedBox(height: 24),
-          Row(
+          WebStatsGrid(
+            espacio: compacto ? 12 : 16,
             children: [
               _stat(
                 'Total',
@@ -259,21 +263,18 @@ class _WebAdminUsersPanelState extends State<WebAdminUsersPanel> {
                 Icons.group_outlined,
                 WebTheme.verdeOscuro,
               ),
-              const SizedBox(width: 16),
               _stat(
                 'Administradores',
                 admins,
                 Icons.admin_panel_settings_outlined,
                 _verde,
               ),
-              const SizedBox(width: 16),
               _stat(
                 'Editores',
                 _usuarios.length - admins,
                 Icons.edit_note,
                 _ocre,
               ),
-              const SizedBox(width: 16),
               _stat('Sin acceso', inactivos, Icons.block, Colors.grey.shade600),
             ],
           ),
@@ -293,27 +294,27 @@ class _WebAdminUsersPanelState extends State<WebAdminUsersPanel> {
   }
 
   Widget _stat(String titulo, int valor, IconData icono, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icono, color: color),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
             ),
-            const SizedBox(width: 14),
-            Column(
+            child: Icon(icono, color: color),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
@@ -324,11 +325,16 @@ class _WebAdminUsersPanelState extends State<WebAdminUsersPanel> {
                     color: Color(0xFF1F2937),
                   ),
                 ),
-                Text(titulo, style: TextStyle(color: Colors.grey.shade600)),
+                Text(
+                  titulo,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: Colors.grey.shade600),
+                ),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -344,69 +350,96 @@ class _WebAdminUsersPanelState extends State<WebAdminUsersPanel> {
       borderSide: BorderSide(color: Colors.grey.shade300),
     );
 
-    return Row(
-      children: [
-        SegmentedButton<_FiltroRol>(
-          showSelectedIcon: false,
-          style: SegmentedButton.styleFrom(
-            selectedBackgroundColor: WebTheme.verdeClaro,
-            selectedForegroundColor: WebTheme.verde,
-          ),
-          segments: [
-            for (final f in _FiltroRol.values)
-              ButtonSegment(value: f, label: Text('${f.label} · ${conteo[f]}')),
-          ],
-          selected: {_filtro},
-          onSelectionChanged: (s) => setState(() {
-            _filtro = s.first;
-            _pagina = 0;
-          }),
-        ),
-        const SizedBox(width: 16),
-        SizedBox(
-          width: 300,
-          child: TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              isDense: true,
-              hintText: 'Buscar por nombre o correo...',
-              prefixIcon: const Icon(Icons.search, size: 20),
-              suffixIcon: _query.isEmpty
-                  ? null
-                  : IconButton(
-                      icon: const Icon(Icons.close, size: 18),
-                      onPressed: _searchController.clear,
-                    ),
-              filled: true,
-              fillColor: Colors.white,
-              border: borde,
-              enabledBorder: borde,
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        IconButton(
-          tooltip: 'Actualizar',
-          onPressed: _cargar,
-          icon: const Icon(Icons.refresh),
-        ),
-        const Spacer(),
-        FilledButton.icon(
-          onPressed: _crear,
-          style: FilledButton.styleFrom(
-            backgroundColor: _verde,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          icon: const Icon(Icons.person_add_alt_1_outlined),
-          label: const Text(
-            'Crear usuario',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-        ),
+    final filtros = SegmentedButton<_FiltroRol>(
+      showSelectedIcon: false,
+      style: SegmentedButton.styleFrom(
+        selectedBackgroundColor: WebTheme.verdeClaro,
+        selectedForegroundColor: WebTheme.verde,
+      ),
+      segments: [
+        for (final f in _FiltroRol.values)
+          ButtonSegment(value: f, label: Text('${f.label} · ${conteo[f]}')),
       ],
+      selected: {_filtro},
+      onSelectionChanged: (s) => setState(() {
+        _filtro = s.first;
+        _pagina = 0;
+      }),
+    );
+    final buscador = TextField(
+      controller: _searchController,
+      decoration: InputDecoration(
+        isDense: true,
+        hintText: 'Buscar por nombre o correo...',
+        prefixIcon: const Icon(Icons.search, size: 20),
+        suffixIcon: _query.isEmpty
+            ? null
+            : IconButton(
+                icon: const Icon(Icons.close, size: 18),
+                onPressed: _searchController.clear,
+              ),
+        filled: true,
+        fillColor: Colors.white,
+        border: borde,
+        enabledBorder: borde,
+      ),
+    );
+    final actualizar = IconButton(
+      tooltip: 'Actualizar',
+      onPressed: _cargar,
+      icon: const Icon(Icons.refresh),
+    );
+    final botonCrear = FilledButton.icon(
+      onPressed: _crear,
+      style: FilledButton.styleFrom(
+        backgroundColor: _verde,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      icon: const Icon(Icons.person_add_alt_1_outlined),
+      label: const Text(
+        'Crear usuario',
+        style: TextStyle(fontWeight: FontWeight.bold),
+      ),
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final ancho = constraints.maxWidth;
+        if (ancho >= kAnchoPanelEscritorio) {
+          return Row(
+            children: [
+              filtros,
+              const SizedBox(width: 16),
+              SizedBox(width: 300, child: buscador),
+              const SizedBox(width: 8),
+              actualizar,
+              const Spacer(),
+              botonCrear,
+            ],
+          );
+        }
+        // Pantallas angostas: filtros, buscador y botón se apilan.
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: filtros,
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(child: buscador),
+                const SizedBox(width: 4),
+                actualizar,
+                if (ancho >= 560) ...[const SizedBox(width: 8), botonCrear],
+              ],
+            ),
+            if (ancho < 560) ...[const SizedBox(height: 12), botonCrear],
+          ],
+        );
+      },
     );
   }
 
@@ -415,6 +448,18 @@ class _WebAdminUsersPanelState extends State<WebAdminUsersPanel> {
   static const double _anchoAcciones = 60;
 
   Widget _buildTabla(List<UsuarioPerfil> usuarios) {
+    return LayoutBuilder(
+      builder: (context, constraints) => _buildTablaCon(
+        usuarios,
+        compacta: constraints.maxWidth < kAnchoTablaCompleta,
+      ),
+    );
+  }
+
+  Widget _buildTablaCon(
+    List<UsuarioPerfil> usuarios, {
+    required bool compacta,
+  }) {
     final cabecera = TextStyle(
       fontSize: 12,
       fontWeight: FontWeight.bold,
@@ -432,25 +477,26 @@ class _WebAdminUsersPanelState extends State<WebAdminUsersPanel> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            color: WebTheme.fondo,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-            child: Row(
-              children: [
-                Expanded(flex: 3, child: Text('USUARIO', style: cabecera)),
-                Expanded(flex: 3, child: Text('CORREO', style: cabecera)),
-                SizedBox(
-                  width: _anchoRol,
-                  child: Text('ROL', style: cabecera),
-                ),
-                SizedBox(
-                  width: _anchoAcceso,
-                  child: Text('ACCESO', style: cabecera),
-                ),
-                const SizedBox(width: _anchoAcciones),
-              ],
+          if (!compacta)
+            Container(
+              color: WebTheme.fondo,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              child: Row(
+                children: [
+                  Expanded(flex: 3, child: Text('USUARIO', style: cabecera)),
+                  Expanded(flex: 3, child: Text('CORREO', style: cabecera)),
+                  SizedBox(
+                    width: _anchoRol,
+                    child: Text('ROL', style: cabecera),
+                  ),
+                  SizedBox(
+                    width: _anchoAcceso,
+                    child: Text('ACCESO', style: cabecera),
+                  ),
+                  const SizedBox(width: _anchoAcciones),
+                ],
+              ),
             ),
-          ),
           if (usuarios.isEmpty)
             Padding(
               padding: const EdgeInsets.all(48),
@@ -480,18 +526,154 @@ class _WebAdminUsersPanelState extends State<WebAdminUsersPanel> {
           else
             for (var i = 0; i < usuarios.length; i++) ...[
               if (i > 0) Divider(height: 1, color: Colors.grey.shade100),
-              _buildFila(usuarios[i]),
+              _buildFila(usuarios[i], compacta: compacta),
             ],
         ],
       ),
     );
   }
 
-  Widget _buildFila(UsuarioPerfil u) {
+  Widget _buildFila(UsuarioPerfil u, {bool compacta = false}) {
     final yo = _esYo(u);
     final ocupado = _guardando.contains(u.id);
     // Nadie puede quitarse a sí mismo el rol de administrador ni el acceso.
     const motivoYo = 'No puedes cambiar tu propio rol ni tu acceso.';
+
+    final avatar = CircleAvatar(
+      radius: 21,
+      backgroundColor: _colorAvatar(u),
+      child: Text(
+        _iniciales(u.nombre),
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+    final nombre = Row(
+      children: [
+        Flexible(
+          child: Text(
+            u.nombre.isEmpty ? 'Sin nombre' : u.nombre,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: u.activo ? const Color(0xFF1F2937) : Colors.grey.shade500,
+            ),
+          ),
+        ),
+        if (yo) ...[
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: WebTheme.verdeClaro,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Text(
+              'Tú',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: WebTheme.verde,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+    final correo = Text(
+      u.correo,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(color: Colors.grey.shade700),
+    );
+    final rol = Tooltip(
+      message: yo ? motivoYo : 'Cambiar rol',
+      child: PopupMenuButton<String>(
+        enabled: !yo && !ocupado,
+        initialValue: u.rol,
+        onSelected: (rol) => _cambiarRol(u, rol),
+        itemBuilder: (_) => const [
+          PopupMenuItem(value: 'editor', child: Text('Editor')),
+          PopupMenuItem(value: 'administrador', child: Text('Administrador')),
+        ],
+        child: _RolBadge(u, conFlecha: !yo),
+      ),
+    );
+    final acceso = Tooltip(
+      message: yo
+          ? motivoYo
+          : (u.activo ? 'Suspender acceso' : 'Permitir acceso'),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Switch(
+            value: u.activo,
+            activeThumbColor: Colors.white,
+            activeTrackColor: _verde,
+            onChanged: yo || ocupado ? null : (_) => _cambiarActivo(u),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            u.activo ? 'Activo' : 'Suspendido',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: u.activo ? _verde : Colors.grey.shade500,
+            ),
+          ),
+        ],
+      ),
+    );
+    final acciones = ocupado
+        ? const SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )
+        : IconButton(
+            tooltip: 'Editar',
+            onPressed: () => _editar(u),
+            icon: const Icon(Icons.edit_outlined, size: 20, color: _verde),
+          );
+
+    // Pantallas angostas: cada usuario se muestra como tarjeta apilada.
+    if (compacta) {
+      return InkWell(
+        onTap: () => _editar(u),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 6, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  avatar,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [nombre, const SizedBox(height: 2), correo],
+                    ),
+                  ),
+                  acciones,
+                ],
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 12,
+                runSpacing: 4,
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [rol, acceso],
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return InkWell(
       onTap: () => _editar(u),
@@ -504,135 +686,21 @@ class _WebAdminUsersPanelState extends State<WebAdminUsersPanel> {
               flex: 3,
               child: Row(
                 children: [
-                  CircleAvatar(
-                    radius: 21,
-                    backgroundColor: _colorAvatar(u),
-                    child: Text(
-                      _iniciales(u.nombre),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                  avatar,
                   const SizedBox(width: 14),
-                  Flexible(
-                    child: Text(
-                      u.nombre.isEmpty ? 'Sin nombre' : u.nombre,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: u.activo
-                            ? const Color(0xFF1F2937)
-                            : Colors.grey.shade500,
-                      ),
-                    ),
-                  ),
-                  if (yo) ...[
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: WebTheme.verdeClaro,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Text(
-                        'Tú',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: WebTheme.verde,
-                        ),
-                      ),
-                    ),
-                  ],
+                  Expanded(child: nombre),
                 ],
               ),
             ),
-            Expanded(
-              flex: 3,
-              child: Text(
-                u.correo,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: Colors.grey.shade700),
-              ),
-            ),
+            Expanded(flex: 3, child: correo),
             SizedBox(
               width: _anchoRol,
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Tooltip(
-                  message: yo ? motivoYo : 'Cambiar rol',
-                  child: PopupMenuButton<String>(
-                    enabled: !yo && !ocupado,
-                    initialValue: u.rol,
-                    onSelected: (rol) => _cambiarRol(u, rol),
-                    itemBuilder: (_) => const [
-                      PopupMenuItem(value: 'editor', child: Text('Editor')),
-                      PopupMenuItem(
-                        value: 'administrador',
-                        child: Text('Administrador'),
-                      ),
-                    ],
-                    child: _RolBadge(u, conFlecha: !yo),
-                  ),
-                ),
-              ),
+              child: Align(alignment: Alignment.centerLeft, child: rol),
             ),
-            SizedBox(
-              width: _anchoAcceso,
-              child: Tooltip(
-                message: yo
-                    ? motivoYo
-                    : (u.activo ? 'Suspender acceso' : 'Permitir acceso'),
-                child: Row(
-                  children: [
-                    Switch(
-                      value: u.activo,
-                      activeThumbColor: Colors.white,
-                      activeTrackColor: _verde,
-                      onChanged: yo || ocupado
-                          ? null
-                          : (_) => _cambiarActivo(u),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      u.activo ? 'Activo' : 'Suspendido',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: u.activo ? _verde : Colors.grey.shade500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            SizedBox(width: _anchoAcceso, child: acceso),
             SizedBox(
               width: _anchoAcciones,
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: ocupado
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : IconButton(
-                        tooltip: 'Editar',
-                        onPressed: () => _editar(u),
-                        icon: const Icon(
-                          Icons.edit_outlined,
-                          size: 20,
-                          color: _verde,
-                        ),
-                      ),
-              ),
+              child: Align(alignment: Alignment.centerRight, child: acciones),
             ),
           ],
         ),

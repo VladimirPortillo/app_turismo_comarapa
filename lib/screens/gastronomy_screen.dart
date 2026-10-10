@@ -28,7 +28,8 @@ class _GastronomyScreenState extends State<GastronomyScreen> {
       id: 'demo-gastro-1',
       nombre: 'Picante de Pollo con Durazno',
       categoriaNombre: 'Platos típicos',
-      descripcion: 'El plato insignia de Comarapa: pollo criollo cocinado a fuego lento en ají colorado comarapeño, servido con duraznos caramelizados del valle, papa y arroz.',
+      descripcion:
+          'El plato insignia de Comarapa: pollo criollo cocinado a fuego lento en ají colorado comarapeño, servido con duraznos caramelizados del valle, papa y arroz.',
       temporada: 'Todo el año',
       precioReferencial: 40,
       activo: true,
@@ -37,7 +38,8 @@ class _GastronomyScreenState extends State<GastronomyScreen> {
       id: 'demo-gastro-2',
       nombre: 'Pique Macho Comarapeño',
       categoriaNombre: 'Platos típicos',
-      descripcion: 'Generosa porción de lomo de res tierno salteado con salchichas, papas fritas crocantes, huevo duro, tomate y locoto fresco cosechado en los huertos comarapeños.',
+      descripcion:
+          'Generosa porción de lomo de res tierno salteado con salchichas, papas fritas crocantes, huevo duro, tomate y locoto fresco cosechado en los huertos comarapeños.',
       temporada: 'Todo el año',
       precioReferencial: 55,
       activo: true,
@@ -46,7 +48,8 @@ class _GastronomyScreenState extends State<GastronomyScreen> {
       id: 'demo-gastro-3',
       nombre: 'Empanadas Blanqueadas',
       categoriaNombre: 'Postres & Dulces',
-      descripcion: 'Tradición repostera de los valles cruceños: masa crujiente rellena con dulce casero de cayote y cubierta con una capa suave de merengue blanqueado.',
+      descripcion:
+          'Tradición repostera de los valles cruceños: masa crujiente rellena con dulce casero de cayote y cubierta con una capa suave de merengue blanqueado.',
       temporada: 'Todo el año',
       precioReferencial: 5,
       activo: true,
@@ -55,7 +58,8 @@ class _GastronomyScreenState extends State<GastronomyScreen> {
       id: 'demo-gastro-4',
       nombre: 'Mermelada Artesanal de Durazno',
       categoriaNombre: 'Postres & Dulces',
-      descripcion: 'Confitura natural elaborada con duraznos selectos de la cosecha de Comarapa, cocinada en pailas de cobre con azúcar morena y sin aditivos químicos.',
+      descripcion:
+          'Confitura natural elaborada con duraznos selectos de la cosecha de Comarapa, cocinada en pailas de cobre con azúcar morena y sin aditivos químicos.',
       temporada: 'Enero - Mayo',
       precioReferencial: 25,
       activo: true,
@@ -64,7 +68,8 @@ class _GastronomyScreenState extends State<GastronomyScreen> {
       id: 'demo-gastro-5',
       nombre: 'Licor Tradicional de Durazno',
       categoriaNombre: 'Bebidas & Licores',
-      descripcion: 'Macerado artesanal elaborado a base de aguardiente puro y pulpa de duraznos madurados al sol en los valles, con aromas dulces y notas especiadas.',
+      descripcion:
+          'Macerado artesanal elaborado a base de aguardiente puro y pulpa de duraznos madurados al sol en los valles, con aromas dulces y notas especiadas.',
       temporada: 'Todo el año',
       precioReferencial: 45,
       activo: true,
@@ -73,7 +78,8 @@ class _GastronomyScreenState extends State<GastronomyScreen> {
       id: 'demo-gastro-6',
       nombre: 'Sopa de Maní con Macarrón',
       categoriaNombre: 'Platos típicos',
-      descripcion: 'Entrada caliente reconfortante a base de maní tostado y molido en batán, con trozos de carne de res, papas pai doradas y perejil fresco.',
+      descripcion:
+          'Entrada caliente reconfortante a base de maní tostado y molido en batán, con trozos de carne de res, papas pai doradas y perejil fresco.',
       temporada: 'Todo el año',
       precioReferencial: 25,
       activo: true,
@@ -122,10 +128,10 @@ class _GastronomyScreenState extends State<GastronomyScreen> {
   List<String> get _categorias {
     final nombres = <String>{
       for (final item in _items)
-        if (item.categoriaNombre != null && item.categoriaNombre!.trim().isNotEmpty)
+        if (item.categoriaNombre != null &&
+            item.categoriaNombre!.trim().isNotEmpty)
           item.categoriaNombre!.trim(),
-    }.toList()
-      ..sort();
+    }.toList()..sort();
     return ['Todos', ...nombres];
   }
 
@@ -133,8 +139,10 @@ class _GastronomyScreenState extends State<GastronomyScreen> {
     final query = _searchQuery.toLowerCase();
     return _items.where((item) {
       final matchesCategory =
-          _selectedCategoria == 'Todos' || item.categoriaNombre == _selectedCategoria;
-      final matchesSearch = item.nombre.toLowerCase().contains(query) ||
+          _selectedCategoria == 'Todos' ||
+          item.categoriaNombre == _selectedCategoria;
+      final matchesSearch =
+          item.nombre.toLowerCase().contains(query) ||
           (item.categoriaNombre ?? '').toLowerCase().contains(query) ||
           item.descripcion.toLowerCase().contains(query);
       return matchesCategory && matchesSearch;
@@ -143,9 +151,13 @@ class _GastronomyScreenState extends State<GastronomyScreen> {
 
   CustomPainter _painterFor(String nombre) {
     final name = nombre.toLowerCase();
-    if (name.contains('picante') || name.contains('pique') || name.contains('sopa')) {
+    if (name.contains('picante') ||
+        name.contains('pique') ||
+        name.contains('sopa')) {
       return TraditionalDishPainter();
-    } else if (name.contains('mermelada') || name.contains('dulce') || name.contains('durazno')) {
+    } else if (name.contains('mermelada') ||
+        name.contains('dulce') ||
+        name.contains('durazno')) {
       return PeachDessertPainter();
     } else if (name.contains('licor') || name.contains('bebida')) {
       return ArtisanalLiquorPainter();
@@ -201,7 +213,7 @@ class _GastronomyScreenState extends State<GastronomyScreen> {
           ),
           const SizedBox(width: 16),
           const Text(
-            'Gastronomía tradicional',
+            'Gastronomías',
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -235,11 +247,19 @@ class _GastronomyScreenState extends State<GastronomyScreen> {
           decoration: InputDecoration(
             hintText: 'Buscar platos, postres, licores...',
             hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-            prefixIcon: Icon(Icons.search, color: Colors.grey.shade400, size: 22),
+            prefixIcon: Icon(
+              Icons.search,
+              color: Colors.grey.shade400,
+              size: 22,
+            ),
             suffixIcon: _searchQuery.isNotEmpty
                 ? GestureDetector(
                     onTap: () => _searchController.clear(),
-                    child: Icon(Icons.clear, color: Colors.grey.shade400, size: 20),
+                    child: Icon(
+                      Icons.clear,
+                      color: Colors.grey.shade400,
+                      size: 20,
+                    ),
                   )
                 : null,
             border: InputBorder.none,
@@ -282,7 +302,9 @@ class _GastronomyScreenState extends State<GastronomyScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
                 side: BorderSide(
-                  color: isSelected ? const Color(0xFFB45309) : Colors.grey.shade200,
+                  color: isSelected
+                      ? const Color(0xFFB45309)
+                      : Colors.grey.shade200,
                   width: 1,
                 ),
               ),
@@ -306,7 +328,11 @@ class _GastronomyScreenState extends State<GastronomyScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.redAccent),
+              const Icon(
+                Icons.error_outline,
+                size: 48,
+                color: Colors.redAccent,
+              ),
               const SizedBox(height: 12),
               Text(_error!, textAlign: TextAlign.center),
               const SizedBox(height: 12),
@@ -330,21 +356,22 @@ class _GastronomyScreenState extends State<GastronomyScreen> {
           : ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               itemCount: filtered.length,
-              itemBuilder: (context, index) => _buildGastronomyCard(filtered[index]),
+              itemBuilder: (context, index) =>
+                  _buildGastronomyCard(filtered[index]),
             ),
     );
   }
 
   Widget _buildGastronomyCard(GastronomiaItem item) {
     final precio = item.precioReferencial;
-    final precioTexto = precio != null && precio > 0 ? 'Bs ${precio.toInt()}' : 'Bs 30';
+    final precioTexto = precio != null && precio > 0
+        ? 'Bs ${precio.toInt()}'
+        : 'Bs 30';
 
     return GestureDetector(
       onTap: () {
         Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => GastronomyDetailScreen(item: item),
-          ),
+          MaterialPageRoute(builder: (_) => GastronomyDetailScreen(item: item)),
         );
       },
       child: Container(
@@ -377,9 +404,8 @@ class _GastronomyScreenState extends State<GastronomyScreen> {
                     ? Image.network(
                         item.imagenes.first,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => CustomPaint(
-                          painter: _painterFor(item.nombre),
-                        ),
+                        errorBuilder: (_, __, ___) =>
+                            CustomPaint(painter: _painterFor(item.nombre)),
                       )
                     : CustomPaint(painter: _painterFor(item.nombre)),
               ),
@@ -392,7 +418,10 @@ class _GastronomyScreenState extends State<GastronomyScreen> {
                   children: [
                     // Badge de categoría
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFFBECE2),
                         borderRadius: BorderRadius.circular(8),
@@ -424,7 +453,11 @@ class _GastronomyScreenState extends State<GastronomyScreen> {
                     // Fila con temporada y precio
                     Row(
                       children: [
-                        Icon(Icons.calendar_today_outlined, size: 13, color: Colors.grey.shade500),
+                        Icon(
+                          Icons.calendar_today_outlined,
+                          size: 13,
+                          color: Colors.grey.shade500,
+                        ),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
@@ -432,11 +465,17 @@ class _GastronomyScreenState extends State<GastronomyScreen> {
                                 ? item.temporada!
                                 : 'Todo el año',
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                            ),
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFFFDF4EC),
                             borderRadius: BorderRadius.circular(6),
@@ -472,7 +511,11 @@ class _GastronomyScreenState extends State<GastronomyScreen> {
         Center(
           child: Column(
             children: [
-              Icon(Icons.restaurant_outlined, size: 56, color: Colors.grey.shade300),
+              Icon(
+                Icons.restaurant_outlined,
+                size: 56,
+                color: Colors.grey.shade300,
+              ),
               const SizedBox(height: 16),
               Text(
                 'No se encontraron platos o delicias',
@@ -506,13 +549,25 @@ class TraditionalDishPainter extends CustomPainter {
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), bgPaint);
 
     final platePaint = Paint()..color = const Color(0xFFECCEB8);
-    canvas.drawCircle(Offset(size.width * 0.5, size.height * 0.52), 34, platePaint);
+    canvas.drawCircle(
+      Offset(size.width * 0.5, size.height * 0.52),
+      34,
+      platePaint,
+    );
 
     final foodPaint = Paint()..color = const Color(0xFFB45309);
-    canvas.drawCircle(Offset(size.width * 0.5, size.height * 0.52), 24, foodPaint);
+    canvas.drawCircle(
+      Offset(size.width * 0.5, size.height * 0.52),
+      24,
+      foodPaint,
+    );
 
     final garnishPaint = Paint()..color = const Color(0xFF16A34A);
-    canvas.drawCircle(Offset(size.width * 0.5, size.height * 0.48), 6, garnishPaint);
+    canvas.drawCircle(
+      Offset(size.width * 0.5, size.height * 0.48),
+      6,
+      garnishPaint,
+    );
   }
 
   @override
@@ -526,13 +581,27 @@ class PeachDessertPainter extends CustomPainter {
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), bgPaint);
 
     final peachPaint = Paint()..color = const Color(0xFFF97316);
-    canvas.drawCircle(Offset(size.width * 0.5, size.height * 0.56), 26, peachPaint);
+    canvas.drawCircle(
+      Offset(size.width * 0.5, size.height * 0.56),
+      26,
+      peachPaint,
+    );
 
     final leafPaint = Paint()..color = const Color(0xFF16A34A);
     final leaf = Path()
       ..moveTo(size.width * 0.5, size.height * 0.35)
-      ..quadraticBezierTo(size.width * 0.65, size.height * 0.25, size.width * 0.7, size.height * 0.35)
-      ..quadraticBezierTo(size.width * 0.55, size.height * 0.4, size.width * 0.5, size.height * 0.35);
+      ..quadraticBezierTo(
+        size.width * 0.65,
+        size.height * 0.25,
+        size.width * 0.7,
+        size.height * 0.35,
+      )
+      ..quadraticBezierTo(
+        size.width * 0.55,
+        size.height * 0.4,
+        size.width * 0.5,
+        size.height * 0.35,
+      );
     canvas.drawPath(leaf, leafPaint);
   }
 
@@ -550,7 +619,7 @@ class ArtisanalLiquorPainter extends CustomPainter {
       ..color = const Color(0xFFB45309)
       ..strokeWidth = 3
       ..style = PaintingStyle.fill;
-    
+
     final bottle = Path()
       ..moveTo(size.width * 0.4, size.height * 0.3)
       ..lineTo(size.width * 0.6, size.height * 0.3)
@@ -577,12 +646,21 @@ class BakeryPastryPainter extends CustomPainter {
     final pastryPaint = Paint()..color = const Color(0xFFD97706);
     final pastry = Path()
       ..moveTo(size.width * 0.25, size.height * 0.65)
-      ..quadraticBezierTo(size.width * 0.5, size.height * 0.25, size.width * 0.75, size.height * 0.65)
+      ..quadraticBezierTo(
+        size.width * 0.5,
+        size.height * 0.25,
+        size.width * 0.75,
+        size.height * 0.65,
+      )
       ..close();
     canvas.drawPath(pastry, pastryPaint);
 
     final glazePaint = Paint()..color = Colors.white.withValues(alpha: 0.6);
-    canvas.drawCircle(Offset(size.width * 0.5, size.height * 0.5), 10, glazePaint);
+    canvas.drawCircle(
+      Offset(size.width * 0.5, size.height * 0.5),
+      10,
+      glazePaint,
+    );
   }
 
   @override
