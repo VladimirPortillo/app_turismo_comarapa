@@ -1,0 +1,218 @@
+@startuml
+
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam defaultFontSize 13
+skinparam titleFontSize 17
+skinparam titleFontStyle bold
+skinparam ArrowColor #1F2D44
+skinparam ArrowThickness 1.2
+skinparam SequenceLifeLineBorderColor #8A97A8
+skinparam SequenceGroupBorderColor #6B7C93
+skinparam SequenceGroupBorderThickness 1.5
+skinparam SequenceGroupHeaderFontStyle bold
+skinparam SequenceDividerBackgroundColor #DDE6F2
+skinparam SequenceDividerBorderColor #6B7C93
+skinparam SequenceDividerFontStyle bold
+skinparam SequenceDividerFontSize 14
+skinparam SequenceReferenceBackgroundColor #F3F6FA
+skinparam SequenceReferenceBorderColor #6B7C93
+skinparam ParticipantBackgroundColor #E8EEF6
+skinparam ParticipantBorderColor #6B7C93
+skinparam DatabaseBackgroundColor #E2E2EF
+skinparam DatabaseBorderColor #6B7C93
+skinparam ActorBackgroundColor #FFFFFF
+skinparam ActorBorderColor #33415C
+skinparam NoteBackgroundColor #FFF8DC
+skinparam NoteBorderColor #B59F55
+skinparam ActivationBackgroundColor #F3F6FA
+skinparam ActivationBorderColor #6B7C93
+
+title Lugares turísticos — Turista / Visitante, Editor y Administrador
+
+actor "Turista /\nVisitante" as T
+actor "Editor" as E
+actor "Administrador" as A
+participant "App Turismo Comarapa\n(móvil / web)" as App
+participant "LugarRepository\n+ ResenaRepository\n+ UsuarioRepository" as R
+database "Supabase\n(Auth · PostgreSQL · Storage)" as S
+participant "Servicio de rutas\n(OSRM)" as O
+
+== 1. Turista / Visitante: consulta pública (sin iniciar sesión) ==
+
+T -> App : Abre la sección "Lugares"
+activate App
+App -> R : fetchActivos()
+activate R
+R -> S : SELECT *, categorias(nombre)\nFROM lugares WHERE activo = true\nORDER BY created_at desc
+S --> R : filas activas (RLS: solo público)
+R --> App : List<Lugar>
+deactivate R
+App --> T : Muestra el listado en tarjetas
+deactivate App
+
+opt Buscar o filtrar por categoría
+  T -> App : Escribe un texto / elige una categoría
+  App -> App : Filtra la lista cargada
+  App --> T : Listado filtrado
+end
+
+T -> App : Selecciona un lugar
+activate App
+App -> R : ResenaRepository.fetchAprobadas(entidad: 'lugar', entidadId)
+R -> S : SELECT * FROM resenas\nWHERE entidad_id = :id AND estado_moderacion = 'aprobada'
+S --> R : reseñas aprobadas
+R --> App : List<Resena>
+App --> T : Detalle (imágenes, descripción, datos,\ncalificación promedio y reseñas)
+deactivate App
+
+opt Ver en el mapa y trazar ruta
+  T -> App : Pulsa "Cómo llegar"
+  App -> App : Obtiene la ubicación actual (GPS)
+  App -> O : GET /route/v1/driving/{origen};{destino}
+  O --> App : geometría, distancia y duración
+  App --> T : Dibuja la ruta en el mapa
+end
+
+opt Dejar una reseña
+  T -> App : Ingresa nombre, calificación (1 a 5) y comentario
+  activate App
+  App -> R : ResenaRepository.create(resena)
+  R -> S : INSERT INTO resenas (estado_moderacion = 'aprobada')
+  S --> R : OK
+  R --> App : OK
+  App --> T : "¡Gracias! Tu reseña ya está publicada"
+  deactivate App
+end
+
+newpage Lugares turísticos — Turista / Visitante, Editor y Administrador (continuación)
+== 2. Editor: gestión del contenido ==
+
+E -> App : Ingresa correo y contraseña
+activate App
+App -> S : auth.signInWithPassword(email, password)
+activate S
+S --> App : sesión
+deactivate S
+App -> R : UsuarioRepository.fetchCurrent()
+R -> S : SELECT * FROM usuarios WHERE id = auth.uid()
+S --> R : perfil
+R --> App : UsuarioPerfil
+alt Credenciales válidas y cuenta activa (rol = editor)
+  App --> E : Panel de administración\n(sin la opción "Usuarios")
+else Credenciales inválidas o cuenta inactiva
+  App --> E : Mensaje de error
+end
+deactivate App
+
+E -> App : Abre "Lugares" en el panel
+activate App
+App -> R : fetchAll()
+activate R
+R -> S : SELECT *, categorias(nombre) FROM lugares\n(activos e inactivos)
+S --> R : todas las filas (RLS: es_admin_o_editor())
+R --> App : List<Lugar>
+deactivate R
+App --> E : Tabla con estado (publicado / oculto)
+deactivate App
+
+alt Crear lugar
+  E -> App : "Nuevo" y completa el formulario
+  activate App
+  opt Subir imagen
+    App -> S : storage.uploadBinary(bucket "comarapa-imagenes")
+    S --> App : URL pública de la imagen
+  end
+  App -> R : create(lugar)
+  R -> S : INSERT INTO lugares
+  S --> R : OK
+  R --> App : OK
+  App --> E : "Registro creado" y lista actualizada
+  deactivate App
+else Editar lugar
+  E -> App : Modifica los datos y guarda
+  activate App
+  App -> R : update(lugar)
+  R -> S : UPDATE lugares SET ... WHERE id = :id
+  S --> R : OK
+  R --> App : OK
+  App --> E : "Cambios guardados"
+  deactivate App
+else Publicar / ocultar (borrado lógico)
+  E -> App : Cambia el interruptor "Publicado"
+  activate App
+  App -> R : setActivo(id, activo)
+  R -> S : UPDATE lugares SET activo = :activo WHERE id = :id
+  S --> R : OK
+  R --> App : OK
+  App --> E : "Ahora es visible" / "Se ocultó del sitio"
+  deactivate App
+end
+
+E -> App : Cierra sesión
+App -> S : auth.signOut()
+App --> E : Vuelve a la pantalla de inicio
+
+newpage Lugares turísticos — Turista / Visitante, Editor y Administrador (continuación)
+== 3. Administrador: gestión del contenido y de los usuarios ==
+
+A -> App : Ingresa correo y contraseña
+activate App
+App -> S : auth.signInWithPassword(email, password)
+activate S
+S --> App : sesión
+deactivate S
+App -> R : UsuarioRepository.fetchCurrent()
+R -> S : SELECT * FROM usuarios WHERE id = auth.uid()
+S --> R : perfil
+R --> App : UsuarioPerfil
+alt Credenciales válidas y cuenta activa (rol = administrador)
+  App --> A : Panel de administración\n(con la opción "Usuarios")
+else Credenciales inválidas o cuenta inactiva
+  App --> A : Mensaje de error
+end
+deactivate App
+
+ref over A, App, R, S
+  Gestiona lugares turísticos con el mismo flujo del Editor (sección 2):
+  fetchAll(), crear, editar y publicar / ocultar (RLS: es_admin_o_editor()).
+end ref
+
+opt Gestionar las cuentas de los editores
+  A -> App : Abre "Usuarios" en el panel
+  activate App
+  App -> R : UsuarioRepository.fetchAll()
+  R -> S : SELECT * FROM usuarios ORDER BY created_at desc
+  S --> R : todas las cuentas (RLS: es_administrador())
+  R --> App : List<UsuarioPerfil>
+  App --> A : Listado de usuarios (filtro por rol)
+  deactivate App
+  alt Cambiar rol (editor / administrador)
+    A -> App : Elige el nuevo rol y guarda
+    activate App
+    App -> R : updateRol(id, nuevoRol)
+    R -> S : UPDATE usuarios SET rol = :rol WHERE id = :id
+    S --> R : OK
+    R --> App : OK
+    App --> A : "Rol actualizado"
+    deactivate App
+  else Activar / desactivar cuenta
+    A -> App : Cambia el interruptor "Activo"
+    activate App
+    App -> R : setActivo(id, activo)
+    R -> S : UPDATE usuarios SET activo = :activo WHERE id = :id
+    S --> R : OK
+    R --> App : OK
+    App --> A : "Cuenta activada" / "Cuenta desactivada"
+    deactivate App
+  end
+  note over E, S
+    Si un Editor intenta cambiar un rol, el trigger fn_bloquear_cambio_rol
+    lo rechaza y Supabase responde 403 (solo el Administrador puede hacerlo).
+  end note
+end
+
+A -> App : Cierra sesión
+App -> S : auth.signOut()
+App --> A : Vuelve a la pantalla de inicio
+@enduml

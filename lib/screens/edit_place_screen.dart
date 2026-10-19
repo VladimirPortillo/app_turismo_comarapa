@@ -693,7 +693,7 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          _buildLabel('Ubicación (GPS)', isOptional: true),
+                          Flexible(child: _buildLabel('Ubicación (GPS)', isOptional: true)),
                           TextButton.icon(
                             onPressed: _abrirMapaCompleto,
                             icon: const Icon(Icons.open_in_full_rounded, size: 15, color: _kPrimary),
@@ -821,8 +821,10 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
             ],
           ),
           const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
             children: [
               _buildLabel('Operador / contacto celular', isOptional: true),
               Text(
@@ -924,8 +926,10 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
           _buildLabel('Servicios (separados por coma)', isOptional: true),
           _buildTextField(_serviciosController, hintText: 'Wifi, Parqueo, Desayuno'),
           const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
             children: [
               _buildLabel('Contacto para reservas', isOptional: true),
               Text(
@@ -1038,26 +1042,26 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
   }
 
   Widget _buildLabel(String label, {bool isRequired = false, bool isOptional = false}) {
+    // Text.rich para que la etiqueta pase a la siguiente línea si no cabe.
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF374151)),
-          ),
-          if (isRequired)
-            const Text(
-              ' *',
-              style: TextStyle(color: Color(0xFFDC2626), fontWeight: FontWeight.bold, fontSize: 15),
-            ),
-          if (isOptional)
-            const Text(
-              ' (Opcional)',
-              style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 12, fontWeight: FontWeight.normal),
-            ),
-        ],
+      child: Text.rich(
+        TextSpan(
+          text: label,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF374151)),
+          children: [
+            if (isRequired)
+              const TextSpan(
+                text: ' *',
+                style: TextStyle(color: Color(0xFFDC2626)),
+              ),
+            if (isOptional)
+              const TextSpan(
+                text: ' (Opcional)',
+                style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 12, fontWeight: FontWeight.normal),
+              ),
+          ],
+        ),
       ),
     );
   }

@@ -12,6 +12,9 @@ const Color kCatVerdeBoton = Color(0xFF1E8E5A);
 const Color _verdeSuave = Color(0xFFE6F2EB);
 const Color _textoGris = Color(0xFF6B7280);
 
+/// Cantidad de resultados por página en los listados web.
+const int kCatPorPagina = 6;
+
 /// Dato corto de una tarjeta (duración, precio, fecha...).
 class CatDato {
   const CatDato(this.icono, this.texto, {this.color});
@@ -141,6 +144,8 @@ class _WebCatalogoState<T> extends State<WebCatalogo<T>> {
   bool _loading = true;
   String? _error;
   List<T> _items = <T>[];
+  int _pagina = 0;
+  final GlobalKey _resultadosKey = GlobalKey();
 
   /// Opciones marcadas por grupo de filtros (índice del grupo -> labels).
   final Map<int, Set<String>> _marcadas = <int, Set<String>>{};
@@ -149,7 +154,12 @@ class _WebCatalogoState<T> extends State<WebCatalogo<T>> {
   void initState() {
     super.initState();
     _searchController.addListener(() {
-      setState(() => _query = _searchController.text.trim().toLowerCase());
+      final query = _searchController.text.trim().toLowerCase();
+      if (query == _query) return;
+      setState(() {
+        _query = query;
+        _pagina = 0;
+      });
     });
     _load();
   }
@@ -171,6 +181,7 @@ class _WebCatalogoState<T> extends State<WebCatalogo<T>> {
       if (!mounted) return;
       setState(() {
         _items = items;
+        _pagina = 0;
         _loading = false;
       });
     } catch (error) {
@@ -223,11 +234,13 @@ class _WebCatalogoState<T> extends State<WebCatalogo<T>> {
     setState(() {
       _categoria = null;
       _marcadas.clear();
+      _pagina = 0;
     });
   }
 
   void _alternar(int grupo, String label) {
     setState(() {
+      _pagina = 0;
       final set = _marcadas.putIfAbsent(grupo, () => <String>{});
       if (set.contains(label)) {
         set.remove(label);
@@ -236,6 +249,18 @@ class _WebCatalogoState<T> extends State<WebCatalogo<T>> {
         set.add(label);
       }
     });
+  }
+
+  void _irAPagina(int pagina) {
+    setState(() => _pagina = pagina);
+    final resultados = _resultadosKey.currentContext;
+    if (resultados != null) {
+      Scrollable.ensureVisible(
+        resultados,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
   }
 
   @override
@@ -448,7 +473,10 @@ class _WebCatalogoState<T> extends State<WebCatalogo<T>> {
             label: 'Todas',
             cantidad: _items.length,
             seleccionada: _categoria == null,
-            onTap: () => setState(() => _categoria = null),
+            onTap: () => setState(() {
+              _categoria = null;
+              _pagina = 0;
+            }),
           ),
           for (final c in categorias)
             _opcionCategoria(
@@ -456,7 +484,10 @@ class _WebCatalogoState<T> extends State<WebCatalogo<T>> {
               label: c,
               cantidad: conteo[c]!,
               seleccionada: _categoria == c,
-              onTap: () => setState(() => _categoria = c),
+              onTap: () => setState(() {
+                _categoria = c;
+                _pagina = 0;
+              }),
             ),
           for (var g = 0; g < widget.filtros.length; g++)
             ..._buildGrupo(g),
@@ -646,8 +677,15 @@ class _WebCatalogoState<T> extends State<WebCatalogo<T>> {
     }
 
     final filtrados = _filtrados;
+    final totalPaginas = (filtrados.length / kCatPorPagina).ceil();
+    final pagina = totalPaginas == 0 ? 0 : _pagina.clamp(0, totalPaginas - 1);
+    final visibles = filtrados
+        .skip(pagina * kCatPorPagina)
+        .take(kCatPorPagina)
+        .toList();
 
     return Column(
+      key: _resultadosKey,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Row(
@@ -688,7 +726,7 @@ class _WebCatalogoState<T> extends State<WebCatalogo<T>> {
             ),
           )
         else if (_vistaLista)
-          for (final item in filtrados)
+          for (final item in visibles)
             Padding(
               padding: const EdgeInsets.only(bottom: 20),
               child: SizedBox(
@@ -711,7 +749,7 @@ class _WebCatalogoState<T> extends State<WebCatalogo<T>> {
               return GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: filtrados.length,
+                itemCount: visibles.length,
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: columnas,
                   mainAxisExtent: widget.altoTarjeta,
@@ -719,12 +757,90 @@ class _WebCatalogoState<T> extends State<WebCatalogo<T>> {
                   crossAxisSpacing: 24,
                 ),
                 itemBuilder: (context, i) => CatTarjetaWidget(
-                  datos: widget.tarjeta(filtrados[i]),
+                  datos: widget.tarjeta(visibles[i]),
                   iconoCategoria: widget.iconoCategoria,
                 ),
               );
             },
           ),
+        if (totalPaginas > 1) ...[
+          const SizedBox(height: 32),
+          _buildPaginador(pagina, totalPaginas),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildPaginador(int pagina, int totalPaginas) {
+    Widget numero(int i) {
+      final activa = i == pagina;
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Material(
+          color: activa ? kCatVerdeOscuro : Colors.white,
+          shape: CircleBorder(
+            side: BorderSide(
+              color: activa ? kCatVerdeOscuro : const Color(0xFF9CB8A8),
+            ),
+          ),
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: activa ? null : () => _irAPagina(i),
+            child: SizedBox(
+              width: 40,
+              height: 40,
+              child: Center(
+                child: Text(
+                  '${i + 1}',
+                  style: TextStyle(
+                    fontWeight: activa ? FontWeight.bold : FontWeight.w500,
+                    color: activa ? Colors.white : kCatVerdeOscuro,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    Widget flecha(IconData icono, String tooltip, int? destino) {
+      return IconButton(
+        tooltip: tooltip,
+        onPressed: destino == null ? null : () => _irAPagina(destino),
+        icon: Icon(icono),
+        color: kCatVerdeOscuro,
+      );
+    }
+
+    // Primera, última y vecinas de la actual; el resto se resume con "…".
+    final paginas = <int?>[];
+    for (var i = 0; i < totalPaginas; i++) {
+      if (i == 0 || i == totalPaginas - 1 || (i - pagina).abs() <= 1) {
+        paginas.add(i);
+      } else if (paginas.last != null) {
+        paginas.add(null);
+      }
+    }
+
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      runSpacing: 8,
+      children: [
+        flecha(Icons.chevron_left, 'Anterior', pagina > 0 ? pagina - 1 : null),
+        for (final i in paginas)
+          i == null
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 6),
+                  child: Text('…', style: TextStyle(color: _textoGris)),
+                )
+              : numero(i),
+        flecha(
+          Icons.chevron_right,
+          'Siguiente',
+          pagina < totalPaginas - 1 ? pagina + 1 : null,
+        ),
       ],
     );
   }

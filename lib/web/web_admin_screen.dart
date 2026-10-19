@@ -349,10 +349,7 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
 
   // ---------------------------------------------------------- Acciones
 
-  Future<void> _cambiarVisibilidad(
-    _Fila fila, {
-    bool mostrarDeshacer = true,
-  }) async {
+  Future<void> _cambiarVisibilidad(_Fila fila) async {
     final nuevo = !fila.activo;
     try {
       switch (_tipo) {
@@ -370,31 +367,6 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
           await context.read<RestauranteRepository>().setActivo(fila.id, nuevo);
       }
       await _cargar(silencioso: true);
-      if (!mounted || !mostrarDeshacer) return;
-      final tipoActual = _tipo;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          width: anchoSnackBar(context),
-          content: Text(
-            nuevo
-                ? '"${fila.nombre}" ahora es visible en el sitio.'
-                : '"${fila.nombre}" se ocultó del sitio.',
-          ),
-          action: SnackBarAction(
-            label: 'Deshacer',
-            onPressed: () {
-              if (_tipo != tipoActual) return;
-              final actualizada = _filas
-                  .where((f) => f.id == fila.id)
-                  .firstOrNull;
-              if (actualizada != null) {
-                _cambiarVisibilidad(actualizada, mostrarDeshacer: false);
-              }
-            },
-          ),
-        ),
-      );
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -769,7 +741,7 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
             Text('Panel', style: TextStyle(color: Colors.grey.shade500)),
             Text('  /  ', style: TextStyle(color: Colors.grey.shade400)),
           ],
-          Flexible(
+          Expanded(
             child: Text(
               _usuarios ? 'Usuarios' : _tipo.etiqueta,
               maxLines: 1,
@@ -780,7 +752,6 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
               ),
             ),
           ),
-          const Spacer(),
           if (!_usuarios) ...[
             if (_refrescando)
               const Padding(

@@ -131,7 +131,9 @@ set search_path = public
 as $$
 begin
   if new.rol <> old.rol and auth.uid() is not null and not public.es_administrador() then
-    raise exception 'Solo un administrador puede cambiar roles de usuario.';
+    -- errcode 42501 (insufficient_privilege): la API REST responde 403.
+    raise exception 'Solo un administrador puede cambiar roles de usuario.'
+      using errcode = '42501';
   end if;
   return new;
 end;
@@ -866,6 +868,15 @@ with check (public.es_admin_o_editor());
 
 grant select on table public.contactos_emergencia to anon, authenticated;
 grant insert, update on table public.contactos_emergencia to authenticated;
+
+-- Supabase otorga DELETE por defecto; se quita para que el intento de
+-- borrado físico responda 401 (anónimo) / 403 (con sesión).
+revoke delete, truncate on table
+  public.usuarios, public.categorias, public.municipio, public.lugares,
+  public.hoteles, public.restaurantes, public.actividades,
+  public.gastronomia, public.eventos, public.rutas, public.resenas,
+  public.contactos_emergencia
+from anon, authenticated;
 
 
 -- ============================================================

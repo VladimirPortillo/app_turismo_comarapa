@@ -1,0 +1,115 @@
+{
+  "info": {
+    "name": "Comarapa Turismo - Seguridad (T5)",
+    "description": "Evidencias T5: 401 del anónimo y 403 del Editor contra la API REST de Supabase. Ejecutar en orden 1 -> 4.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "https://djawghloqotlyxetxbyv.supabase.co" },
+    { "key": "apikey", "value": "sb_publishable_qRkipZW18Hd_FKLgO0bfJQ_Xj5hYkLV" },
+    { "key": "editor_email", "value": "CAMBIAR_correo_del_editor@correo.com" },
+    { "key": "editor_password", "value": "CAMBIAR_clave" },
+    { "key": "access_token", "value": "" },
+    { "key": "editor_id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Anónimo crea un lugar -> 401",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Anónimo recibe 401 Unauthorized', () => pm.response.to.have.status(401));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "apikey", "value": "{{apikey}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"prueba anonimo\"\n}" },
+        "url": "{{base_url}}/rest/v1/lugares"
+      }
+    },
+    {
+      "name": "2. Login del Editor (guarda el token)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Login correcto (200)', () => pm.response.to.have.status(200));",
+              "const r = pm.response.json();",
+              "pm.collectionVariables.set('access_token', r.access_token);",
+              "pm.collectionVariables.set('editor_id', r.user.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "apikey", "value": "{{apikey}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{editor_email}}\",\n  \"password\": \"{{editor_password}}\"\n}"
+        },
+        "url": "{{base_url}}/auth/v1/token?grant_type=password"
+      }
+    },
+    {
+      "name": "3. Editor borra físicamente un lugar -> 403",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Editor recibe 403 Forbidden', () => pm.response.to.have.status(403));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "apikey", "value": "{{apikey}}" },
+          { "key": "Authorization", "value": "Bearer {{access_token}}" }
+        ],
+        "url": "{{base_url}}/rest/v1/lugares?nombre=eq.prueba"
+      }
+    },
+    {
+      "name": "4. Editor se autoasigna rol administrador -> 403",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Editor recibe 403 Forbidden', () => pm.response.to.have.status(403));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "apikey", "value": "{{apikey}}" },
+          { "key": "Authorization", "value": "Bearer {{access_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"rol\": \"administrador\"\n}" },
+        "url": "{{base_url}}/rest/v1/usuarios?id=eq.{{editor_id}}"
+      }
+    }
+  ]
+}

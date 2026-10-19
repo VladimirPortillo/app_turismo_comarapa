@@ -408,39 +408,33 @@ class _NewEventScreenState extends State<NewEventScreen> {
   }
 
   Widget _buildLabel(String label, {bool isRequired = false, bool isOptional = false}) {
-    return Row(
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-            color: Color(0xFF1F2937),
-          ),
+    // Text.rich para que la etiqueta pase a la siguiente línea si no cabe.
+    return Text.rich(
+      TextSpan(
+        text: label,
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 14,
+          color: Color(0xFF1F2937),
         ),
-        if (isRequired) ...[
-          const SizedBox(width: 4),
-          const Text(
-            '*',
-            style: TextStyle(
-              color: Color(0xFFDC2626),
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
+        children: [
+          if (isRequired)
+            const TextSpan(
+              text: ' *',
+              style: TextStyle(color: Color(0xFFDC2626)),
             ),
-          ),
-        ],
-        if (isOptional) ...[
-          const SizedBox(width: 6),
-          const Text(
-            '(Opcional)',
-            style: TextStyle(
-              color: Color(0xFF9CA3AF),
-              fontSize: 12,
-              fontStyle: FontStyle.italic,
+          if (isOptional)
+            const TextSpan(
+              text: ' (Opcional)',
+              style: TextStyle(
+                color: Color(0xFF9CA3AF),
+                fontSize: 12,
+                fontWeight: FontWeight.normal,
+                fontStyle: FontStyle.italic,
+              ),
             ),
-          ),
         ],
-      ],
+      ),
     );
   }
 
@@ -768,7 +762,7 @@ class _NewEventScreenState extends State<NewEventScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _buildLabel('Ubicación del evento', isOptional: true),
+            Flexible(child: _buildLabel('Ubicación del evento', isOptional: true)),
             TextButton.icon(
               onPressed: _abrirMapaCompleto,
               icon: const Icon(Icons.open_in_full_rounded, size: 15, color: Color(0xFF26674B)),

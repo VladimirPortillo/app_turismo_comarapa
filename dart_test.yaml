@@ -1,3 +1,5 @@
 tags:
   integracion:
     # Pruebas contra el proyecto real de Supabase (requieren internet).
+  rendimiento:
+    # Micro-benchmarks locales (no requieren internet).

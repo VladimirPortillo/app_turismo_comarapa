@@ -11,3 +11,6 @@ android/key.properties
 .idea/
 .vscode/
 *.iml
+
+# APK firmados (se publican como GitHub Release, no en el código)
+/release/

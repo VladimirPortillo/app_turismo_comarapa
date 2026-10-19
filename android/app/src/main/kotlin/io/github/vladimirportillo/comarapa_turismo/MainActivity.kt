@@ -1,4 +1,4 @@
-package com.example.proyecto_final_360
+package io.github.vladimirportillo.comarapa_turismo
 
 import io.flutter.embedding.android.FlutterActivity
 
