@@ -1,0 +1,332 @@
+OBSERVACIONES DE CONSISTENCIA — 2.ª REVISIÓN
+Documento: Portillo_Lopez_Vladimir_E4 (1).pdf (versión de 164 páginas)
+"Desarrollo de aplicación móvil Android y web para la promoción e información
+turística del municipio de Comarapa"
+Primera revisión: 21/10/2026 · Segunda revisión: 21/10/2026
+
+Cómo leer este archivo
+----------------------
+Cada observación tiene un estado:
+    [RESUELTO]   ya está corregido en la nueva versión.
+    [PARCIAL]    se corrigió una parte; se indica qué falta.
+    [PENDIENTE]  sigue igual que en la primera revisión.
+    [NUEVO]      problema que apareció con los cambios de esta versión.
+Las páginas citadas son las de la NUEVA versión del PDF.
+
+======================================================================
+RESUMEN RÁPIDO
+======================================================================
+Resueltas: A4, A5, A6, A7, D3 y la mayor parte de B5 (categorías).
+Parciales: A1, A2, A3, B5.
+Lo MÁS URGENTE ahora es el bloque N (nuevo): al renumerar figuras y tablas
+quedaron desfasados los índices y casi todas las referencias del Capítulo 2
+("ver Figura 25", "Tabla 24", etc.). Eso se nota mucho al leer.
+
+
+======================================================================
+N. PROBLEMAS NUEVOS (aparecieron al reorganizar el documento)
+======================================================================
+
+N1. [NUEVO] Figuras renumeradas, pero el índice y las referencias no
+    Las figuras de los Anexos F y G ahora se llaman Figura 6 a Figura 23,
+    pero el ÍNDICE DE FIGURAS (págs. xiv-xv) y el texto siguen usando los
+    números viejos (18 a 35). Además, las Figuras 6 a 11 ya existían con
+    otro sentido en la versión anterior (diagramas de secuencia).
+    Correspondencia actual (viejo -> nuevo):
+      18 -> 6 (CP-15)        19 -> 7 (CP-17)        20 -> 8 (CP-18)
+      21 -> 9 (CP-19)        22 -> 10 (CP-20)       23 -> 11 (CP-23)
+      24 -> 12 (UptimeRobot) 25 -> 13 (AuthGate)    26 -> 14 (RLS lugares)
+      27 -> 15 (OSRM)        28 -> 16 (alta usuario) 29 -> 17 (roles RLS)
+      30 -> 18 (validación)  31 -> 19 (restricciones) 32 -> 20 (prueba widget)
+      33 -> 21 (prueba RLS)  34 -> 22 (17 pruebas)  35 -> 23 (flutter analyze)
+    Referencias en el texto que hay que cambiar:
+      - 2.6.2 (pág. 29) y 2.7.1 (pág. 32): "Figura 25" -> Figura 13.
+      - 2.6.3 (pág. 29): "Figura 26" -> Figura 14.
+      - 2.6.4 (pág. 29): "Figura 27" -> Figura 15.
+      - 2.6.5 punto 1 (pág. 30) y 2.7.1 (pág. 32): "Figura 28" -> Figura 16.
+      - 2.7.2 (pág. 33): "Figura 29" -> Figura 17.
+      - 2.7.3 (pág. 33): "Figura 30" y "Figura 31" -> Figuras 18 y 19.
+      - 2.8.2 (pág. 37): "Figura 32" y "Figura 33" -> Figuras 20 y 21.
+      - 2.8.3 (pág. 37): "Figura 34" y "Figura 35" -> Figuras 22 y 23.
+      - 2.8.7 (pág. 38): "Figura 24 en el Anexo F" -> Figura 12.
+      - F.4 (pág. 121): "La Figura 24 muestra..." -> Figura 12.
+    Recomendación: en Word, use Referencias > Insertar título y
+    Referencia cruzada; así los números se actualizan solos (F9).
+
+N2. [NUEVO] Tablas renumeradas, pero el índice y las referencias no
+    En el cuerpo, las tablas de los anexos bajaron un número (la de
+    participantes del Anexo E quedó sin título), pero el ÍNDICE DE TABLAS
+    (págs. xi-xii) sigue con los números viejos y además salta de la
+    Tabla 12 a la Tabla 14 (falta la 13).
+    Correspondencia actual (viejo -> nuevo):
+      14 -> 13 (usuarios)       15 -> 14 (categorías)   16 -> 15 (lugares)
+      17 -> 16 (hoteles)        18 -> 17 (restaurantes) 19 -> 18 (actividades)
+      20 -> 19 (gastronomía)    21 -> 20 (eventos)      22 -> 21 (reseñas)
+      23 -> 22 (casos prueba)   24 -> 23 (API)          25 -> 24 (soluciones)
+      26 -> 25 (RF MoSCoW)      27 -> 26 (RNF métricas) 28 -> 27 (objetivos)
+    Referencias en el texto que hay que cambiar:
+      - 2.4.4 (pág. 25): "Tabla 24 (Anexo F, apartado F.5)" -> Tabla 23.
+      - 2.8.4 (pág. 37): "La Tabla 23 (Anexo F)" -> Tabla 22.
+      - F.3 (pág. 116): "En la Tabla 23 se presentan..." -> Tabla 22.
+      - F.5 (pág. 122): "La Tabla 24 presenta..." -> Tabla 23.
+    Alternativa: devolverle el título "Tabla 13. Participantes de los
+    diagramas de secuencia" a la tabla de E.1.1 (págs. 69-70); así vuelve
+    la numeración anterior y solo hay que revisar las referencias.
+
+N3. [NUEVO] Las Figuras E.1 a E.6 (diagramas de secuencia, cada una en
+    3 partes) no aparecen en el índice de figuras. Agregarlas o aclarar
+    que el Anexo E usa numeración propia.
+
+N4. [NUEVO] Tabla 2, fila Administrador, columna "Qué no puede hacer"
+    (pág. 17): el paréntesis "(ese primer ascenso se hace una sola vez,
+    directamente en el SQL Editor de Supabase." quedó sin cerrar.
+
+N5. [NUEVO] 2.7.2 (pág. 32): "el rol de las cuentas se guardan" ->
+    "el rol de las cuentas se guarda". Sugerencia de redacción completa:
+    "El sistema maneja dos roles con cuenta (editor y administrador) y un
+    perfil sin inicio de sesión (visitante). El rol se guarda en..."
+
+N6. [NUEVO] RF-11 (Tabla 3 y Tabla 25): "eliminar(desactivar)" -> falta
+    un espacio: "eliminar (desactivar)".
+
+
+======================================================================
+A. CONTRADICCIONES DE CONTENIDO
+======================================================================
+
+A1. [PARCIAL] Moderación de reseñas
+    Resuelto: diagramas del Anexo E ('aprobada', "¡Gracias! Tu reseña ya
+    está publicada") y la nota de E.1.2.
+    Falta:
+      - Tabla 5 (pág. 22): "reseñas/calificaciones sujetas a moderación".
+      - Tabla 6 (pág. 26): "reseñas con flujo de moderación".
+      - Figura 3 (arquitectura): "reseñas y calificaciones (con
+        moderación: pendiente / aprobada / rechazada)".
+    Sugerencia: "reseñas y calificaciones (se publican automáticamente;
+    el esquema admite moderación)".
+
+A2. [PARCIAL] Contrato de la API (2.4.4 y Tabla 23, antes 24)
+    Resuelto: la columna Rol ya dice "Administrador / editor".
+    Falta:
+      - Las rutas siguen siendo /api/v1/... (el sistema usa /rest/v1/... de
+        PostgREST y /auth/v1/... de Supabase Auth; la Figura 21 usa
+        '$url/rest/v1/lugares').
+      - "POST /api/v1/auth/registro" sin autenticación contradice el
+        Manual A.5: las cuentas solo las crea un administrador.
+      - "DELETE ... (activo = false)": el borrado lógico es un PATCH de
+        activo; el DELETE físico está bloqueado (script 10 -> 403).
+      - Texto de 2.4.4 (pág. 25): todavía dice "exigen un token válido y
+        el rol de administrador; las excepciones son el registro...".
+        Cambiar a "rol de administrador o editor" y quitar "el registro".
+      - Categorías: falta la operación de renombrar/eliminar (PATCH con
+        nombre y/o activo; errores 400, 401, 403, 404, 409 nombre
+        duplicado).
+
+A3. [PARCIAL] ¿Quién gestiona el contenido: administrador y editor?
+    Resuelto: Tabla 3 (RF-11) y Tabla 23 (API).
+    Falta:
+      - Tabla 25 (RF-11, pág. 136): "permitir a administradores" y
+        CA-11.1 "como administrador" -> "administradores y editores" /
+        "como administrador o editor".
+      - CU-16, CU-17, CU-18, CU-19 y CU-20 (págs. 98-101): precondición
+        "con rol administrador" -> "con rol editor o administrador"
+        (igual que CU-15).
+
+A4. [RESUELTO] Tabla 2: ya no dice que el administrador no puede
+    gestionar usuarios.
+    Pendiente menor: fila Editor, "Usuario con acceso completo al panel
+    administrativo" -> "acceso al panel administrativo, excepto la gestión
+    de usuarios".
+
+A5. [RESUELTO] 2.7.2 ya reconoce los tres perfiles (ver N5 de redacción).
+
+A6. [RESUELTO] 2.7.2 ya dice "recibe el rol editor".
+
+A7. [RESUELTO] Mensaje de login genérico: se corrigió el código y se
+    quitó la fila "Usuario no encontrado" de A.6.
+
+A8. [PENDIENTE] CP-21 "Por corregir" (Tabla 22, pág. 117) contradice
+    2.6.5 punto 6 (págs. 30-31), que lo da por resuelto. Volver a probar
+    eventos/actividades/gastronomía sin internet y dejar ambas partes
+    iguales.
+
+A9. [PENDIENTE] CP-12 "Por corregir" con "Mensaje asigne un rol", pero la
+    prueba automática (Figura 22) verifica que el rol por defecto sea
+    editor y pasa. Redactarlo con lo que realmente se prueba y marcarlo
+    Aprobado.
+
+A10. [PENDIENTE] CP-15 y CP-16 siguen siendo el mismo caso (ambos con
+     cuenta de administrador). Convertir CP-16 en "Iniciar sesión con
+     cuenta de editor -> gestiona contenido, NO ve la opción Usuarios".
+
+A11. [PENDIENTE] La conclusión 3 (pág. 43) dice "siete dificultades" y
+     2.6.5 tiene seis. Se resuelve agregando el punto 7 de categorías
+     (ver B5).
+
+A12. [PENDIENTE] 2.8.1 (pág. 36): "Se combinaron tres tipos de prueba" y
+     se enumeran cuatro.
+
+A13. [PENDIENTE] Resumen: "2 por corregir"; 2.8.5 y conclusión 5:
+     "2 por revisar". Usar "por corregir" (como la Tabla 22).
+
+A14. [PENDIENTE] Introducción (pág. 2): "televisión, la radio y las redes
+     sociales"; el resto del documento dice "material impreso, radio y
+     redes sociales".
+
+A15. [PENDIENTE] 1.2 (pág. 4) menciona "comunidades", que no es un módulo
+     del sistema.
+
+
+======================================================================
+B. DATOS QUE NO COINCIDEN CON EL REPOSITORIO
+======================================================================
+
+B1. [PENDIENTE] Identificador del paquete Android
+    2.9.4 (pág. 41) y B.9.2 (pág. 66) dicen "com.example.proyecto_final_360";
+    el real es "io.github.vladimirportillo.comarapa_turismo". B.4.1
+    (pág. 61) menciona "bo.edu.uajms". La nota "Firma" (pág. 67) sugiere
+    cambiar el identificador, cuando ya está cambiado.
+
+B2. [PENDIENTE] Versiones
+    - 2.1.4 (pág. 10): "versión [versión utilizada]" y "flutter -version".
+      -> "Flutter 3.44.8 (canal stable; mínimo 3.35.0)" y
+      "flutter --version".
+    - 2.1.5 (pág. 10): "Dart, versión 3.35" -> la versión de Dart que
+      muestra "flutter --version" (mínimo 3.9.0).
+    - Tabla 6 (pág. 26): "Flutter 3.35.0" -> "Flutter 3.44.8 (mínimo
+      3.35.0)", igual que B.2.2.
+
+B3. [PENDIENTE] Scripts SQL
+    2.9.2 (pág. 40) dice "05 a 08"; la tabla de B.5.2 (pág. 62) y B.3.1
+    (pág. 60, "Scripts SQL 04 al 08") no incluyen:
+      - 09_SALUD.sql (ruta de salud para UptimeRobot)
+      - 10_PERMISOS_403.sql (bloqueo de cambio de rol y de borrado físico)
+      - 11_CATEGORIAS_EDITAR_ELIMINAR.sql (lectura de categorías ocultas)
+
+B4. [PENDIENTE] Número de pruebas automatizadas
+    El documento dice 17 (2.8.3, 2.8.5, conclusión 5, Figura 22) y el
+    repositorio tiene 18 (se agregó test/rendimiento_modelos_test.dart).
+    Volver a ejecutar "flutter test" y actualizar la figura y los números.
+
+B5. [PARCIAL] Edición y eliminación de categorías
+    Resuelto: RF-11 (Tabla 3 y Tabla 25), 2.6.1 punto 2, flujo alternativo
+    en CU-15 a CU-20, Manual A.5.3 paso 5 y descripción de "activo" en la
+    Tabla 14 (categorías). ¡Bien!
+    Falta:
+      - 2.6.3 (pág. 29): "Los visitantes anónimos solo pueden leer
+        contenido activo" -> agregar la excepción de las categorías
+        (se leen todas para que los registros conserven su nombre de
+        categoría; la app solo ofrece las activas).
+      - 2.6.5: agregar el punto 7 "Eliminar categorías sin dejar
+        registros huérfanos" (también resuelve A11).
+      - Script 11 en 2.9.2 y B.5.2 (ver B3).
+      - Tabla 23 (API): operación de renombrar/eliminar categoría (A2).
+      - Opcional: CA-11.3 en la Tabla 25 y casos de prueba CP-24/CP-25.
+      - Opcional: bloque "Gestionar categoría" en los diagramas de
+        secuencia del Editor (archivos .puml en docs/diagramas_secuencia).
+
+B6. [PENDIENTE — opcional] Calendario en español (RNF-01): ya se corrigió
+    en el código; se puede mencionar en 2.6.5 o en las pruebas.
+
+B7. [PENDIENTE] 2.4.3.2 cita líneas de código ("home_screen.dart, líneas
+    205-236" y "55-107"). Mejor citar el nombre del widget o método,
+    porque las líneas cambian con cada modificación.
+
+
+======================================================================
+C. REFERENCIAS CRUZADAS, CITAS Y REDACCIÓN
+======================================================================
+
+C1. [PENDIENTE] 2.4.3.2 (págs. 24-25): "cumpliendo RNF-02" -> RNF-01
+    (validación); "en línea con RNF-04 (modo de referencia ante fallas)"
+    -> RNF-03.
+
+C2. [PENDIENTE] Citas sin resolver: "(pressman2020)" (pág. 9) y
+    "(dart_async)" (pág. 11). Cambiar a "(Pressman, 2020)" y a la
+    documentación oficial de Dart, y agregarlas a la Bibliografía.
+
+C3. [PENDIENTE] Bibliografía (págs. 46-47): sin orden alfabético
+    (SANJINES antes que LA REGIÓN), formato mixto, faltan las fuentes
+    técnicas (Flutter, Supabase, OpenStreetMap, OSRM, Open-Meteo, OWASP,
+    Scrum Guide) y verificar el enlace de Rosales Huincho (Huaraz, Perú)
+    que apunta a "uts.edu.co" (Colombia).
+
+C4. [PENDIENTE] Conclusión 1 dice que los criterios Dado/Cuando/Entonces
+    y MoSCoW están en "la sección 2.3", pero están en la Tabla 25, al
+    final y fuera de un anexo (ver D2).
+
+C5. [PENDIENTE] Figura 1: "al cierre de la Semana 1", pero el tablero
+    muestra casi todo terminado.
+
+C6. [PENDIENTE] Tabla 1: Sprint 0 dura 10 días (11-20 sep) y la
+    metodología dice "sprints de una semana".
+
+C7. [PENDIENTE] 2.4.3.1 / Figura 5: se llaman "wireframes" pero son
+    capturas de la app.
+
+C8. [PENDIENTE] 2.9.2 (pág. 40): "Se manejan entornos:" -> "Se manejan
+    dos entornos:". La Tabla 12 no incluye DEMO_MODE.
+
+C9. [PENDIENTE] Primera/segunda persona: 2.8.6 "Ejecuté la prueba..."
+    (y no dice qué herramienta se usó); 2.8.7 "desde que la monitoreas".
+
+C10. [PENDIENTE] La lista de "ocho funcionalidades" de la conclusión 3
+     no coincide con la de 2.6.1.
+
+C11. [PENDIENTE] Manual A.1.1 (pág. 48): fila Editor, "Requiere cuenta"
+     vacío -> "Sí".
+
+C12. [PENDIENTE] CU-15 a CU-20: el flujo principal dice
+     "editar/eliminar" y la postcondición "queda ... eliminado"; el
+     sistema solo desactiva -> "editar o desactivar" / "desactivado".
+
+C13. [PENDIENTE] Tabla 19 y F.2.7 dicen "gastronomias"; la tabla real se
+     llama "gastronomia".
+
+C14. [PARCIAL] Erratas
+     Resuelto: "crear y edita" (Tabla 2).
+     Falta: "el alcance esta" -> "está" (1.4.1); en el diagrama de casos
+     de uso: "Seleciionar", "Vizualizacion", "Gestiona lugares",
+     "Ubicacion persona actual".
+
+C15. [PENDIENTE] 2.6.2 y 2.7.1 repiten la explicación de la sesión.
+
+
+======================================================================
+D. FORMATO Y MAQUETACIÓN
+======================================================================
+
+D1. [PENDIENTE] Las Figuras 3 y 4 siguen pegadas dentro del índice de
+    figuras (págs. xiii y xiv).
+
+D2. [PENDIENTE] Tablas 24 a 27 sueltas después del Anexo G (págs.
+    130-142), sin anexo propio. Crear "Anexo H" o moverlas. Además, la
+    Tabla 26 se titula igual que la Tabla 4 ("Requisitos no
+    funcionales"): renombrarla "...con métricas de verificación".
+
+D3. [RESUELTO] Anexo E: ya no hay páginas en blanco y cada diagrama
+    tiene su título y pie en la misma página.
+
+D4. [PENDIENTE] Estilo de títulos mezclado: Tabla 7 y Figuras 13 a 23 en
+    negrita; el resto en cursiva.
+
+D5. [PENDIENTE] Las figuras de los manuales (A.1 a A.4, B.1) y las
+    Figuras E.1 a E.6 no están en el índice de figuras (ver N3).
+
+D6. [PENDIENTE] Subtítulo "2.8.5 Resumen de resultados": el número no
+    está en negrita como los demás.
+
+D7. [PENDIENTE] Portada repetida (págs. 1 y 2), si no es intencional.
+
+
+======================================================================
+ORDEN SUGERIDO PARA TERMINAR
+======================================================================
+1. N1 y N2 (numeración de figuras y tablas + índices). Lo más rápido es
+   usar títulos y referencias cruzadas de Word y luego actualizar todo
+   con Ctrl+A y F9.
+2. A2, A3 y A1 (API, rol del editor, moderación en Tablas 5/6 y Figura 3).
+3. A8 a A13 (casos de prueba y números del resumen).
+4. B1, B2, B3, B4 y lo que falta de B5.
+5. C1, C2 y D1, D2.
+6. El resto (redacción y formato).

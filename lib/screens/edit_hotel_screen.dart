@@ -10,6 +10,7 @@ import '../repositories/categoria_repository.dart';
 import '../repositories/hotel_repository.dart';
 import '../widgets/imagen_picker_field.dart';
 import '../widgets/fullscreen_location_picker.dart';
+import '../widgets/categoria_acciones.dart';
 
 class EditHotelScreen extends StatefulWidget {
   final Hotel? hotel;
@@ -530,6 +531,15 @@ class _EditHotelScreenState extends State<EditHotelScreen> {
     );
   }
 
+  Future<void> _accionesCategoria(Categoria cat) async {
+    final resultado = await mostrarAccionesCategoria(context, cat);
+    if (!mounted || resultado == null) return;
+    setState(() {
+      _categorias = aplicarResultadoCategoria(_categorias, cat, resultado);
+      if (resultado.eliminada && _categoriaId == cat.id) _categoriaId = null;
+    });
+  }
+
   Widget _buildLabel(String label, {bool isRequired = false, bool isOptional = false}) {
     // Text.rich para que la etiqueta pase a la siguiente línea si no cabe.
     return Text.rich(
@@ -644,6 +654,8 @@ class _EditHotelScreenState extends State<EditHotelScreen> {
               final isSelected = _categoriaId == cat.id;
               return GestureDetector(
                 onTap: () => setState(() => _categoriaId = cat.id),
+                onLongPress: () => _accionesCategoria(cat),
+                onSecondaryTap: () => _accionesCategoria(cat),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 9),
                   decoration: BoxDecoration(

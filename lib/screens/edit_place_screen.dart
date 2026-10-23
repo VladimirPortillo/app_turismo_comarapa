@@ -19,6 +19,7 @@ import '../repositories/lugar_repository.dart';
 import '../repositories/restaurante_repository.dart';
 import '../widgets/imagen_picker_field.dart';
 import '../widgets/fullscreen_location_picker.dart';
+import '../widgets/categoria_acciones.dart';
 
 const Color _kPrimary = Color(0xFF1B5A3F);
 const Color _kAccent = Color(0xFF2A7353);
@@ -1041,6 +1042,15 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
     );
   }
 
+  Future<void> _accionesCategoria(Categoria cat) async {
+    final resultado = await mostrarAccionesCategoria(context, cat);
+    if (!mounted || resultado == null) return;
+    setState(() {
+      _categorias = aplicarResultadoCategoria(_categorias, cat, resultado);
+      if (resultado.eliminada && _categoriaId == cat.id) _categoriaId = null;
+    });
+  }
+
   Widget _buildLabel(String label, {bool isRequired = false, bool isOptional = false}) {
     // Text.rich para que la etiqueta pase a la siguiente línea si no cabe.
     return Padding(
@@ -1136,7 +1146,10 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
       children: [
         ..._categorias.map((cat) {
           final isSelected = _categoriaId == cat.id;
-          return ChoiceChip(
+          return GestureDetector(
+            onLongPress: () => _accionesCategoria(cat),
+            onSecondaryTap: () => _accionesCategoria(cat),
+            child: ChoiceChip(
             label: Text(
               cat.nombre,
               style: TextStyle(
@@ -1157,6 +1170,7 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
               side: BorderSide(color: isSelected ? _kAccent : Colors.grey.shade200),
             ),
             showCheckmark: false,
+            ),
           );
         }),
         GestureDetector(

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
 import 'controllers/preferences_controller.dart';
@@ -29,6 +30,14 @@ class ProyectoFinalApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Comarapa Turismo',
       scrollBehavior: AppScrollBehavior(),
+      // Idioma español para widgets de Material (calendario, diálogos, etc.).
+      locale: const Locale('es', 'ES'),
+      supportedLocales: const [Locale('es', 'ES'), Locale('en', 'US')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       themeMode: preferences.themeMode,
       theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.indigo),
       darkTheme: ThemeData(

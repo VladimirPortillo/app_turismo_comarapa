@@ -114,9 +114,12 @@ class _WebLoginScreenState extends State<WebLoginScreen> {
   String _traducirErrorAuth(Object error) {
     if (error is AuthException) {
       final msg = error.message.toLowerCase();
+      // Mismo mensaje para correo inexistente y contraseña incorrecta:
+      // no se revela qué cuentas existen en el sistema.
       if (msg.contains('invalid login credentials') ||
           msg.contains('invalid_grant') ||
-          msg.contains('invalid credentials')) {
+          msg.contains('invalid credentials') ||
+          msg.contains('user not found')) {
         return 'Correo o contraseña incorrectos. Por favor, verifica tus datos.';
       }
       if (msg.contains('email not confirmed')) {
@@ -124,9 +127,6 @@ class _WebLoginScreenState extends State<WebLoginScreen> {
       }
       if (msg.contains('rate limit') || msg.contains('too many requests')) {
         return 'Demasiados intentos. Por favor espera unos momentos antes de reintentar.';
-      }
-      if (msg.contains('user not found')) {
-        return 'Usuario no encontrado. Verifica el correo ingresado.';
       }
       if (msg.contains('invalid email')) {
         return 'El formato de correo electrónico es inválido.';

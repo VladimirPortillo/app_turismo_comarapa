@@ -4,7 +4,7 @@ import 'package:latlong2/latlong.dart' hide Path;
 
 import '../screens/home_screen.dart' show GreenMountainLogoPainter;
 import '../widgets/full_map_sheet.dart';
-import '../widgets/fullscreen_image_gallery.dart';
+import 'web_image_gallery.dart';
 import 'web_theme.dart';
 
 // Piezas reutilizables por las pantallas web de listado y detalle.
@@ -431,7 +431,7 @@ class WebGaleria extends StatelessWidget {
             Navigator.of(context).push(
               MaterialPageRoute(
                 fullscreenDialog: true,
-                builder: (_) => FullscreenImageGallery(
+                builder: (_) => WebImageGallery(
                   imagenes: imagenes,
                   initialIndex: index,
                 ),

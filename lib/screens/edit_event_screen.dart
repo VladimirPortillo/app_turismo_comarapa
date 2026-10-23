@@ -9,6 +9,7 @@ import '../repositories/categoria_repository.dart';
 import '../repositories/evento_repository.dart';
 import '../widgets/imagen_picker_field.dart';
 import '../widgets/fullscreen_location_picker.dart';
+import '../widgets/categoria_acciones.dart';
 
 class EditEventScreen extends StatefulWidget {
   final Evento? evento;
@@ -439,6 +440,15 @@ class _EditEventScreenState extends State<EditEventScreen> {
     );
   }
 
+  Future<void> _accionesCategoria(Categoria cat) async {
+    final resultado = await mostrarAccionesCategoria(context, cat);
+    if (!mounted || resultado == null) return;
+    setState(() {
+      _categorias = aplicarResultadoCategoria(_categorias, cat, resultado);
+      if (resultado.eliminada && _categoriaId == cat.id) _categoriaId = null;
+    });
+  }
+
   Widget _buildLabel(String label, {bool isRequired = false, bool isOptional = false}) {
     // Text.rich para que la etiqueta pase a la siguiente línea si no cabe.
     return Text.rich(
@@ -554,6 +564,8 @@ class _EditEventScreenState extends State<EditEventScreen> {
                   padding: const EdgeInsets.only(right: 10),
                   child: GestureDetector(
                     onTap: () => setState(() => _categoriaId = cat.id),
+                    onLongPress: () => _accionesCategoria(cat),
+                    onSecondaryTap: () => _accionesCategoria(cat),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8.5),
                       decoration: BoxDecoration(
